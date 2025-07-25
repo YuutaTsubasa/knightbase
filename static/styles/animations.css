@@ -1,0 +1,33 @@
+.enterFade {
+  transform: translateX(20px);
+  opacity: 0;
+  animation: enterFadeAnimation 0.5s ease-out forwards;
+}
+
+.leaveFade {
+  transform: translateX(0);
+  opacity: 1;
+  animation: leaveFadeAnimation 0.5s ease-in forwards;
+}
+
+@keyframes enterFadeAnimation {
+  from {
+    transform: translateX(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes leaveFadeAnimation {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(-20px);
+    opacity: 0;
+  }
+}
