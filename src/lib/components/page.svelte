@@ -1,19 +1,20 @@
 <script lang="ts">
-  import type { ITransitionComponent } from '$lib/animations/transitions/ITransitionComponent';
   import { FadeTransitionComponent } from '$lib/animations/transitions/FadeTransitionComponent';
+  import { onMount } from 'svelte';
+  import { goto } from '$app/navigation';
   
   export let wrapperClass = '';
   export let contentClass = '';
+  export let mainProgress: () => Promise<string>;
 
   let pageElement: HTMLElement;
-  
-  let transition: ITransitionComponent;
-  export function enter(): Promise<void> { return transition.enter(); }
-  export function leave(): Promise<void> { return transition.leave(); }
-
-  $: if (pageElement && !transition) {
-    transition = new FadeTransitionComponent(pageElement);
-  }
+  onMount(async () => {
+    let transition = new FadeTransitionComponent(pageElement);
+    await transition.enter();
+    let nextPath = await mainProgress();
+    await transition.leave();
+    goto(nextPath);
+  });
 
 </script>
 
@@ -33,7 +34,7 @@
     width: 100vw;
     min-height: 100vh;
 
-    background: var(--background, #f4f4f4);
+    background: var(--background, #1e293b);
   }
 
   .safeArea {

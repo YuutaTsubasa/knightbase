@@ -1,5 +1,5 @@
 import { wait } from '$lib/utils/Wait';
-import { ITransitionComponent } from './ITransitionComponent';
+import type { ITransitionComponent } from './ITransitionComponent';
 
 export class FadeTransitionComponent implements ITransitionComponent {
   protected element: HTMLElement;

@@ -3,6 +3,7 @@
   import { PopupStore } from '$lib/systems/PopupStore';
   import { FadeTransitionComponent } from '$lib/animations/transitions/FadeTransitionComponent';
   import { onMount } from 'svelte';
+  import Button from '../Button.svelte';
 
   export let popup: PopupData;
 
@@ -36,12 +37,12 @@
       <div class="popupContent">{popup.content}</div>
       <div class="popupButtons">
         {#each popup.buttons as { text, className }, i}
-          <button
-            class={`fancyButton ${className}`}
-            on:click={() => handleClick(i)}
+          <Button
+            className={`${className}`}
+            onClick={() => handleClick(i)}
           >
             {text}
-          </button>
+          </Button>
         {/each}
       </div>
     </div>
@@ -64,7 +65,6 @@
   .popupBackground {
     background: white;
     width: 100%;
-    max-width: 600px;
     box-shadow: 0 8px 20px rgba(0,0,0,0.2);
     display: flex;
     justify-content: center;
@@ -75,6 +75,7 @@
     display: flex;
     flex-direction: column;
     width: 100%;
+    max-width: 600px;
   }
 
   .popupTitle {
@@ -90,6 +91,7 @@
     font-weight: bold;
     font-size: 1rem;
     line-height: 1.5;
+    text-align: left;
   }
 
   .popupButtons {

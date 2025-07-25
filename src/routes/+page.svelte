@@ -1,14 +1,10 @@
 <script lang="ts">
   import { wait } from '$lib/utils/Wait';
   import Page from '$lib/components/Page.svelte';
-  import type { ITransitionComponent } from '$lib/animations/transitions/ITransitionComponent';
-  import { onMount } from 'svelte';
   import { PopupStore, PopupResult } from '$lib/systems/PopupStore';
-
-  let page: InstanceType<typeof Page> & ITransitionComponent;
-
-  onMount(async() => {
-    await page.enter();
+  import Image from '$lib/components/Image.svelte';
+  
+  async function main() {
     await wait(1000);
     const result = await PopupStore.open({
       title: '是否要離開？',
@@ -26,26 +22,21 @@
         },
       ]
     });
-    await page.leave();
-  });
-
+    return "/title";
+  }
 </script>
 
-<Page bind:this={page} wrapperClass="splashScreen">
+<Page mainProgress={main} wrapperClass="splashScreen">
   <div class="logoBox enterFade">
-    <img src="/assets/images/splashScreenLogo.png" alt="Splash Screen Logo" />
+    <Image key="splashScreenLogo" alt="Splash Screen Logo" className="logo" />
   </div>
 </Page>
 
-<link rel="stylesheet" href="/styles/animations.css" />
 <style>
   :global(.splashScreen) {
-    --background: #1e293b;
-
     display: flex;
     justify-content: center;
     align-items: center;
-
     color: white;
   }
 
@@ -58,7 +49,7 @@
     height: 100%;
   }
 
-  .logoBox img {
+  .logoBox :global(.logo) {
     width: 50%;
   }
 </style>
