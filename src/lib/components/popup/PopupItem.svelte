@@ -4,6 +4,8 @@
   import { FadeTransitionComponent } from '$lib/animations/transitions/FadeTransitionComponent';
   import { onMount } from 'svelte';
   import Button from '../Button.svelte';
+  import { AudioManager } from '$lib/systems/AudioManager';
+    import { FontAssets } from '$lib/assets/FontAssets';
 
   export let popup: PopupData;
 
@@ -21,9 +23,14 @@
   }
 
   async function handleClick(index: number) {
-    const clickedResult = popup.buttons[index].onClick?.();
-    if (clickedResult === PopupResult.Keep)
-      return;
+    const button = popup.buttons[index];
+    const clickEvent = button.onClickEvent;
+    if (clickEvent) {
+      AudioManager.play(clickEvent.sfx || "sfx_confirm");
+      const clickedResult = clickEvent.handler();
+      if (clickedResult === PopupResult.Keep)
+        return;
+    }
     
     await handleClose();
     popup.resolve(index);
@@ -33,8 +40,8 @@
 <div bind:this={rootElement} class="popupBackdrop">
   <div class="popupBackground">
     <div class="popupBox">
-      <div class="popupTitle">{popup.title}</div>
-      <div class="popupContent">{popup.content}</div>
+      <div class="popupTitle" style={FontAssets.getCssStyle("titleBold")}>{popup.title}</div>
+      <div class="popupContent" style={FontAssets.getCssStyle("default")}>{popup.content}</div>
       <div class="popupButtons">
         {#each popup.buttons as { text, className }, i}
           <Button

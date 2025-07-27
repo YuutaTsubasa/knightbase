@@ -1,50 +1,47 @@
-import type { AudioGroupId, AudioGroupConfig } from "$lib/assets/AudioGroupSettings";
-
-interface AudioGroup {
-  gainNode: GainNode;
-  loop: boolean;
-}
+import { audioAssets } from "$lib/assets/AudioAssets";
+import { type AudioGroupId, audioGroupSettings } from "$lib/assets/AudioGroupSettings";
+import { AudioGroup } from "./AudioGroup";
 
 export class AudioManager {
   private static context = new AudioContext();
   private static groups: Map<AudioGroupId, AudioGroup> = new Map();
 
-  static initialize(groups: Record<AudioGroupId, { loop?: boolean }>) {
-    for (const [id, options] of Object.entries(groups)) {
-      const gainNode = this.context.createGain();
-      gainNode.connect(this.context.destination);
-      this.groups.set(id, {
-        gainNode,
-        loop: options.loop ?? false
-      });
+  static initialize() {
+    for (const [id, options] of Object.entries(audioGroupSettings)) {
+      this.groups.set(id, 
+        new AudioGroup(this.context, options.loop)
+      );
     }
   }
 
-  static async preload(id: string, url: string, group: AudioGroupId) {
-    const res = await fetch(url);
+  static async preload(id: string) {
+    const audioAsset = audioAssets[id];
+    if (!audioAsset) return;
+    
+    const res = await fetch(audioAsset.url);
     const arrayBuffer = await res.arrayBuffer();
     const buffer = await this.context.decodeAudioData(arrayBuffer);
-    this.buffers.set(id, { buffer, group });
+    this.buffers.set(id, { buffer, group: audioAsset.group });
   }
 
-  static play(id: string) {
+  static async play(id: string) {
+    if (this.groups.values.length == 0) this.initialize();
+    if (!this.buffers.has(id)) await this.preload(id);
     const data = this.buffers.get(id);
-    if (!data) return;
+    if (!data) return null;
 
     const source = this.context.createBufferSource();
     source.buffer = data.buffer;
     const group = this.groups.get(data.group)!;
-
-    source.loop = group.loop;
-    source.connect(group.gainNode);
-    source.start();
+    return group.play(source.buffer);
   }
 
   static setVolume(groupId: AudioGroupId, volume: number) {
     const group = this.groups.get(groupId);
-    if (group) {
-      group.gainNode.gain.value = volume;
-    }
+    if (!group)
+      return;
+
+    group.setVolume(volume);
   }
 
   static resumeContext() {
@@ -52,9 +49,11 @@ export class AudioManager {
   }
 
   static connectMediaElement(videoElement: HTMLMediaElement, groupId: AudioGroupId) {
-    const source = this.context.createMediaElementSource(videoElement);
     const group = this.groups.get(groupId);
-    if (group) source.connect(group.gainNode);
+    if (!group) 
+      return;  
+
+    group.connectMediaElement(videoElement);
   }
 
   private static buffers: Map<string, { buffer: AudioBuffer; group: AudioGroupId }> = new Map();

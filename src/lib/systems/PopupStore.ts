@@ -8,7 +8,10 @@ export enum PopupResult {
 export type PopupButton = {
   text: string;
   className?: string;
-  onClick?: () => PopupResult | void;
+  onClickEvent?: {
+    handler: () => PopupResult,
+    sfx?: string
+  }
 };
 
 export type PopupData = {

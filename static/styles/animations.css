@@ -10,6 +10,10 @@
   animation: leaveFadeAnimation 0.5s ease-in forwards;
 }
 
+.slowFlicker {
+  animation: slowFlicker 2.5s ease-in-out infinite;
+}
+
 @keyframes enterFadeAnimation {
   from {
     transform: translateX(20px);
@@ -30,4 +34,10 @@
     transform: translateX(-20px);
     opacity: 0;
   }
+}
+
+@keyframes slowFlicker {
+  0%   { opacity: 0.2; }
+  50%  { opacity: 1; }
+  100% { opacity: 0.2; }
 }

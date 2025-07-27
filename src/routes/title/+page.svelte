@@ -1,13 +1,17 @@
 <script>
   import Page from "$lib/components/Page.svelte";
   import Image from "$lib/components/Image.svelte";
-  import { wait } from "$lib/utils/Wait";
   import Video from "$lib/components/Video.svelte";
+  import { ReactiveProperty } from "$lib/utils/ReactiveProperty";
+    import { AudioManager } from "$lib/systems/AudioManager";
 
+  const shouldGoToNextPage = new ReactiveProperty(false);
   async function main() {
-    await wait(5000);
-    return "/";
+    await shouldGoToNextPage.waitUntil(value => value);
+    AudioManager.play("sfx_confirm");
+    return "/mainmenu";
   }
+
 </script>
 
 <Page mainProgress={main} wrapperClass="titlePage">
@@ -15,10 +19,10 @@
     <Video key="titleBackground" />
   </div>
 
-  <div class="overlay">
+  <button class="overlay" on:click={() => shouldGoToNextPage.value = true}>
     <Image className="gameLogo" key="gameLogo" />
-    <div class="pressStart">PRESS TO START</div>
-  </div>
+    <div class="pressStart slowFlicker">PRESS TO START</div>
+  </button>
 </Page>
 
 <style>
@@ -26,7 +30,6 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    height: 100%;
   }
 
   .videoBackground :global(video) {
@@ -39,6 +42,7 @@
   }
 
   .overlay {
+    all: unset;
     backdrop-filter: blur(4px);
     background: rgba(0, 0, 0, 0.5);
     position: relative;
