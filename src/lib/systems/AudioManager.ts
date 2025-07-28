@@ -1,6 +1,7 @@
 import { audioAssets } from "$lib/assets/AudioAssets";
 import { type AudioGroupId, audioGroupSettings } from "$lib/assets/AudioGroupSettings";
 import { AudioGroup } from "./AudioGroup";
+import { playerStore, type PlayerData } from "./PlayerStore";
 
 export class AudioManager {
   private static context = new AudioContext();
@@ -12,12 +13,16 @@ export class AudioManager {
         new AudioGroup(this.context, options.loop)
       );
     }
+
+    playerStore.subscribe(playerData => {
+      this.updateVolumeFromPlayerData(playerData);
+    });
   }
 
   static async preload(id: string) {
     const audioAsset = audioAssets[id];
     if (!audioAsset) return;
-    
+
     const res = await fetch(audioAsset.url);
     const arrayBuffer = await res.arrayBuffer();
     const buffer = await this.context.decodeAudioData(arrayBuffer);
@@ -36,12 +41,17 @@ export class AudioManager {
     return group.play(source.buffer);
   }
 
-  static setVolume(groupId: AudioGroupId, volume: number) {
-    const group = this.groups.get(groupId);
-    if (!group)
-      return;
+  private static updateVolumeFromPlayerData(playerData: PlayerData){
+    this.groups.forEach((group, groupId) => {
+      if (groupId !== "bgm" && groupId !== "sfx")
+        return;
 
-    group.setVolume(volume);
+      group?.setVolume(
+        ((groupId === "bgm" ? playerData.bgmVolume : 
+          groupId === "sfx" ? playerData.sfxVolume : 0) / 100) *
+          (playerData.masterVolume / 100)
+      );
+    });
   }
 
   static resumeContext() {

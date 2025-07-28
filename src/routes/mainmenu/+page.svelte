@@ -5,14 +5,24 @@
   import { ReactiveProperty } from "$lib/utils/ReactiveProperty";
   import PlayerInfoBox from "$lib/components/mainmenu/PlayerInfoBox.svelte";
   import ResourceBar from "$lib/components/mainmenu/ResourceBar.svelte";
-  import SettingButton from "$lib/components/mainmenu/SettingButton.svelte";
   import BannerCarousel from "$lib/components/mainmenu/BannerCarousel.svelte";
   import BattleButton from "$lib/components/mainmenu/BattleButton.svelte";
+  import { playerStore } from "$lib/systems/PlayerStore";
+  import { goto } from "$app/navigation";
+    import { page } from "$app/state";
+    import { AudioManager } from "$lib/systems/AudioManager";
 
-  const goToNextScene = new ReactiveProperty(false);
+  let playerData = $playerStore;
+
+  $: playerName = playerData.name;
+  $: playerLevel = playerData.level;
+  $: playerTitle = playerData.title;
+  $: playerExperience = playerData.experience;
+
+  const goToNextScene : ReactiveProperty<string | null> = new ReactiveProperty(null);
   async function main() {
-    await goToNextScene.waitUntil(value => value);
-    return "/";
+    await goToNextScene.waitUntil(value => value !== null);
+    return goToNextScene.value ?? page.url.pathname;
   }
 </script>
 
@@ -21,7 +31,7 @@
     <Video key="titleBackground" />
   </div>
 
-  <PlayerInfoBox level={5} expPercent={0.4} name="勇者小翼" title="幻想旅人" />
+  <PlayerInfoBox level={playerLevel} expPercent={playerExperience} name={playerName} title={playerTitle} />
   <div class="rightTopSection">
     <ResourceBar
       resources={[
@@ -30,7 +40,6 @@
         { key: "gem", amount: "124680", onAdd: () => console.log("add gem") },
       ]}
   />
-    <SettingButton />
   </div>
   
   <BannerCarousel banners={[
@@ -38,7 +47,11 @@
     { key: 'banner02' }
   ]} />
 
-  <BattleButton progressText="目前進度：主線第 3 章 - 地底實驗所" onClick={() => {}} />
+  <BattleButton progressText="目前進度：主線第 3 章 - 地底實驗所"
+    onSettings={() => { 
+      AudioManager.play("sfx_confirm");
+      goToNextScene.value = "/settings"; 
+    }} />
 </Page>
 
 <style>
@@ -60,7 +73,7 @@
   .rightTopSection {
     position: absolute;
     top: 0.9rem;
-    right: 0.2rem;
+    right: 0.5rem;
 
     display: flex;
     align-items: center;

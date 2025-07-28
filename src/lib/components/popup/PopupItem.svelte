@@ -5,7 +5,8 @@
   import { onMount } from 'svelte';
   import Button from '../Button.svelte';
   import { AudioManager } from '$lib/systems/AudioManager';
-    import { FontAssets } from '$lib/assets/FontAssets';
+  import { FontAssets } from '$lib/assets/FontAssets';
+  import { imageAssets } from '$lib/assets/ImageAssets';
 
   export let popup: PopupData;
 
@@ -38,7 +39,7 @@
 </script>
 
 <div bind:this={rootElement} class="popupBackdrop">
-  <div class="popupBackground">
+  <div class="popupBackground" style="background: url({imageAssets["backgroundWhite"]});">
     <div class="popupBox">
       <div class="popupTitle" style={FontAssets.getCssStyle("titleBold")}>{popup.title}</div>
       <div class="popupContent" style={FontAssets.getCssStyle("default")}>{popup.content}</div>
@@ -70,7 +71,6 @@
   }
 
   .popupBackground {
-    background: white;
     width: 100%;
     box-shadow: 0 8px 20px rgba(0,0,0,0.2);
     display: flex;

@@ -2,18 +2,21 @@
   import { FadeTransitionComponent } from '$lib/animations/transitions/FadeTransitionComponent';
   import { onDestroy, onMount } from 'svelte';
   import { goto } from '$app/navigation';
-  import { page } from '$app/stores';
+  import { page } from '$app/state';
   import { AudioManager } from '$lib/systems/AudioManager';
-    import { FontAssets } from '$lib/assets/FontAssets';
+  import { FontAssets } from '$lib/assets/FontAssets';
+  import { BACK_PATH } from '$lib/utils/Constant';
   
   export let wrapperClass = '';
+  export let wrapperStyle = '';
   export let contentClass = '';
+  export let contentStyle = '';
   export let mainProgress: () => Promise<string>;
 
   let stopAudio: (() => void) | null;
   let pageElement: HTMLElement;
   onMount(async () => {
-    const currentPath = $page.url.pathname;
+    const currentPath = page.url.pathname;
     const playBgmPromise = AudioManager.play(`bgm_${currentPath.substring(1)}`);
 
     const transition = new FadeTransitionComponent(pageElement);
@@ -24,6 +27,12 @@
     
     await transition.leave();
     stopAudio?.();
+
+    if (nextPath === BACK_PATH){
+      history.back();
+      return;
+    }
+
     goto(nextPath);
   });
 
@@ -32,9 +41,9 @@
   });
 </script>
 
-<div bind:this={pageElement} class="page {wrapperClass}" style={FontAssets.getCssStyle("englishNumberDefault", "default")}>
+<div bind:this={pageElement} class="page {wrapperClass}" style={`${FontAssets.getCssStyle("englishNumberDefault", "default")} ${wrapperStyle}`}>
   <slot name="outside" />
-  <div class="safeArea {contentClass}">
+  <div class="safeArea {contentClass}" style={contentStyle}>
     <slot />
   </div>
 </div>

@@ -3,7 +3,7 @@
   import Image from "$lib/components/Image.svelte";
   import Video from "$lib/components/Video.svelte";
   import { ReactiveProperty } from "$lib/utils/ReactiveProperty";
-    import { AudioManager } from "$lib/systems/AudioManager";
+  import { AudioManager } from "$lib/systems/AudioManager";
 
   const shouldGoToNextPage = new ReactiveProperty(false);
   async function main() {

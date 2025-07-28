@@ -3,6 +3,7 @@
   export let onBattle = () => {};
   export let onMission = () => {};
   export let onShop = () => {};
+  export let onSettings = () => {};
 </script>
 
 <div class="battleButtonArea">
@@ -18,6 +19,10 @@
   <div class="bottomButtons">
     <button class="smallButton" on:click={onMission}>任務</button>
     <button class="smallButton" on:click={onShop}>商店</button>
+  </div>
+
+  <div class="bottomButtons">
+    <button class="smallButton" on:click={onSettings}>設定</button>
   </div>
 </div>
 
