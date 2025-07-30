@@ -2,14 +2,13 @@
   import { PlayerDataManager, playerStore } from '$lib/systems/PlayerStore';
   import { BACK_PATH } from '$lib/utils/Constant';
   import Page from '$lib/components/Page.svelte';
-  import { ReactiveProperty } from '$lib/utils/ReactiveProperty';
+  import { waitUntil } from '$lib/utils/Wait';
   import { imageAssets } from '$lib/assets/ImageAssets';
   import Topbar from '$lib/components/Topbar.svelte';
   import Button from '$lib/components/Button.svelte';
   import { LocalizationAssets, t } from '$lib/assets/LocalizationAssets';
   import { BoxIcon, DrumIcon, FormInputIcon, MessageSquareTextIcon, Music4Icon, Volume2Icon } from 'lucide-svelte';
-  import { PopupResult, PopupStore } from '$lib/systems/PopupStore';
-    import { get } from 'svelte/store';
+  import { get, writable } from 'svelte/store';
 
 
   let playerData = $playerStore;
@@ -22,7 +21,7 @@
 
   let restoreText = '';
   let restoreStatus = '';
-  let shouldExit = new ReactiveProperty(false);
+  let shouldExit = writable(false);
 
   function updateVolume() {
     playerStore.update(value => ({
@@ -57,14 +56,14 @@
   }
 
   async function main(){
-    await shouldExit.waitUntil(value => value);
+    await waitUntil(shouldExit, value => value);
     return BACK_PATH;
   }
 </script>
 
 <Page mainProgress={main} wrapperStyle={`background-image: url(${imageAssets["backgroundWhite"]}); background-repeat: no-repeat; background-attachment: fixed; background-size: cover;`}>
   <Topbar 
-    onBack={() => { shouldExit.value = true;}}
+    onBack={() => { shouldExit.set(true);}}
     primaryTitle={$t("settingsPageTitle")}
     secondaryTitle={$t("settingsPageSubtitle")}></Topbar>
   
