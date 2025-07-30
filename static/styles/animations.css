@@ -1,17 +1,54 @@
+.initialFade {
+  transform: translateX(20px);
+  opacity: 0;
+}
+
 .enterFade {
   transform: translateX(20px);
   opacity: 0;
-  animation: enterFadeAnimation 0.5s ease-out forwards;
+  animation: enterFadeAnimation var(--duration, 0.5s) ease-out forwards;
 }
 
 .leaveFade {
   transform: translateX(0);
   opacity: 1;
-  animation: leaveFadeAnimation 0.5s ease-in forwards;
+  animation: leaveFadeAnimation var(--duration, 0.5s) ease-in forwards;
 }
 
 .slowFlicker {
   animation: slowFlicker 2.5s ease-in-out infinite;
+}
+
+.initialScaleHeightByGrid {
+  display: grid;
+  grid-template-rows: 0fr;
+  overflow: hidden;
+}
+
+.initialScaleHeightByGrid > * {
+  min-height: 0;
+}
+
+.enterScaleHeightByGrid {
+  display: grid;
+  grid-template-rows: 0fr;
+  overflow: hidden;
+  animation: enterScaleHeightByGridAnimation var(--duration, 0.5s) ease-in-out forwards;
+}
+
+.enterScaleHeightByGrid > * {
+  min-height: 0;
+}
+
+.leaveScaleHeightByGrid {
+  display: grid;
+  grid-template-rows: 1fr;
+  overflow: auto;
+  animation: leaveScaleHeightByGridAnimation var(--duration, 0.5s) ease-in-out forwards;
+}
+
+.leaveScaleHeightByGrid > * {
+  min-height: 0;
 }
 
 @keyframes enterFadeAnimation {
@@ -40,4 +77,26 @@
   0%   { opacity: 0.2; }
   50%  { opacity: 1; }
   100% { opacity: 0.2; }
+}
+
+@keyframes enterScaleHeightByGridAnimation {
+  from {
+    grid-template-rows: 0fr;
+    overflow: hidden;
+  }
+  to {
+    grid-template-rows: 1fr;
+    overflow: auto;
+  }
+}
+
+@keyframes leaveScaleHeightByGridAnimation {
+  from {
+    grid-template-rows: 1fr;
+    overflow: auto;
+  }
+  to {
+    grid-template-rows: 0fr;
+    overflow: hidden;
+  }
 }

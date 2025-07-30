@@ -4,22 +4,20 @@
   import { PopupStore, PopupResult } from '$lib/systems/PopupStore';
   import Image from '$lib/components/Image.svelte';
   import { AudioManager } from '$lib/systems/AudioManager';
+  import { t } from '$lib/assets/LocalizationAssets';
   
   async function main() {
     AudioManager.initialize();
     await wait(1000);
     const result = await PopupStore.open({
-      title: '歡迎光臨「Knight Base」！',
-      content: '本遊戲為一個框架示範遊戲，主要是以一個具有基本遊戲流程來做設計，處理掉一些在各個平台會踩到的坑，讓做新遊戲變得更簡單。來看看這裡面究竟有什麼吧！',
+      title: $t("welcomeTitle"),
+      content: $t("welcomeContent"),
       buttons: [
         {
-          text: '確認',
-          className: 'confirmButton',
-          onClickEvent: {
-            handler: () => {
-            AudioManager.resumeContext();
+          text: $t("confirm"),
+          onClick: () => {
             return PopupResult.Close;
-          }},
+          },
         },
       ]
     });

@@ -4,6 +4,7 @@
   import Video from "$lib/components/Video.svelte";
   import { ReactiveProperty } from "$lib/utils/ReactiveProperty";
   import { AudioManager } from "$lib/systems/AudioManager";
+  import { t } from "$lib/assets/LocalizationAssets";
 
   const shouldGoToNextPage = new ReactiveProperty(false);
   async function main() {
@@ -21,7 +22,7 @@
 
   <button class="overlay" on:click={() => shouldGoToNextPage.value = true}>
     <Image className="gameLogo" key="gameLogo" />
-    <div class="pressStart slowFlicker">PRESS TO START</div>
+    <div class="pressStart slowFlicker">{$t("pressToStart")}</div>
   </button>
 </Page>
 

@@ -1,4 +1,7 @@
 <script lang="ts">
+  import { ListIcon, SettingsIcon, ShoppingCartIcon, SwordIcon } from "lucide-svelte";
+  import { t } from "$lib/assets/LocalizationAssets";
+
   export let progressText = "目前進度：主線第 3 章";
   export let onBattle = () => {};
   export let onMission = () => {};
@@ -8,7 +11,7 @@
 
 <div class="battleButtonArea">
   <button class="battleButton" on:click={onBattle}>
-    <div class="label">出戰</div>
+    <div class="label"><SwordIcon size="6vh" class="icon" /> {$t("battle")}</div>
     <div class="marquee">
         <div class="marqueeInner">
         {progressText}　{progressText}　{progressText}
@@ -17,12 +20,12 @@
   </button>
 
   <div class="bottomButtons">
-    <button class="smallButton" on:click={onMission}>任務</button>
-    <button class="smallButton" on:click={onShop}>商店</button>
+    <button class="smallButton" on:click={onMission}><ListIcon size="2.8vh" class="icon"/> {$t("mission")}</button>
+    <button class="smallButton" on:click={onShop}><ShoppingCartIcon size="2.8vh" class="icon" /> {$t("shop")}</button>
   </div>
 
   <div class="bottomButtons">
-    <button class="smallButton" on:click={onSettings}>設定</button>
+    <button class="smallButton" on:click={onSettings}><SettingsIcon size="2.8vh" class="icon"/> {$t("settings")}</button>
   </div>
 </div>
 
@@ -30,13 +33,14 @@
   .battleButtonArea {
     transform: perspective(800px) rotateY(-25deg);
     position: absolute;
-    right: 2rem;
-    bottom: 2rem;
-    width: 220px;
+    right: 4rem;
+    bottom: 4rem;
+    width: 30vw;
     display: flex;
     flex-direction: column;
     align-items: stretch;
     gap: 0.5rem;
+    font-size: 5vh;
   }
 
   .battleButton {
@@ -62,28 +66,28 @@
   }
   
   .label {
-    font-size: 1.8rem;
+    font-size: 1em;
     font-weight: bold;
     text-align: left;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.5em;
   }
 
   .marquee {
     overflow: hidden;
-    height: 1.2rem;
+    height: 1.0em;
     position: relative;
   }
 
   .marqueeInner {
     white-space: nowrap;
     animation: scrollLeft 5s linear infinite;
-    font-size: 0.9rem;
-    opacity: 0.8;
+    font-size: 0.5em;
+    opacity: 0.4;
   }
 
   @keyframes scrollLeft {
     0% { transform: translateX(0); }
-    100% { transform: translateX(-150%); }
+    100% { transform: translateX(-100%); }
   }
 
   .bottomButtons {
@@ -95,6 +99,7 @@
 
   .smallButton {
     flex: 1;
+    font-size: 0.5em;
     background: rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(2px);
     color: white;

@@ -1,8 +1,8 @@
 <script lang="ts">
-  export let level = 10;
-  export let expPercent = 0.65;
-  export let name = "悠太翼";
-  export let title = "迷途旅人";
+  export let level;
+  export let expPercent;
+  export let name;
+  export let title;
 </script>
 
 <div class="playerInfoBox">

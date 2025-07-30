@@ -8,15 +8,15 @@
   import BannerCarousel from "$lib/components/mainmenu/BannerCarousel.svelte";
   import BattleButton from "$lib/components/mainmenu/BattleButton.svelte";
   import { playerStore } from "$lib/systems/PlayerStore";
-  import { goto } from "$app/navigation";
-    import { page } from "$app/state";
-    import { AudioManager } from "$lib/systems/AudioManager";
+  import { page } from "$app/state";
+  import { AudioManager } from "$lib/systems/AudioManager";
+  import { t } from "$lib/assets/LocalizationAssets";
 
   let playerData = $playerStore;
 
   $: playerName = playerData.name;
   $: playerLevel = playerData.level;
-  $: playerTitle = playerData.title;
+  $: playerTitle = playerData.selectedTitle;
   $: playerExperience = playerData.experience;
 
   const goToNextScene : ReactiveProperty<string | null> = new ReactiveProperty(null);
@@ -31,7 +31,7 @@
     <Video key="titleBackground" />
   </div>
 
-  <PlayerInfoBox level={playerLevel} expPercent={playerExperience} name={playerName} title={playerTitle} />
+  <PlayerInfoBox level={playerLevel} expPercent={playerExperience} name={playerName} title={$t(playerTitle)} />
   <div class="rightTopSection">
     <ResourceBar
       resources={[

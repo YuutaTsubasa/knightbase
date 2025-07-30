@@ -7,4 +7,5 @@ export const imageAssets: Record<string, string> = {
   banner01: '/assets/images/banner01.png',
   banner02: '/assets/images/banner02.png',
   backgroundWhite: '/assets/images/backgroundWhite.png',
+  backgroundWhiteButton: '/assets/images/backgroundWhiteButton.png',
 };

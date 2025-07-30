@@ -6,6 +6,7 @@
   import { AudioManager } from '$lib/systems/AudioManager';
   import { FontAssets } from '$lib/assets/FontAssets';
   import { BACK_PATH } from '$lib/utils/Constant';
+    import { LocalizationAssets } from '$lib/assets/LocalizationAssets';
   
   export let wrapperClass = '';
   export let wrapperStyle = '';
@@ -18,8 +19,8 @@
   onMount(async () => {
     const currentPath = page.url.pathname;
     const playBgmPromise = AudioManager.play(`bgm_${currentPath.substring(1)}`);
-
     const transition = new FadeTransitionComponent(pageElement);
+    await LocalizationAssets.initialize();
     await transition.enter();
     stopAudio = await playBgmPromise;
     
@@ -68,9 +69,9 @@
     width: 100%;
     min-height: 100%;
     padding: env(safe-area-inset-top, 1rem)
-              env(safe-area-inset-right, 1rem)
-              env(safe-area-inset-bottom, 1rem)
-              env(safe-area-inset-left, 1rem);
+      env(safe-area-inset-right, 1rem)
+      env(safe-area-inset-bottom, 1rem)
+      env(safe-area-inset-left, 1rem);
   }
 
   ::slotted([slot="outside"]) {

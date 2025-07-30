@@ -8,4 +8,5 @@
 <PopupHost />
 <slot />
 
+<link rel="stylesheet" href="/styles/adjustment.css" />
 <link rel="stylesheet" href="/styles/animations.css" />

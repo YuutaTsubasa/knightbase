@@ -4,31 +4,34 @@
   import { FadeTransitionComponent } from '$lib/animations/transitions/FadeTransitionComponent';
   import { onMount } from 'svelte';
   import Button from '../Button.svelte';
-  import { AudioManager } from '$lib/systems/AudioManager';
   import { FontAssets } from '$lib/assets/FontAssets';
   import { imageAssets } from '$lib/assets/ImageAssets';
+  import { ScaleHeightTransitionComponent } from '$lib/animations/transitions/ScaleHeightTransitionComponent';
 
   export let popup: PopupData;
 
   let rootElement: HTMLElement;
+  let boxElement: HTMLElement;
   let transition: FadeTransitionComponent;
+  let boxTransition: ScaleHeightTransitionComponent;
 
-  onMount(() => {
-    transition = new FadeTransitionComponent(rootElement);
-    transition.enter();
+  onMount(async () => {
+    transition = new FadeTransitionComponent(rootElement, 200);
+    boxTransition = new ScaleHeightTransitionComponent(boxElement, 300);
+    await transition.enter();
+    await boxTransition.enter();
   });
 
   async function handleClose() {
+    await boxTransition.leave();
     await transition.leave();
     PopupStore.close(popup.id);
   }
 
   async function handleClick(index: number) {
     const button = popup.buttons[index];
-    const clickEvent = button.onClickEvent;
-    if (clickEvent) {
-      AudioManager.play(clickEvent.sfx || "sfx_confirm");
-      const clickedResult = clickEvent.handler();
+    if (button.onClick) {
+      const clickedResult = button.onClick();
       if (clickedResult === PopupResult.Keep)
         return;
     }
@@ -39,14 +42,14 @@
 </script>
 
 <div bind:this={rootElement} class="popupBackdrop">
-  <div class="popupBackground" style="background: url({imageAssets["backgroundWhite"]});">
-    <div class="popupBox">
+  <div class="popupBackground" style="background-image: url({imageAssets["backgroundWhite"]});">
+    <div class="popupBox" bind:this={boxElement}>
       <div class="popupTitle" style={FontAssets.getCssStyle("titleBold")}>{popup.title}</div>
       <div class="popupContent" style={FontAssets.getCssStyle("default")}>{popup.content}</div>
       <div class="popupButtons">
-        {#each popup.buttons as { text, className }, i}
+        {#each popup.buttons as { text, variant }, i}
           <Button
-            className={`${className}`}
+            variant={variant}
             onClick={() => handleClick(i)}
           >
             {text}
@@ -76,6 +79,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
+    background-size: cover;
   }
 
   .popupBox {

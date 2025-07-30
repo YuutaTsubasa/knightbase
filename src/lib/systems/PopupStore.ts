@@ -1,3 +1,4 @@
+import type { ButtonVariant } from '$lib/utils/Constant';
 import { writable } from 'svelte/store';
 
 export enum PopupResult {
@@ -7,11 +8,8 @@ export enum PopupResult {
 
 export type PopupButton = {
   text: string;
-  className?: string;
-  onClickEvent?: {
-    handler: () => PopupResult,
-    sfx?: string
-  }
+  variant?: ButtonVariant;
+  onClick?: () => PopupResult;
 };
 
 export type PopupData = {

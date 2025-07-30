@@ -1,17 +1,24 @@
 <script lang="ts">
-  import { AudioManager } from '$lib/systems/AudioManager';
   import { PlayerDataManager, playerStore } from '$lib/systems/PlayerStore';
   import { BACK_PATH } from '$lib/utils/Constant';
   import Page from '$lib/components/Page.svelte';
   import { ReactiveProperty } from '$lib/utils/ReactiveProperty';
   import { imageAssets } from '$lib/assets/ImageAssets';
-  import { FontAssets } from '$lib/assets/FontAssets';
-    import { linear } from 'svelte/easing';
+  import Topbar from '$lib/components/Topbar.svelte';
+  import Button from '$lib/components/Button.svelte';
+  import { LocalizationAssets, t } from '$lib/assets/LocalizationAssets';
+  import { BoxIcon, DrumIcon, FormInputIcon, MessageSquareTextIcon, Music4Icon, Volume2Icon } from 'lucide-svelte';
+  import { PopupResult, PopupStore } from '$lib/systems/PopupStore';
+    import { get } from 'svelte/store';
+
 
   let playerData = $playerStore;
   $: masterVolume = playerData.masterVolume;
   $: bgmVolume = playerData.bgmVolume;
   $: sfxVolume = playerData.sfxVolume;
+
+  $: locale = LocalizationAssets.locale;
+  $: availableLocales = LocalizationAssets.availableLocales;
 
   let restoreText = '';
   let restoreStatus = '';
@@ -27,7 +34,6 @@
   }
 
   function handleBackup() {
-    AudioManager.play("sfx_confirm");
     const data = PlayerDataManager.exportBase64();
     if (!data) {
       restoreStatus = '⚠️ 沒有資料可備份';
@@ -56,78 +62,61 @@
   }
 </script>
 
-<Page mainProgress={main} wrapperStyle={`background: url(${imageAssets["backgroundWhite"]});`}>
-  <div class="topbar">
-    <button class="backButton" on:click={() => shouldExit.value = true}>←</button>
-    <h1 class="topbarTitle" style={FontAssets.getCssStyle("englishNumberBold", "titleBold")}>設定 <span class="topbarSubtitle">Settings</span></h1>
-  </div>
-
+<Page mainProgress={main} wrapperStyle={`background-image: url(${imageAssets["backgroundWhite"]}); background-repeat: no-repeat; background-attachment: fixed; background-size: cover;`}>
+  <Topbar 
+    onBack={() => { shouldExit.value = true;}}
+    primaryTitle={$t("settingsPageTitle")}
+    secondaryTitle={$t("settingsPageSubtitle")}></Topbar>
+  
   <div class="settingsPanel">
     <label>
-      <div class="labelTitle">🎚️ 總音量</div>
+      <div class="labelTitle"><Volume2Icon class="icon" size="20" /> {$t("masterVolume")}</div>
       <input type="range" min="0" max="100" bind:value={masterVolume} on:input={updateVolume} 
         style="--ratio: {masterVolume}%"/>
       <span>{masterVolume}</span>
     </label>
 
     <label>
-      <div class="labelTitle">🎵 音樂音量</div>
+      <div class="labelTitle"><Music4Icon class="icon" size="20" /> {$t("musicVolume")}</div>
       <input type="range" min="0" max="100" bind:value={bgmVolume} on:input={updateVolume} 
         style="--ratio: {bgmVolume}%"/>
       <span>{bgmVolume}</span>
     </label>
 
     <label>
-      <div class="labelTitle">🔊 音效音量</div>
+      <div class="labelTitle"><DrumIcon class="icon" size="20" /> {$t("soundVolume")}</div>
       <input type="range" min="0" max="100" bind:value={sfxVolume} on:input={updateVolume} 
         style="--ratio: {sfxVolume}%"/>
       <span>{sfxVolume}</span>
     </label>
 
-    <div class="backupRestore">
-      <button class="backupButton" on:click={handleBackup}>📦 備份存檔</button>
-      <span class="status">{restoreStatus}</span>
+    <label>
+      <div class="labelTitle">
+        <MessageSquareTextIcon class="icon" size="20"/> {$t("language")}
+      </div>
+      <select bind:value={$locale} on:change={() => {LocalizationAssets.setLocale(LocalizationAssets.getLocale());}}>
+        {#each $availableLocales as availableLocale }
+          <option value={availableLocale}>{$t(availableLocale)}</option>
+        {/each}
+      </select>
+    </label>
 
+    <div class="backupRestore">
+      <div class="status">{restoreStatus}</div>
+      <Button onClick={handleBackup}><BoxIcon class="icon" size="20"/> {$t("backupSaveData")}</Button>
       <div class="restoreSection">
-        <input type="text" bind:value={restoreText} placeholder="貼上備份資料..." />
-        <button on:click={handleRestore}>📥 還原存檔</button>
+        <input type="text" bind:value={restoreText} placeholder="{$t("pasteSaveDataHint")}" />
+        <Button onClick={handleRestore}><FormInputIcon class="icon" size="20"/> {$t("restoreSaveData")}</Button>
       </div>
     </div>
   </div>
 </Page>
 
 <style>
-  .topbar {
-    display: flex;
-    align-items: center;
-    margin-bottom: 1rem;
-  }
-
-  .backButton {
-    background: black;
-    color: white;
-    border: none;
-    font-size: 1.5rem;
-    padding: 0rem 4rem 0em 0.5rem;
-    box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
-    margin-left: 1rem;
-    margin-right: 1rem;
-  }
-
-  .topbarTitle {
-    font-size: 2rem;
-    color: #1e293b;
-  }
-
-  .topbarSubtitle {
-    font-size: 1rem;
-    margin-left: 0.5rem;
-    color: #666;
-  }
-
   .settingsPanel {
     width: 80%;
     margin: 0 auto;
+    padding-bottom: 50px;
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
@@ -176,11 +165,6 @@
     flex-direction: column;
     gap: 0.8rem;
     margin-top: 1rem;
-  }
-
-  .backupButton {
-    font-size: 1rem;
-    padding: 0.5rem;
   }
 
   .restoreSection {
