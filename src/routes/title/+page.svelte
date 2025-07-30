@@ -2,13 +2,14 @@
   import Page from "$lib/components/Page.svelte";
   import Image from "$lib/components/Image.svelte";
   import Video from "$lib/components/Video.svelte";
-  import { ReactiveProperty } from "$lib/utils/ReactiveProperty";
+  import { waitUntil } from "$lib/utils/Wait";
   import { AudioManager } from "$lib/systems/AudioManager";
   import { t } from "$lib/assets/LocalizationAssets";
+  import { get, writable } from "svelte/store";
 
-  const shouldGoToNextPage = new ReactiveProperty(false);
+  const shouldGoToNextPage = writable(false);
   async function main() {
-    await shouldGoToNextPage.waitUntil(value => value);
+    await waitUntil(shouldGoToNextPage, value => value);
     AudioManager.play("sfx_confirm");
     return "/mainmenu";
   }
@@ -21,7 +22,7 @@
     <div class="videoMask"></div>
   </div>
 
-  <button class="overlay" on:click={() => shouldGoToNextPage.value = true}>
+  <button class="overlay" on:click={() => shouldGoToNextPage.set(true)}>
     <Image className="gameLogo" key="gameLogo" />
     <div class="pressStart slowFlicker">{$t("pressToStart")}</div>
   </button>

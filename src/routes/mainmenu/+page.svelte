@@ -2,7 +2,7 @@
 <script lang="ts">
   import Page from "$lib/components/Page.svelte";
   import Video from "$lib/components/Video.svelte";
-  import { ReactiveProperty } from "$lib/utils/ReactiveProperty";
+  import { waitUntil } from "$lib/utils/Wait";
   import PlayerInfoBox from "$lib/components/mainmenu/PlayerInfoBox.svelte";
   import ResourceBar from "$lib/components/mainmenu/ResourceBar.svelte";
   import BannerCarousel from "$lib/components/mainmenu/BannerCarousel.svelte";
@@ -11,6 +11,7 @@
   import { page } from "$app/state";
   import { AudioManager } from "$lib/systems/AudioManager";
   import { t } from "$lib/assets/LocalizationAssets";
+  import { get, writable, type Writable } from "svelte/store";
 
   let playerData = $playerStore;
 
@@ -19,10 +20,10 @@
   $: playerTitle = playerData.selectedTitle;
   $: playerExperience = playerData.experience;
 
-  const goToNextScene : ReactiveProperty<string | null> = new ReactiveProperty(null);
+  const goToNextScene = writable<string | null>(null);
   async function main() {
-    await goToNextScene.waitUntil(value => value !== null);
-    return goToNextScene.value ?? page.url.pathname;
+    await waitUntil(goToNextScene, value => value !== null);
+    return get(goToNextScene) ?? page.url.pathname;
   }
 </script>
 
@@ -50,7 +51,7 @@
   <BattleButton progressText="目前進度：主線第 3 章 - 地底實驗所"
     onSettings={() => { 
       AudioManager.play("sfx_confirm");
-      goToNextScene.value = "/settings"; 
+      goToNextScene.set("/settings"); 
     }} />
 </Page>
 
