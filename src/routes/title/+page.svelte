@@ -18,6 +18,7 @@
 <Page mainProgress={main} wrapperClass="titlePage">
   <div class="videoBackground" slot="outside">
     <Video key="titleBackground" />
+    <div class="videoMask"></div>
   </div>
 
   <button class="overlay" on:click={() => shouldGoToNextPage.value = true}>
@@ -41,11 +42,19 @@
     height: 100vh;
     object-fit: cover;
   }
+  
+  .videoMask {
+    backdrop-filter: blur(4px);
+    background: rgba(0, 0, 0, 0.5);
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+  }
 
   .overlay {
     all: unset;
-    backdrop-filter: blur(4px);
-    background: rgba(0, 0, 0, 0.5);
     position: relative;
     width: 100vw;
     height: 100vh;
