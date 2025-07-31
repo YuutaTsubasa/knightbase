@@ -6,7 +6,7 @@
   import { AudioManager } from '$lib/systems/AudioManager';
   import { FontAssets } from '$lib/assets/FontAssets';
   import { BACK_PATH } from '$lib/utils/Constant';
-    import { LocalizationAssets } from '$lib/assets/LocalizationAssets';
+  import { LocalizationAssets } from '$lib/assets/LocalizationAssets';
   
   export let wrapperClass = '';
   export let wrapperStyle = '';
@@ -44,7 +44,8 @@
 
 <div bind:this={pageElement} class="page {wrapperClass}" style={`${FontAssets.getCssStyle("englishNumberDefault", "default")} ${wrapperStyle}`}>
   <slot name="outside" />
-  <div class="safeArea {contentClass}" style={contentStyle}>
+  <div class="safeArea {contentClass}" 
+       style={contentStyle}>
     <slot />
   </div>
 </div>
@@ -57,6 +58,7 @@
 
     width: 100vw;
     min-height: 100vh;
+    overflow: hidden;
 
     background: var(--background, #1e293b);
   }
