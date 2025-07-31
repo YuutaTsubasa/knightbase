@@ -18,18 +18,27 @@
   let pageElement: HTMLElement;
   onMount(async () => {
     const currentPath = page.url.pathname;
-    const playBgmPromise = AudioManager.play(`bgm_${currentPath.substring(1)}`);
     const transition = new FadeTransitionComponent(pageElement);
-    AudioManager.initialize();
-    await LocalizationAssets.initialize();
-    await transition.enter();
-    stopAudio = await playBgmPromise;
     
+    // Initialize systems but don't wait for them to complete
+    AudioManager.initialize();
+    LocalizationAssets.initialize(); // Remove await to make non-blocking
+    
+    // Start loading audio in background but don't block UI
+    const playBgmPromise = AudioManager.play(`bgm_${currentPath.substring(1)}`);
+    
+    // Enter transition immediately to make UI interactive
+    await transition.enter();
+    
+    // Wait for main progress (this contains the actual page logic)
     const nextPath = await mainProgress();
     
+    // Clean up and transition out
     await transition.leave();
-    stopAudio?.();
-
+    
+    // Stop audio if it was playing
+    playBgmPromise.then(stopFn => stopFn?.()).catch(() => {});
+    
     if (nextPath === BACK_PATH){
       history.back();
       return;

@@ -24,12 +24,20 @@ export class LocalizationAssets {
     return DEFAULT_LOCALE;
   }
 
-  static async initialize() {
+  static initialize() {
     if (Object.entries(get(this.data)).length > 0)
-      return;
+      return Promise.resolve();
 
-    await this.load();
-    this.locale.set(PlayerDataManager.getData().locale ?? LocalizationAssets.detectUserLocale());
+    // Start loading in background but don't block
+    const loadPromise = this.load().then(() => {
+      this.locale.set(PlayerDataManager.getData().locale ?? LocalizationAssets.detectUserLocale());
+    }).catch(error => {
+      console.warn('Failed to load localization assets:', error);
+      // Set default locale even if loading fails
+      this.locale.set(DEFAULT_LOCALE);
+    });
+
+    return loadPromise;
   }
 
   static async load() {
