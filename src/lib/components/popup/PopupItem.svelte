@@ -42,7 +42,7 @@
 </script>
 
 <div bind:this={rootElement} class="popupBackdrop">
-  <div class="popupBackground" style="background-image: url({imageAssets["backgroundWhite"]});">
+  <div class="popupBackground" style="background-image: url({imageAssets["backgroundWhite"]}); background-color: white;">
     <div class="popupBox" bind:this={boxElement}>
       <div class="popupTitle" style={FontAssets.getCssStyle("titleBold")}>{popup.title}</div>
       <div class="popupContent" style={FontAssets.getCssStyle("default")}>{popup.content}</div>

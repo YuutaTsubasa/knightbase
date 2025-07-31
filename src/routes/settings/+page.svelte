@@ -69,11 +69,14 @@
   }
 </script>
 
-<Page mainProgress={main} wrapperStyle={`background-image: url(${imageAssets["backgroundWhite"]}); background-repeat: no-repeat; background-attachment: fixed; background-size: cover;`}>
-  <Topbar 
-    onBack={() => { shouldExit?.set(true);}}
-    primaryTitle={$t("settingsPageTitle")}
-    secondaryTitle={$t("settingsPageSubtitle")}></Topbar>
+<Page mainProgress={main} wrapperStyle={`background-image: url(${imageAssets["backgroundWhite"]}); background-color: white; background-repeat: no-repeat; background-attachment: fixed; background-size: cover;`}>
+  <slot name="outside">
+    <Topbar 
+      onBack={() => { shouldExit?.set(true);}}
+      primaryTitle={$t("settingsPageTitle")}
+      secondaryTitle={$t("settingsPageSubtitle")}>
+    </Topbar>
+  </slot>
   
   <div class="settingsPanel">
     <label>

@@ -13,7 +13,7 @@
 
 <button
   class={`baseButton ${ButtonVariant[variant].toLowerCase()} ${className}`}
-  style="background-image: url({imageAssets["backgroundWhiteButton"]});"
+  style="background-image: url({imageAssets["backgroundWhiteButton"]})"
   on:click={() => {
     AudioManager.play(match<ButtonVariant, string>(variant)
       .whenEquals(ButtonVariant.Default, () => "sfx_confirm")

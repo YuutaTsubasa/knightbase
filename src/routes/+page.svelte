@@ -3,7 +3,6 @@
   import Page from '$lib/components/Page.svelte';
   import { PopupStore, PopupResult } from '$lib/systems/PopupStore';
   import Image from '$lib/components/Image.svelte';
-  import { AudioManager } from '$lib/systems/AudioManager';
   import { t } from '$lib/assets/LocalizationAssets';
   
   async function main() {
