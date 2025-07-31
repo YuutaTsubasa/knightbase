@@ -13,7 +13,7 @@
   {#each resources as resource}
     <div class="resourceItem">
       <div class="resourceBackground"></div>
-      <Image className="icon" key={resource.key} />
+      <Image className="icon" key={resource.key} size="icon" />
       <div class="amount">{resource.amount}</div>
       {#if resource.onAdd}
         <button class="add" on:click={resource.onAdd}>+</button>
@@ -37,11 +37,6 @@
     padding: 0.1rem 0rem 0.1rem 0rem;
     max-height: 1rem;
     overflow-y: visible;
-  }
-
-  .resourceItem :global(.icon) {
-    width: 1.3rem;
-    height: 1.3rem;
   }
 
   .amount {

@@ -27,7 +27,7 @@
 <Page mainProgress={main} wrapperClass="splashScreen">
   <div class="logoSection">
     <div class="logoBox enterFade">
-      <Image key="splashScreenLogo" alt="Splash Screen Logo" className="logo" />
+      <Image key="splashScreenLogo" alt="Splash Screen Logo" className="logo" size="inherit" />
     </div>
   </div>
 </Page>

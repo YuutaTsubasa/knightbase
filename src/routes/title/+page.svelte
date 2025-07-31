@@ -25,7 +25,7 @@
   </div>
 
   <button class="overlay" on:click={() => shouldGoToNextPage?.set(true)}>
-    <Image className="gameLogo" key="gameLogo" />
+    <Image className="gameLogo" key="gameLogo" size="inherit" />
     <div class="pressStart slowFlicker">{$t("pressToStart")}</div>
   </button>
 </Page>
