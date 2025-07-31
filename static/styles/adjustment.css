@@ -1,3 +1,21 @@
 .icon {
   vertical-align: text-bottom;
 }
+
+/* Route-specific overflow settings for body element */
+body.route-root {
+  overflow: hidden !important;
+}
+
+body.route-title {
+  overflow: hidden !important;
+}
+
+body.route-mainmenu {
+  overflow: hidden !important;
+}
+
+body.route-settings {
+  overflow-x: hidden !important;
+  overflow-y: scroll !important;
+}
