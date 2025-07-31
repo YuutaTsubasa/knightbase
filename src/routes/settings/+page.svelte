@@ -9,7 +9,7 @@
   import { LocalizationAssets, t } from '$lib/assets/LocalizationAssets';
   import { BoxIcon, DrumIcon, FormInputIcon, MessageSquareTextIcon, Music4Icon, Volume2Icon } from 'lucide-svelte';
   import { get, writable } from 'svelte/store';
-
+  import StatusBox from '$lib/components/StatusBox.svelte';
 
   let playerData = $playerStore;
   $: masterVolume = playerData.masterVolume;
@@ -101,7 +101,7 @@
     </label>
 
     <div class="backupRestore">
-      <div class="status">{restoreStatus}</div>
+      <StatusBox>{restoreStatus}</StatusBox>
       <Button onClick={handleBackup}><BoxIcon class="icon" size="20"/> {$t("backupSaveData")}</Button>
       <div class="restoreSection">
         <input type="text" bind:value={restoreText} placeholder="{$t("pasteSaveDataHint")}" />
