@@ -6,8 +6,8 @@
 
   FontAssets.preload();
 
-  // Reactive statement to update body class when route changes
-  $: {
+  // Function to update body class
+  function updateBodyClass(pathname) {
     if (typeof document !== 'undefined') {
       // Remove all existing route classes
       const classesToRemove = Array.from(document.body.classList).filter(className => 
@@ -18,11 +18,15 @@
       });
 
       // Add current route class
-      const currentPath = page.url.pathname;
-      const routeClass = `route-${currentPath.replace(/\//g, '') || 'root'}`;
+      const routeClass = `route-${pathname.replace(/\//g, '') || 'root'}`;
       document.body.classList.add(routeClass);
     }
   }
+
+  // Use $effect to watch for page changes in Svelte 5
+  $effect(() => {
+    updateBodyClass(page.url.pathname);
+  });
 </script>
 
 <PopupHost />
