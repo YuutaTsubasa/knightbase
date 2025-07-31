@@ -6,12 +6,13 @@
   import PlayerInfoBox from "$lib/components/mainmenu/PlayerInfoBox.svelte";
   import ResourceBar from "$lib/components/mainmenu/ResourceBar.svelte";
   import BannerCarousel from "$lib/components/mainmenu/BannerCarousel.svelte";
-  import BattleButton from "$lib/components/mainmenu/BattleButton.svelte";
+  import MainMenuButtonGroup from "$lib/components/mainmenu/MainMenuButtonGroup.svelte";
   import { playerStore } from "$lib/systems/PlayerStore";
   import { page } from "$app/state";
   import { AudioManager } from "$lib/systems/AudioManager";
   import { t } from "$lib/assets/LocalizationAssets";
   import { get, writable, type Writable } from "svelte/store";
+    import { format } from "$lib/utils/Format";
 
   let playerData = $playerStore;
 
@@ -49,7 +50,11 @@
     { key: 'banner02' }
   ]} />
 
-  <BattleButton progressText="目前進度：主線第 3 章 - 地底實驗所"
+  <MainMenuButtonGroup progressText={format($t("stageProgress"), $t("none"))}
+    onBattle={() => { 
+      AudioManager.play("sfx_confirm");
+      goToNextScene?.set("/battlemenu"); 
+    }}
     onSettings={() => { 
       AudioManager.play("sfx_confirm");
       goToNextScene?.set("/settings"); 

@@ -8,4 +8,7 @@ export const imageAssets: Record<string, string> = {
   banner02: '/assets/images/banner02.png',
   backgroundWhite: '/assets/images/backgroundWhite.png',
   backgroundWhiteButton: '/assets/images/backgroundWhiteButton.png',
+  characterBackground: '/assets/images/characterBackground.png',
+  stageBackground: '/assets/images/stageBackground.png',
+  yuutaPortrait: '/assets/images/characters/yuuta/yuutaPortrait.png',
 };

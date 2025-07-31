@@ -7,14 +7,16 @@
   export let onMission = () => {};
   export let onShop = () => {};
   export let onSettings = () => {};
+
+  $: marqueeText = Array(4).fill(progressText).join("　") + "　";
 </script>
 
-<div class="battleButtonArea">
+<div class="mainMenuButtonArea">
   <button class="battleButton" on:click={onBattle}>
     <div class="label"><SwordIcon size="6vh" class="icon" /> {$t("battle")}</div>
     <div class="marquee">
         <div class="marqueeInner">
-        {progressText}　{progressText}　{progressText}
+        {marqueeText}
         </div>
     </div>
   </button>
@@ -30,7 +32,7 @@
 </div>
 
 <style>
-  .battleButtonArea {
+  .mainMenuButtonArea {
     transform: perspective(800px) rotateY(-25deg);
     position: absolute;
     right: 4rem;
@@ -74,20 +76,22 @@
 
   .marquee {
     overflow: hidden;
-    height: 1.0em;
+    height: 1.5em;
     position: relative;
   }
 
   .marqueeInner {
+    display: inline-block;
     white-space: nowrap;
-    animation: scrollLeft 5s linear infinite;
+    animation: scrollLeft 8s linear infinite;
     font-size: 0.5em;
     opacity: 0.4;
+    min-width: 200%;
   }
 
   @keyframes scrollLeft {
     0% { transform: translateX(0); }
-    100% { transform: translateX(-100%); }
+    100% { transform: translateX(-50%); }
   }
 
   .bottomButtons {

@@ -19,3 +19,7 @@ body.route-settings {
   overflow-x: hidden !important;
   overflow-y: scroll !important;
 }
+
+body.route-battlemenu {
+  overflow: hidden !important;
+}
