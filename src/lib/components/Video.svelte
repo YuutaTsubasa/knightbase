@@ -4,12 +4,19 @@
 
   export let key: string;
   let container: HTMLDivElement;
-  onMount(() => {
+  onMount(async () => {
     const video = VideoManager.get(key);
     if (video && container) {
       container.innerHTML = ""; // 清空
       container.appendChild(video);
-      video.play();
+      
+      // Make video playback non-blocking to prevent UI freezing
+      try {
+        await video.play();
+      } catch (error) {
+        // Handle video playback errors gracefully without blocking UI
+        console.warn(`Video playback failed for ${key}:`, error);
+      }
     }
   });
 </script>
