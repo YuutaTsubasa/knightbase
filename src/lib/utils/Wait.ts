@@ -8,8 +8,9 @@ export function waitUntil<T>(
   store: Readable<T>,
   predicate: (value: T) => boolean
 ): Promise<T> {
+  let unsubscribe: () => void;
   return new Promise<T>(resolve => {
-    const unsubscribe = store.subscribe(value => {
+    unsubscribe = store.subscribe(value => {
       if (predicate(value)) {
         unsubscribe();
         resolve(value);
