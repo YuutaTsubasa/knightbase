@@ -8,7 +8,7 @@
   import Button from '$lib/components/Button.svelte';
   import { LocalizationAssets, t } from '$lib/assets/LocalizationAssets';
   import { BoxIcon, DrumIcon, FormInputIcon, MessageSquareTextIcon, Music4Icon, Volume2Icon } from 'lucide-svelte';
-  import { get, writable } from 'svelte/store';
+  import { get, writable, type Writable } from 'svelte/store';
   import StatusBox from '$lib/components/StatusBox.svelte';
   import { StatusBoxType } from '$lib/types/StatusBoxType';
 
@@ -23,7 +23,7 @@
   let restoreText = '';
   let restoreStatusType = StatusBoxType.Default;
   let restoreStatus = 'backupSaveHint';
-  let shouldExit = writable(false);
+  let shouldExit: Writable<boolean>;
 
   function updateVolume() {
     playerStore.update(value => ({
@@ -63,6 +63,7 @@
   }
 
   async function main(){
+    shouldExit = writable(false);
     await waitUntil(shouldExit, value => value);
     return BACK_PATH;
   }
@@ -70,7 +71,7 @@
 
 <Page mainProgress={main} wrapperStyle={`background-image: url(${imageAssets["backgroundWhite"]}); background-repeat: no-repeat; background-attachment: fixed; background-size: cover;`}>
   <Topbar 
-    onBack={() => { shouldExit.set(true);}}
+    onBack={() => { shouldExit?.set(true);}}
     primaryTitle={$t("settingsPageTitle")}
     secondaryTitle={$t("settingsPageSubtitle")}></Topbar>
   

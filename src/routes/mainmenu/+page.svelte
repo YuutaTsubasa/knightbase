@@ -20,8 +20,9 @@
   $: playerTitle = playerData.selectedTitle;
   $: playerExperience = playerData.experience;
 
-  const goToNextScene = writable<string | null>(null);
+  let goToNextScene: Writable<string | null>;
   async function main() {
+    goToNextScene = writable(null);
     await waitUntil(goToNextScene, value => value !== null);
     return get(goToNextScene) ?? page.url.pathname;
   }
@@ -51,7 +52,7 @@
   <BattleButton progressText="目前進度：主線第 3 章 - 地底實驗所"
     onSettings={() => { 
       AudioManager.play("sfx_confirm");
-      goToNextScene.set("/settings"); 
+      goToNextScene?.set("/settings"); 
     }} />
 </Page>
 
