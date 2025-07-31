@@ -10,6 +10,7 @@
   import { BoxIcon, DrumIcon, FormInputIcon, MessageSquareTextIcon, Music4Icon, Volume2Icon } from 'lucide-svelte';
   import { get, writable } from 'svelte/store';
   import StatusBox from '$lib/components/StatusBox.svelte';
+  import { StatusBoxType } from '$lib/types/StatusBoxType';
 
   let playerData = $playerStore;
   $: masterVolume = playerData.masterVolume;
@@ -20,7 +21,8 @@
   $: availableLocales = LocalizationAssets.availableLocales;
 
   let restoreText = '';
-  let restoreStatus = '';
+  let restoreStatusType = StatusBoxType.Default;
+  let restoreStatus = 'backupSaveHint';
   let shouldExit = writable(false);
 
   function updateVolume() {
@@ -35,23 +37,28 @@
   function handleBackup() {
     const data = PlayerDataManager.exportBase64();
     if (!data) {
-      restoreStatus = '⚠️ 沒有資料可備份';
+      restoreStatusType = StatusBoxType.Error;
+      restoreStatus = 'noDataToBackup';
       return;
     }
     
     navigator.clipboard.writeText(data).then(() => {
-      restoreStatus = '✅ 已複製存檔至剪貼簿';
+      restoreStatusType = StatusBoxType.Success;
+      restoreStatus = 'successToCopy';
     }).catch(() => {
-      restoreStatus = '❌ 複製失敗';
+      restoreStatusType = StatusBoxType.Error;
+      restoreStatus = 'copyFailed';
     });
   }
 
   function handleRestore() {
     try {
       PlayerDataManager.importBase64(restoreText.trim());
-      restoreStatus = '✅ 還原成功';
+      restoreStatusType = StatusBoxType.Success;
+      restoreStatus = 'restoreSuccess';
     } catch {
-      restoreStatus = '❌ 格式錯誤';
+      restoreStatusType = StatusBoxType.Error;
+      restoreStatus = 'formatError';
     }
   }
 
@@ -101,7 +108,7 @@
     </label>
 
     <div class="backupRestore">
-      <StatusBox>{restoreStatus}</StatusBox>
+      <StatusBox type={restoreStatusType}>{$t(restoreStatus)}</StatusBox>
       <Button onClick={handleBackup}><BoxIcon class="icon" size="20"/> {$t("backupSaveData")}</Button>
       <div class="restoreSection">
         <input type="text" bind:value={restoreText} placeholder="{$t("pasteSaveDataHint")}" />
@@ -174,10 +181,5 @@
   .restoreSection input {
     flex: 1;
     padding: 0.4rem;
-  }
-
-  .status {
-    font-size: 0.9rem;
-    color: #666;
   }
 </style>

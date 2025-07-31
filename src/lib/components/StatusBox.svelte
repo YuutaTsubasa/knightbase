@@ -1,11 +1,12 @@
 <script lang="ts">
+  import { StatusBoxType } from "$lib/types/StatusBoxType";
   import { CircleCheckBigIcon, CircleXIcon, MessageCircleWarningIcon } from "lucide-svelte";
 
-  export let type: 'default' | 'success' | 'error' = 'default';
+  export let type: StatusBoxType = StatusBoxType.Default;
 
-  $: color = type === 'success'
+  $: color = type === StatusBoxType.Success
     ? '#22c55e' // green-500
-    : type === 'error'
+    : type === StatusBoxType.Error
     ? '#ef4444' // red-500
     : '#facc15'; // yellow-400
 </script>
@@ -14,14 +15,14 @@
   <div class="statusIcon" style="background-color: {color}">
     <div class="pattern"></div>
     <span class="symbol">
-      {#if type === 'default'}
-        <MessageCircleWarningIcon style="color: black" size="30"/>
+      {#if type === StatusBoxType.Default}
+        <MessageCircleWarningIcon class="icon" style="color: black; margin: 3px;" size="30"/>
       {/if}
-      {#if type === "success"}
-        <CircleCheckBigIcon />
+      {#if type === StatusBoxType.Success}
+        <CircleCheckBigIcon class="icon" size="30"/>
       {/if}
-      {#if type === "error"}
-        <CircleXIcon />
+      {#if type === StatusBoxType.Error}
+        <CircleXIcon class="icon" style="margin: 3px" size="30"/>
       {/if}
     </span>
   </div>
