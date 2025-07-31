@@ -17,5 +17,5 @@ body.route-mainmenu {
 
 body.route-settings {
   overflow-x: hidden !important;
-  overflow-y: visible !important;
+  overflow-y: scroll !important;
 }
