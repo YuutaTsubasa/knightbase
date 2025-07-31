@@ -7,7 +7,6 @@
   import { FontAssets } from '$lib/assets/FontAssets';
   import { imageAssets } from '$lib/assets/ImageAssets';
   import { ScaleHeightTransitionComponent } from '$lib/animations/transitions/ScaleHeightTransitionComponent';
-  import Image from '../Image.svelte';
 
   export let popup: PopupData;
 
@@ -43,8 +42,7 @@
 </script>
 
 <div bind:this={rootElement} class="popupBackdrop">
-  <div class="popupBackground">
-    <Image key="backgroundWhite" alt="Background" className="backgroundImage" size="inherit" />
+  <div class="popupBackground" style="background-image: url({imageAssets["backgroundWhite"]}); background-color: white;">
     <div class="popupBox" bind:this={boxElement}>
       <div class="popupTitle" style={FontAssets.getCssStyle("titleBold")}>{popup.title}</div>
       <div class="popupContent" style={FontAssets.getCssStyle("default")}>{popup.content}</div>
@@ -76,22 +74,12 @@
   }
 
   .popupBackground {
-    position: relative;
     width: 100%;
     box-shadow: 0 8px 20px rgba(0,0,0,0.2);
     display: flex;
     justify-content: center;
     align-items: center;
-  }
-
-  .popupBackground :global(.backgroundImage) {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    z-index: -1;
+    background-size: cover;
   }
 
   .popupBox {

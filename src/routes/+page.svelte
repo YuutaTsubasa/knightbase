@@ -3,7 +3,6 @@
   import Page from '$lib/components/Page.svelte';
   import { PopupStore, PopupResult } from '$lib/systems/PopupStore';
   import Image from '$lib/components/Image.svelte';
-  import { AudioManager } from '$lib/systems/AudioManager';
   import { t } from '$lib/assets/LocalizationAssets';
   
   async function main() {
@@ -27,7 +26,7 @@
 <Page mainProgress={main} wrapperClass="splashScreen">
   <div class="logoSection">
     <div class="logoBox enterFade">
-      <Image key="splashScreenLogo" alt="Splash Screen Logo" className="logo" size="inherit" />
+      <Image key="splashScreenLogo" alt="Splash Screen Logo" className="logo" />
     </div>
   </div>
 </Page>

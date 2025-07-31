@@ -11,7 +11,6 @@
   import { get, writable, type Writable } from 'svelte/store';
   import StatusBox from '$lib/components/StatusBox.svelte';
   import { StatusBoxType } from '$lib/types/StatusBoxType';
-  import Image from '$lib/components/Image.svelte';
 
   let playerData = $playerStore;
   $: masterVolume = playerData.masterVolume;
@@ -70,12 +69,14 @@
   }
 </script>
 
-<Page mainProgress={main} wrapperStyle="" wrapperClass="settingsPageWrapper">
-  <Image key="backgroundWhite" alt="Background" className="pageBackground" size="inherit" />
-  <Topbar 
-    onBack={() => { shouldExit?.set(true);}}
-    primaryTitle={$t("settingsPageTitle")}
-    secondaryTitle={$t("settingsPageSubtitle")}></Topbar>
+<Page mainProgress={main} wrapperStyle={`background-image: url(${imageAssets["backgroundWhite"]}); background-color: white; background-repeat: no-repeat; background-attachment: fixed; background-size: cover;`}>
+  <slot name="outside">
+    <Topbar 
+      onBack={() => { shouldExit?.set(true);}}
+      primaryTitle={$t("settingsPageTitle")}
+      secondaryTitle={$t("settingsPageSubtitle")}>
+    </Topbar>
+  </slot>
   
   <div class="settingsPanel">
     <label>
@@ -184,19 +185,5 @@
   .restoreSection input {
     flex: 1;
     padding: 0.4rem;
-  }
-
-  :global(.settingsPageWrapper) {
-    position: relative;
-  }
-
-  :global(.settingsPageWrapper .pageBackground) {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    z-index: -1;
   }
 </style>

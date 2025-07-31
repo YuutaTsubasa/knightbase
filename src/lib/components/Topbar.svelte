@@ -4,19 +4,24 @@
   export let onBack: () => void;
   export let primaryTitle: string;
   export let secondaryTitle: string;
+
+  let height: number;
 </script>
 
-<div class="topbar">
-  <button class="backButton" on:click={() => {
-    AudioManager.play("sfx_confirm");
-    onBack?.();
-  }}>←</button>
-  <h1 class="topbarTitle" style={FontAssets.getCssStyle("englishNumberBold", "titleBold")}>{primaryTitle} <span class="topbarSubtitle">{secondaryTitle}</span></h1>
+<div>
+  <div class="topbar" bind:clientHeight={height}>
+    <button class="backButton" on:click={() => {
+      AudioManager.play("sfx_confirm");
+      onBack?.();
+    }}>←</button>
+    <h1 class="topbarTitle" style={FontAssets.getCssStyle("englishNumberBold", "titleBold")}>{primaryTitle} <span class="topbarSubtitle">{secondaryTitle}</span></h1>
+  </div>
+  <div style="width: 100%; height: {height}px;"></div>
 </div>
 
 <style>
   .topbar {
-    position: sticky;
+    position: fixed;
     top: 0;
     left: 0;
     width: 100%;

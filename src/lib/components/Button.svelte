@@ -3,7 +3,6 @@
   import { AudioManager } from "$lib/systems/AudioManager";
   import { ButtonVariant } from "$lib/utils/Constant";
   import { match } from "$lib/utils/Ｍatcher";
-  import Image from "./Image.svelte";
 
   export let label: string = '';
   export let variant: ButtonVariant = ButtonVariant.Default;
@@ -14,6 +13,7 @@
 
 <button
   class={`baseButton ${ButtonVariant[variant].toLowerCase()} ${className}`}
+  style="background-image: url({imageAssets["backgroundWhiteButton"]})"
   on:click={() => {
     AudioManager.play(match<ButtonVariant, string>(variant)
       .whenEquals(ButtonVariant.Default, () => "sfx_confirm")
@@ -22,7 +22,6 @@
   }}
   disabled={disabled}
 >
-  <Image key="backgroundWhiteButton" alt="Button Background" className="buttonBackground" size="inherit" />
   <span><slot>{label}</slot></span>
 </button>
 
@@ -36,18 +35,10 @@
     transition: all 0.2s ease;
     border: none;
     font-family: inherit;
+    background-size: cover;
+    background-position: 50% 15%;
     overflow: hidden;
     z-index: 0;
-  }
-
-  .baseButton :global(.buttonBackground) {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    z-index: -1;
   }
 
   .baseButton span {

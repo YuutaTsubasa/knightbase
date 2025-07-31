@@ -86,10 +86,10 @@
       <div class="banner" style="width: {bannerSize}vw">
         {#if link}
           <a href={link} target="_blank">
-            <Image key={key} alt="banner" className="bannerImage" size="inherit"/>
+            <Image key={key} alt="banner" className="bannerImage"/>
           </a>
         {:else}
-          <Image key={key} alt="banner" className="bannerImage" size="inherit"/>
+          <Image key={key} alt="banner" className="bannerImage"/>
         {/if}
       </div>
     {/each}

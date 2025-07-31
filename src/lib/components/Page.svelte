@@ -14,7 +14,6 @@
   export let contentStyle = '';
   export let mainProgress: () => Promise<string>;
 
-  let stopAudio: (() => void) | null;
   let pageElement: HTMLElement;
   onMount(async () => {
     const currentPath = page.url.pathname;
@@ -45,10 +44,6 @@
     }
 
     goto(nextPath);
-  });
-
-  onDestroy(() => {
-    stopAudio?.();
   });
 </script>
 
