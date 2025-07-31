@@ -7,7 +7,6 @@
   import { t } from '$lib/assets/LocalizationAssets';
   
   async function main() {
-    AudioManager.initialize();
     await wait(1000);
     const result = await PopupStore.open({
       title: $t("welcomeTitle"),

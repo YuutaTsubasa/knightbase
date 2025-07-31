@@ -8,6 +8,9 @@ export class AudioManager {
   private static groups: Map<AudioGroupId, AudioGroup> = new Map();
 
   static initialize() {
+    if (this.groups.entries.length > 0)
+      return;
+    
     for (const [id, options] of Object.entries(audioGroupSettings)) {
       this.groups.set(id, 
         new AudioGroup(this.context, options.loop)

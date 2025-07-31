@@ -20,6 +20,7 @@
     const currentPath = page.url.pathname;
     const playBgmPromise = AudioManager.play(`bgm_${currentPath.substring(1)}`);
     const transition = new FadeTransitionComponent(pageElement);
+    AudioManager.initialize();
     await LocalizationAssets.initialize();
     await transition.enter();
     stopAudio = await playBgmPromise;
