@@ -2,20 +2,20 @@
   vertical-align: text-bottom;
 }
 
-/* Route-specific overflow settings */
-.page.route-root {
+/* Route-specific overflow settings for body element */
+body.route-root {
   overflow: hidden !important;
 }
 
-.page.route-title {
+body.route-title {
   overflow: hidden !important;
 }
 
-.page.route-mainmenu {
+body.route-mainmenu {
   overflow: hidden !important;
 }
 
-.page.route-settings {
+body.route-settings {
   overflow-x: hidden !important;
   overflow-y: visible !important;
 }

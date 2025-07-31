@@ -15,12 +15,8 @@
   export let mainProgress: () => Promise<string>;
 
   let pageElement: HTMLElement;
-  let routeClass = '';
-  
   onMount(async () => {
     const currentPath = page.url.pathname;
-    // Create a CSS class based on the current route path
-    routeClass = `route-${currentPath.replace(/\//g, '') || 'root'}`;
     const transition = new FadeTransitionComponent(pageElement);
     
     // Initialize systems but don't wait for them to complete
@@ -51,7 +47,7 @@
   });
 </script>
 
-<div bind:this={pageElement} class="page {wrapperClass} {routeClass}" style={`${FontAssets.getCssStyle("englishNumberDefault", "default")} ${wrapperStyle}`}>
+<div bind:this={pageElement} class="page {wrapperClass}" style={`${FontAssets.getCssStyle("englishNumberDefault", "default")} ${wrapperStyle}`}>
   <slot name="outside" />
   <div class="safeArea {contentClass}" 
        style={contentStyle}>
