@@ -108,6 +108,9 @@
 
 <style>
   .banner-box {
+    position: absolute;
+    bottom: 1rem;
+    left: 1rem;
     overflow: hidden;
   }
 
