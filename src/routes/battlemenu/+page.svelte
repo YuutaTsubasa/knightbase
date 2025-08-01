@@ -131,9 +131,9 @@
   }
   .bg :global(.portrait) {
     position: absolute;
-    top: 0;
-    width: 100%;
-    filter: drop-shadow(0 0px 0px rgba(0,0,0,0)); /* 初始無陰影 */
+    top: 0vh;
+    object-fit: cover;
+    filter: drop-shadow(0 0px 0px rgba(0,0,0,0));
     opacity: 0;
     transform: translateX(-25%);
     animation: fadeInPortrait 0.7s cubic-bezier(.5,1.5,.5,1) 0.25s forwards,
