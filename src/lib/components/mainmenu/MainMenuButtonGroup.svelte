@@ -34,9 +34,6 @@
 <style>
   .mainMenuButtonArea {
     transform: perspective(800px) rotateY(-25deg);
-    position: absolute;
-    right: 4rem;
-    bottom: 4rem;
     width: 30vw;
     display: flex;
     flex-direction: column;

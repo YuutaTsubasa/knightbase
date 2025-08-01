@@ -35,52 +35,14 @@
     <Video key="titleBackground" />
   </div>
 
-  {#if $isPortrait}
-    <!-- Portrait layout: responsive grid design -->
-    <div class="mainMenuLayout portrait">
-      <div class="topSection">
-        <div class="playerInfoContainer">
-          <PlayerInfoBox level={playerLevel} expPercent={playerExperience} name={playerName} title={$t(playerTitle)} />
-        </div>
-        
-        <div class="resourceContainer">
-          <ResourceBar
-            resources={[
-              { key: "coin", amount: "33645678" },
-              { key: "diamond", amount: "25000", onAdd: () => console.log("add ticket") },
-              { key: "gem", amount: "124680", onAdd: () => console.log("add gem") },
-            ]}
-          />
-        </div>
+  <div class="mainMenuLayout" class:portrait={$isPortrait} class:landscape={!$isPortrait}>
+    <!-- Top section for portrait, left-top for landscape -->
+    <div class="topSection">
+      <div class="playerInfoContainer">
+        <PlayerInfoBox level={playerLevel} expPercent={playerExperience} name={playerName} title={$t(playerTitle)} />
       </div>
-
-      <div class="bannerSection">
-        <BannerCarousel banners={[
-          { key: 'banner01' },
-          { key: 'banner02' }
-        ]} />
-      </div>
-
-      <div class="buttonSection">
-        <MainMenuButtonGroup progressText={format($t("stageProgress"), $t("none"))}
-          onBattle={() => { 
-            AudioManager.play("sfx_confirm");
-            goToNextScene?.set("/battlemenu"); 
-          }}
-          onSettings={() => { 
-            AudioManager.play("sfx_confirm");
-            goToNextScene?.set("/settings"); 
-          }} />
-      </div>
-    </div>
-  {:else}
-    <!-- Landscape layout: original absolute positioning -->
-    <div class="mainMenuLayout landscape">
-      <!-- Top-left: PlayerInfoBox -->
-      <PlayerInfoBox level={playerLevel} expPercent={playerExperience} name={playerName} title={$t(playerTitle)} />
       
-      <!-- Top-right: ResourceBar -->
-      <div class="rightTopSection">
+      <div class="resourceContainer">
         <ResourceBar
           resources={[
             { key: "coin", amount: "33645678" },
@@ -89,14 +51,18 @@
           ]}
         />
       </div>
-      
-      <!-- Bottom-left: BannerCarousel -->
+    </div>
+
+    <!-- Banner section -->
+    <div class="bannerSection">
       <BannerCarousel banners={[
         { key: 'banner01' },
         { key: 'banner02' }
       ]} />
+    </div>
 
-      <!-- Bottom-right: MainMenuButtonGroup -->
+    <!-- Button section -->
+    <div class="buttonSection">
       <MainMenuButtonGroup progressText={format($t("stageProgress"), $t("none"))}
         onBattle={() => { 
           AudioManager.play("sfx_confirm");
@@ -107,7 +73,7 @@
           goToNextScene?.set("/settings"); 
         }} />
     </div>
-  {/if}
+  </div>
 </Page>
 
 <style>
@@ -130,21 +96,21 @@
     position: relative;
     width: 100%;
     height: 100%;
-  }
-
-  /* Portrait layout: responsive grid design */
-  .mainMenuLayout.portrait {
     display: grid;
-    grid-template-areas: 
-      "top"
-      "banner"
-      "buttons";
-    grid-template-rows: auto auto 1fr;
-    padding: 1rem;
     gap: 1rem;
   }
 
-  .portrait .topSection {
+  /* Portrait layout */
+  .mainMenuLayout.portrait {
+    grid-template-areas: 
+      "top top"
+      "banner banner"
+      "buttons buttons";
+    grid-template-rows: auto auto 1fr;
+    padding: 1rem;
+  }
+
+  .mainMenuLayout.portrait .topSection {
     grid-area: top;
     display: flex;
     flex-direction: column;
@@ -152,34 +118,33 @@
     align-items: flex-start;
   }
 
-  .portrait .playerInfoContainer {
+  .mainMenuLayout.portrait .playerInfoContainer {
     width: 95%;
     max-width: 95%;
   }
 
-  .portrait .playerInfoContainer :global(.playerInfoBox) {
-    position: static; /* Override absolute positioning */
+  .mainMenuLayout.portrait .playerInfoContainer :global(.playerInfoBox) {
     font-size: 0.9rem; /* Smaller font for narrow screens */
   }
 
-  .portrait .resourceContainer {
+  .mainMenuLayout.portrait .resourceContainer {
     width: 100%;
   }
 
-  .portrait .resourceContainer :global(.resourceBar) {
+  .mainMenuLayout.portrait .resourceContainer :global(.resourceBar) {
     flex-direction: column;
     align-items: flex-start;
     gap: 0.3rem;
   }
 
-  .portrait .bannerSection {
+  .mainMenuLayout.portrait .bannerSection {
     grid-area: banner;
     display: flex;
     justify-content: flex-start;
     align-items: flex-start;
   }
 
-  .portrait .buttonSection {
+  .mainMenuLayout.portrait .buttonSection {
     grid-area: buttons;
     display: flex;
     justify-content: center;
@@ -188,27 +153,53 @@
     margin: 0 auto;
   }
 
-  .portrait .bannerSection :global(.banner-box) {
-    position: static; /* Override absolute positioning */
-  }
-
-  .portrait .buttonSection :global(.mainMenuButtonArea) {
-    position: static; /* Override absolute positioning */
+  .mainMenuLayout.portrait .buttonSection :global(.mainMenuButtonArea) {
     width: 100%;
     transform: none; /* Remove 3D perspective in portrait */
   }
 
-  /* Landscape layout: restore original absolute positioning */
+  /* Landscape layout (maintain current design) */
   .mainMenuLayout.landscape {
-    /* Components use their original absolute positioning */
+    grid-template-areas: 
+      "top . buttons"
+      "banner . buttons";
+    grid-template-columns: auto 1fr auto;
+    grid-template-rows: auto 1fr;
   }
 
-  .rightTopSection {
+  .mainMenuLayout.landscape .topSection {
+    grid-area: top;
+    position: absolute;
+    top: 1rem;
+    left: 0;
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .mainMenuLayout.landscape .playerInfoContainer {
+    position: relative;
+    left: -0.5rem;
+  }
+
+  .mainMenuLayout.landscape .resourceContainer {
     position: absolute;
     top: 0.9rem;
     right: 0.5rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  }
+
+  .mainMenuLayout.landscape .bannerSection {
+    grid-area: banner;
+    position: absolute;
+    bottom: 1rem;
+    left: 1rem;
+  }
+
+  .mainMenuLayout.landscape .buttonSection {
+    grid-area: buttons;
+    position: absolute;
+    right: 4rem;
+    bottom: 4rem;
   }
 </style>
