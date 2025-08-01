@@ -4,12 +4,14 @@
   import { t } from "$lib/assets/LocalizationAssets";
   import Image from "$lib/components/Image.svelte";
   import Page from "$lib/components/Page.svelte";
+    import SpaceBetweenTextGroup from "$lib/components/SpaceBetweenTextGroup.svelte";
   import Topbar from "$lib/components/Topbar.svelte";
   import { BACK_PATH } from "$lib/utils/Constant";
-    import { format } from "$lib/utils/Format";
+  import { format } from "$lib/utils/StringUtils";
   import { waitUntil } from "$lib/utils/Wait";
   import { get, writable, type Writable } from "svelte/store";
  
+  $: topbarHeight = 0;
   $: character = {
     name: $t("yuutaName"),
     imageKey: "yuutaPortrait"
@@ -25,45 +27,64 @@
 </script>
 
 <Page mainProgress={main} 
-  wrapperStyle="position: relative; background-image: url({imageAssets["backgroundWhite"]}); background-size: cover; background-position: center; background-color: white;">
+  wrapperStyle="position: relative; background-image: url({imageAssets["backgroundWhite"]}); background-size: cover; background-position: center; background-color: white;"
+  contentStyle="box-sizing: border-box; height: 100vh;">
   <slot name="outside">
     <Topbar 
       primaryTitle={$t('battlePageTitle')} 
       secondaryTitle={$t('battlePageSubtitle')}
+      onHeightChange={(height) => topbarHeight = height}
       onBack={() => goToNextScene.set(BACK_PATH)} />
   </slot>
-  <div class="battlemenu">
-    <button class="menuButton leftButton" style="background-image: url({imageAssets["characterBackground"]}); background-size: cover; background-position: center center; "
-            on:click={() => {}}>
-      <div class="bg"><Image key={character.imageKey} alt={character.name} className="portrait fadeinPortrait" /></div>
-      <div class="content">
-        <div class="title" style={FontAssets.getCssStyle("titleBold")}>{$t('character')}</div>
-        <div class="description">{format($t('selectedCharacter'), character.name)}</div>
-      </div>
-    </button>
-    <button class="menuButton rightButton" style="background-image: url({imageAssets["stageBackground"]}); background-size: cover; background-position: center center; "
-            on:click={() => {}}>
-      <div class="content">
-        <div class="title" style={FontAssets.getCssStyle("titleBold")}>{$t('stage')}</div>
-        <div class="description">{format($t('stageProgress'), progressText)}</div>
-      </div>
-    </button>
+  <div class="battlemenu" style={`--topbarHeight: ${topbarHeight}px;`}>
+    <div class="menuButtonContainer">
+      <button class="menuButton leftButton" style="background-image: url({imageAssets["characterBackground"]}); background-size: cover; background-position: center center; "
+          on:click={() => {}}>
+        <div class="bg"><Image key={character.imageKey} alt={character.name} className="portrait fadeinPortrait" /></div>
+        <div class="content">
+          <div class="title" style={FontAssets.getCssStyle("titleBold")}>
+            <SpaceBetweenTextGroup content={$t('character')} spacing="0.3em" />
+          </div>
+          <div class="description">{format($t('selectedCharacter'), character.name)}</div>
+        </div>
+      </button>
+    </div>
+    <div class="menuButtonContainer">
+      <button class="menuButton rightButton" style="background-image: url({imageAssets["stageBackground"]}); background-size: cover; background-position: center center; "
+          on:click={() => {}}>
+        <div class="content">
+          <div class="title" style={FontAssets.getCssStyle("titleBold")}>
+            <SpaceBetweenTextGroup content={$t('stage')} spacing="0.3em" />
+          </div>
+          <div class="description">{format($t('stageProgress'), progressText)}</div>
+        </div>
+      </button>
+    </div>
   </div>
 </Page>
 
 <style>
   .battlemenu {
-    display: flex;
-    gap: 10vw;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     justify-content: center;
-    align-items: stretch;
-    height: 80vh;
+    align-items: center;
+    box-sizing: border-box;
+    height: 100%;
+    padding-top: var(--topbarHeight, 0px);
   }
-  .menuButton {
+  .menuButtonContainer {
     position: relative;
-    flex: 1 1 0;
-    min-width: 320px;
-    max-width: 480px;
+    box-sizing: border-box;
+    padding: 5%;
+    height: 95%;
+    display: grid;
+    grid-template-columns: 100%;
+    grid-template-rows: 100%;
+    overflow: hidden; 
+  }
+
+  .menuButton {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -72,9 +93,8 @@
     border-radius: 2rem;
     overflow: hidden;
     cursor: pointer;
-    box-shadow: 0 0px 0px rgba(0,0,0,0); /* 初始無陰影 */
+    box-shadow: 0 0px 0px rgba(0,0,0,0);
     padding: 0;
-    background: none;
     opacity: 0;
     transform: translateX(40px);
     animation: fadeInButton 0.6s cubic-bezier(.5,1.5,.5,1) 0.2s forwards;
@@ -91,6 +111,8 @@
   }
   .bg {
     position: absolute;
+    width: 100%;
+    height: 100%;
     inset: 0;
     z-index: 0;
     opacity: 1;
@@ -110,20 +132,17 @@
   .bg :global(.portrait) {
     position: absolute;
     top: 0;
-    left: 0;
     width: 100%;
-    height: 100%;
-    object-fit: contain;
     filter: drop-shadow(0 0px 0px rgba(0,0,0,0)); /* 初始無陰影 */
     opacity: 0;
-    transform: translateX(40px);
+    transform: translateX(-25%);
     animation: fadeInPortrait 0.7s cubic-bezier(.5,1.5,.5,1) 0.25s forwards,
               shadowPopup 0.7s cubic-bezier(.5,1.5,.5,1) 0.55s forwards;
   }
   @keyframes fadeInPortrait {
     to {
       opacity: 1;
-      transform: translateX(0);
+      transform: translateX(-50%);
     }
   }
   @keyframes shadowPopup {
@@ -132,16 +151,27 @@
     }
   }
   .title {
-    font-size: 3rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    font-size: min(8vh, 4vw);
     font-weight: bold;
-    margin-bottom: 1rem;
     color: white;
-    letter-spacing: 0.05em;
+    text-align: center;
   }
   .description {
-    font-size: 1.3rem;
+    font-size: min(4vh, 2vw);
     color: #bbb;
-    margin-top: 0.5rem;
     text-align: center;
+  }
+  .menuButtonContainer:hover {
+    transform: scale(1.02) translateX(-10px) translateY(-10px);
+    filter: brightness(0.5);
+    transition: transform 0.2s ease, filter 0.2s ease;
+  }
+  .menuButtonContainer:hover .menuButton {
+    box-shadow: 4px 4px 5px rgba(0,0,0,0.5);
+    transition: box-shadow 0.2s ease;
   }
 </style>

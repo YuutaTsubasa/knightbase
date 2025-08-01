@@ -1,22 +1,21 @@
 <script lang="ts">
   import { FontAssets } from "$lib/assets/FontAssets";
   import { AudioManager } from "$lib/systems/AudioManager";
-  export let onBack: () => void;
   export let primaryTitle: string;
   export let secondaryTitle: string;
-
+  export let onHeightChange: (height: number) => void;
+  export let onBack: () => void;
+  
   let height: number;
+  $: onHeightChange?.(height);
 </script>
 
-<div>
-  <div class="topbar" bind:clientHeight={height}>
-    <button class="backButton" on:click={() => {
-      AudioManager.play("sfx_confirm");
-      onBack?.();
-    }}>←</button>
-    <h1 class="topbarTitle" style={FontAssets.getCssStyle("englishNumberBold", "titleBold")}>{primaryTitle} <span class="topbarSubtitle">{secondaryTitle}</span></h1>
-  </div>
-  <div style="width: 100%; height: {height}px;"></div>
+<div class="topbar" bind:clientHeight={height}>
+  <button class="backButton" on:click={() => {
+    AudioManager.play("sfx_confirm");
+    onBack?.();
+  }}>←</button>
+  <h1 class="topbarTitle" style={FontAssets.getCssStyle("englishNumberBold", "titleBold")}>{primaryTitle} <span class="topbarSubtitle">{secondaryTitle}</span></h1>
 </div>
 
 <style>

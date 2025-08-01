@@ -12,7 +12,7 @@
   import { AudioManager } from "$lib/systems/AudioManager";
   import { t } from "$lib/assets/LocalizationAssets";
   import { get, writable, type Writable } from "svelte/store";
-    import { format } from "$lib/utils/Format";
+    import { format } from "$lib/utils/StringUtils";
 
   let playerData = $playerStore;
 

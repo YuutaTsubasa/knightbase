@@ -20,6 +20,7 @@
   $: locale = LocalizationAssets.locale;
   $: availableLocales = LocalizationAssets.availableLocales;
 
+  $: topBarHeight = 0;
   let restoreText = '';
   let restoreStatusType = StatusBoxType.Default;
   let restoreStatus = 'backupSaveHint';
@@ -72,13 +73,13 @@
 <Page mainProgress={main} wrapperStyle={`background-image: url(${imageAssets["backgroundWhite"]}); background-color: white; background-repeat: no-repeat; background-attachment: fixed; background-size: cover;`}>
   <slot name="outside">
     <Topbar 
-      onBack={() => { shouldExit?.set(true);}}
       primaryTitle={$t("settingsPageTitle")}
-      secondaryTitle={$t("settingsPageSubtitle")}>
-    </Topbar>
+      secondaryTitle={$t("settingsPageSubtitle")}
+      onHeightChange={(height) => topBarHeight = height}
+      onBack={() => { shouldExit?.set(true);}} />
   </slot>
   
-  <div class="settingsPanel">
+  <div class="settingsPanel" style={`padding-top: ${topBarHeight}px;`}>
     <label>
       <div class="labelTitle"><Volume2Icon class="icon" size="20" /> {$t("masterVolume")}</div>
       <input type="range" min="0" max="100" bind:value={masterVolume} on:input={updateVolume} 
