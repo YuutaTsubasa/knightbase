@@ -22,12 +22,17 @@
   let score = 0;
   let isPaused = false;
   
-  // Game entities (doubled size)
+  // Game entities (doubled size) with separate collision boxes
   let player = {
     x: 100,
     y: 300,
     width: 128,
     height: 128,
+    // Collision box (smaller than visual sprite)
+    collisionOffsetX: 20,
+    collisionOffsetY: 10,
+    collisionWidth: 88,
+    collisionHeight: 108,
     velocityY: 0,
     onGround: false,
     animation: 'run',
@@ -38,16 +43,20 @@
   // Background scrolling
   let backgroundOffset = 0;
   
-  let enemies: Array<{x: number, y: number, width: number, height: number, facingLeft: boolean}> = [];
-  let gameCoins: Array<{x: number, y: number, width: number, height: number, collected: boolean}> = [];
+  let enemies: Array<{x: number, y: number, width: number, height: number, facingLeft: boolean, collisionOffsetX: number, collisionOffsetY: number, collisionWidth: number, collisionHeight: number}> = [];
+  let gameCoins: Array<{x: number, y: number, width: number, height: number, collected: boolean, collisionOffsetX: number, collisionOffsetY: number, collisionWidth: number, collisionHeight: number}> = [];
   let projectiles: Array<{x: number, y: number, width: number, height: number, velocityX: number, animationFrame: number, animationTimer: number}> = [];
-  let traps: Array<{x: number, y: number, width: number, height: number}> = [];
+  let traps: Array<{x: number, y: number, width: number, height: number, collisionOffsetX: number, collisionOffsetY: number, collisionWidth: number, collisionHeight: number}> = [];
   
   // Game settings
   const GRAVITY = 0.8;
   const JUMP_FORCE = -15;
   const GROUND_Y = 320;
-  const BASE_SCROLL_SPEED = 2;
+  const BASE_SCROLL_SPEED = 1.5; // Reduced from 2 to make jumps more manageable
+
+  // Trap spawning control
+  let lastTrapSpawnTime = 0;
+  const MIN_TRAP_INTERVAL = 3000; // Minimum 3 seconds between traps
   
   // Asset loading
   let assetsLoaded = false;
@@ -158,6 +167,7 @@
     gameState = 'playing';
     survivalTime = 0;
     lastSurvivalSecond = 0;
+    lastTrapSpawnTime = 0;
     coins = 0;
     lives = 3;
     score = 0;
@@ -170,6 +180,11 @@
       y: GROUND_Y - 128,
       width: 128,
       height: 128,
+      // Collision box (smaller than visual sprite)
+      collisionOffsetX: 20,
+      collisionOffsetY: 10,
+      collisionWidth: 88,
+      collisionHeight: 108,
       velocityY: 0,
       onGround: true,
       animation: 'run',
@@ -190,7 +205,12 @@
         y: GROUND_Y - 100 - Math.random() * 100,
         width: 64,
         height: 64,
-        collected: false
+        collected: false,
+        // Collision box (smaller than visual sprite)
+        collisionOffsetX: 8,
+        collisionOffsetY: 8,
+        collisionWidth: 48,
+        collisionHeight: 48
       });
     }
   }
@@ -227,7 +247,12 @@
       y: GROUND_Y - 96,
       width: 96,
       height: 96,
-      facingLeft: true
+      facingLeft: true,
+      // Collision box (smaller than visual sprite)
+      collisionOffsetX: 12,
+      collisionOffsetY: 8,
+      collisionWidth: 72,
+      collisionHeight: 80
     });
   }
   
@@ -237,7 +262,12 @@
       y: GROUND_Y - 100 - Math.random() * 100,
       width: 64,
       height: 64,
-      collected: false
+      collected: false,
+      // Collision box (smaller than visual sprite)
+      collisionOffsetX: 8,
+      collisionOffsetY: 8,
+      collisionWidth: 48,
+      collisionHeight: 48
     });
   }
   
@@ -246,13 +276,18 @@
       x: canvas.width + 50,
       y: GROUND_Y - 48,
       width: 128,
-      height: 48
+      height: 48,
+      // Collision box (smaller than visual sprite for better gameplay)
+      collisionOffsetX: 16,
+      collisionOffsetY: 8,
+      collisionWidth: 96,
+      collisionHeight: 32
     });
   }
   
   function getCurrentScrollSpeed(): number {
-    // Speed increases over time, starting at BASE_SCROLL_SPEED and increasing by 0.1 every 10 seconds
-    return BASE_SCROLL_SPEED + Math.floor(survivalTime / 10) * 0.1;
+    // Speed increases over time, starting at BASE_SCROLL_SPEED and increasing by 0.05 every 10 seconds (reduced from 0.1)
+    return BASE_SCROLL_SPEED + Math.floor(survivalTime / 10) * 0.05;
   }
   
   function updateGame(deltaTime: number) {
@@ -286,7 +321,8 @@
     
     // Update animation (6 frames per sprite sheet)
     player.animationTimer += deltaTime;
-    if (player.animationTimer > 100) { // Faster animation for 6 frames
+    const animationSpeed = player.animation === 'attack' ? 150 : 100; // Slower for attack animation
+    if (player.animationTimer > animationSpeed) {
       player.animationFrame = (player.animationFrame + 1) % 6;
       player.animationTimer = 0;
       
@@ -328,11 +364,7 @@
     
     // Collision detection - coins
     gameCoins.forEach(coin => {
-      if (!coin.collected && 
-          player.x < coin.x + coin.width &&
-          player.x + player.width > coin.x &&
-          player.y < coin.y + coin.height &&
-          player.y + player.height > coin.y) {
+      if (!coin.collected && checkCollision(player, coin)) {
         coin.collected = true;
         coins++;
         score += 10; // Award 10 points for collecting a coin
@@ -341,10 +373,7 @@
     
     // Collision detection - enemies (only if player is vulnerable)
     enemies.forEach((enemy, enemyIndex) => {
-      if (player.x < enemy.x + enemy.width &&
-          player.x + player.width > enemy.x &&
-          player.y < enemy.y + enemy.height &&
-          player.y + player.height > enemy.y) {
+      if (checkCollision(player, enemy)) {
         lives--;
         // Remove the enemy that hit the player
         enemies.splice(enemyIndex, 1);
@@ -359,10 +388,7 @@
     
     // Collision detection - traps
     traps.forEach(trap => {
-      if (player.x < trap.x + trap.width &&
-          player.x + player.width > trap.x &&
-          player.y < trap.y + trap.height &&
-          player.y + player.height > trap.y) {
+      if (checkCollision(player, trap)) {
         lives--;
         if (lives <= 0) {
           handleGameOver();
@@ -402,9 +428,12 @@
       spawnCoin();
     }
     
-    // Spawn traps occasionally 
-    if (Math.random() < Math.min(0.003 + survivalTime * 0.0002, 0.012)) {
+    // Spawn traps occasionally with minimum interval
+    const currentTime = Date.now();
+    if (Math.random() < Math.min(0.003 + survivalTime * 0.0002, 0.012) && 
+        currentTime - lastTrapSpawnTime > MIN_TRAP_INTERVAL) {
       spawnTrap();
+      lastTrapSpawnTime = currentTime;
     }
   }
   
@@ -620,6 +649,21 @@
     const remainingSeconds = Math.floor(seconds % 60);
     return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
   }
+
+  // Helper function for collision detection using collision boxes
+  function checkCollision(a: any, b: any): boolean {
+    const aLeft = a.x + (a.collisionOffsetX || 0);
+    const aRight = aLeft + (a.collisionWidth || a.width);
+    const aTop = a.y + (a.collisionOffsetY || 0);
+    const aBottom = aTop + (a.collisionHeight || a.height);
+
+    const bLeft = b.x + (b.collisionOffsetX || 0);
+    const bRight = bLeft + (b.collisionWidth || b.width);
+    const bTop = b.y + (b.collisionOffsetY || 0);
+    const bBottom = bTop + (b.collisionHeight || b.height);
+
+    return aLeft < bRight && aRight > bLeft && aTop < bBottom && aBottom > bTop;
+  }
   
   async function main() {
     goToNextScene = writable(null);
@@ -741,11 +785,28 @@
     align-items: center;
     background-image: url('{imageAssets.backgroundWhiteButton}');
     background-size: cover;
-    background-position: center;
+    background-position: 50% 15%;
     color: white;
     padding: 0.5rem 1rem;
     border-radius: 0.5rem;
     backdrop-filter: blur(10px);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .topUI::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-color: #0000ff;
+    mix-blend-mode: multiply;
+    opacity: 1;
+    z-index: 1;
+  }
+
+  .topUI > * {
+    position: relative;
+    z-index: 2;
   }
 
   .gameStats {
@@ -820,8 +881,8 @@
     align-items: center;
     justify-content: center;
     background: rgba(255, 255, 255, 0.05);
-    border: 2px dashed rgba(255, 255, 255, 0.2);
-    color: rgba(255, 255, 255, 0.6);
+    border: 2px dashed rgba(0, 0, 0, 0.5);
+    color: rgba(0, 0, 0, 0.8);
     font-size: 1.2rem;
     font-weight: bold;
     pointer-events: auto;
@@ -834,11 +895,11 @@
   }
 
   .touchZone.left {
-    border-right: 1px dashed rgba(255, 255, 255, 0.2);
+    border-right: 1px dashed rgba(0, 0, 0, 0.5);
   }
 
   .touchZone.right {
-    border-left: 1px dashed rgba(255, 255, 255, 0.2);
+    border-left: 1px dashed rgba(0, 0, 0, 0.5);
   }
 
   .instructions {
