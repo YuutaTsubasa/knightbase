@@ -2,13 +2,13 @@
   import { ListIcon, SettingsIcon, ShoppingCartIcon, SwordIcon } from "lucide-svelte";
   import { t } from "$lib/assets/LocalizationAssets";
 
-  export let progressText = "目前進度：主線第 3 章";
+  export let progressText = "";
   export let onBattle = () => {};
   export let onMission = () => {};
   export let onShop = () => {};
   export let onSettings = () => {};
 
-  $: marqueeText = Array(4).fill(progressText).join("　") + "　";
+  $: marqueeText = Array(16).fill(progressText).join("　") + "　";
 </script>
 
 <div class="mainMenuButtonArea">
@@ -34,7 +34,6 @@
 <style>
   .mainMenuButtonArea {
     transform: perspective(800px) rotateY(-25deg);
-    width: 30vw;
     display: flex;
     flex-direction: column;
     align-items: stretch;
@@ -55,6 +54,7 @@
     width: 100%;
     transition: transform 0.2s ease;
     cursor: pointer;
+    height: 23vh;
   }
 
   .battleButton:hover {
@@ -73,7 +73,7 @@
 
   .marquee {
     overflow: hidden;
-    height: 1.5em;
+    height: 1.2em;
     position: relative;
   }
 
@@ -81,14 +81,14 @@
     display: inline-block;
     white-space: nowrap;
     animation: scrollLeft 8s linear infinite;
-    font-size: 0.5em;
+    font-size: 0.6em;
     opacity: 0.4;
     min-width: 200%;
   }
 
   @keyframes scrollLeft {
     0% { transform: translateX(0); }
-    100% { transform: translateX(-50%); }
+    100% { transform: translateX(-25%); }
   }
 
   .bottomButtons {
@@ -108,11 +108,11 @@
     border: 1px solid white;
     border-radius: 0.5rem;
     box-sizing: border-box;
-    padding: 0.6rem 0.5rem;
     box-shadow: 0 0.2rem 0.5rem rgba(0, 0, 0, 0.7);
     transition: transform 0.1s ease;
     cursor: pointer;
     text-align: left;
+    height: 6vh;
   }
 
   .smallButton:hover {

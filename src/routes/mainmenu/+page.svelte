@@ -13,7 +13,8 @@
   import { t } from "$lib/assets/LocalizationAssets";
   import { get, writable, type Writable } from "svelte/store";
   import { format } from "$lib/utils/StringUtils";
-  import { isPortrait } from "../+layout";
+  import { isPortrait } from "$lib/systems/Orientation";
+  import { CoinsIcon, DiamondIcon, GemIcon } from "lucide-svelte";
 
   let playerData = $playerStore;
 
@@ -36,33 +37,25 @@
   </div>
 
   <div class="mainMenuLayout" class:portrait={$isPortrait} class:landscape={!$isPortrait}>
-    <!-- Top section for portrait, left-top for landscape -->
-    <div class="topSection">
-      <div class="playerInfoContainer">
-        <PlayerInfoBox level={playerLevel} expPercent={playerExperience} name={playerName} title={$t(playerTitle)} />
-      </div>
-      
-      <div class="resourceContainer">
-        <ResourceBar
-          resources={[
-            { key: "coin", amount: "33645678" },
-            { key: "diamond", amount: "25000", onAdd: () => console.log("add ticket") },
-            { key: "gem", amount: "124680", onAdd: () => console.log("add gem") },
-          ]}
-        />
-      </div>
+    <div class="playerInfoContainer">
+      <PlayerInfoBox level={playerLevel} expPercent={playerExperience} name={playerName} title={$t(playerTitle)} />
     </div>
-
-    <!-- Banner section -->
-    <div class="bannerSection">
+    <div class="resourceContainer">
+      <ResourceBar
+        resources={[
+          { key: CoinsIcon, amount: "33645678", color: "gold" },
+          { key: DiamondIcon, amount: "25000", color:"lightblue", onAdd: () => console.log("add ticket") },
+          { key: GemIcon, amount: "124680", color:"lightpink", onAdd: () => console.log("add gem") },
+        ]}
+      />
+    </div>
+    <div class="bannerContainer">
       <BannerCarousel banners={[
         { key: 'banner01' },
         { key: 'banner02' }
       ]} />
     </div>
-
-    <!-- Button section -->
-    <div class="buttonSection">
+     <div class="buttonContainer">
       <MainMenuButtonGroup progressText={format($t("stageProgress"), $t("none"))}
         onBattle={() => { 
           AudioManager.play("sfx_confirm");
@@ -95,111 +88,47 @@
   .mainMenuLayout {
     position: relative;
     width: 100%;
-    height: 100%;
-    display: grid;
-    gap: 1rem;
+    height: 100vh;
   }
 
-  /* Portrait layout */
-  .mainMenuLayout.portrait {
-    grid-template-areas: 
-      "top top"
-      "banner banner"
-      "buttons buttons";
-    grid-template-rows: auto auto 1fr;
-    padding: 1rem;
-  }
-
-  .mainMenuLayout.portrait .topSection {
-    grid-area: top;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    align-items: flex-start;
-  }
-
-  .mainMenuLayout.portrait .playerInfoContainer {
-    width: 95%;
-    max-width: 95%;
-  }
-
-  .mainMenuLayout.portrait .playerInfoContainer :global(.playerInfoBox) {
-    font-size: 0.9rem; /* Smaller font for narrow screens */
-  }
-
-  .mainMenuLayout.portrait .resourceContainer {
-    width: 100%;
-  }
-
-  .mainMenuLayout.portrait .resourceContainer :global(.resourceBar) {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.3rem;
-  }
-
-  .mainMenuLayout.portrait .bannerSection {
-    grid-area: banner;
-    display: flex;
-    justify-content: flex-start;
-    align-items: flex-start;
-  }
-
-  .mainMenuLayout.portrait .buttonSection {
-    grid-area: buttons;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 95%;
-    margin: 0 auto;
-  }
-
-  .mainMenuLayout.portrait .buttonSection :global(.mainMenuButtonArea) {
-    width: 100%;
-    transform: none; /* Remove 3D perspective in portrait */
-  }
-
-  /* Landscape layout (maintain current design) */
-  .mainMenuLayout.landscape {
-    grid-template-areas: 
-      "top . buttons"
-      "banner . buttons";
-    grid-template-columns: auto 1fr auto;
-    grid-template-rows: auto 1fr;
-  }
-
-  .mainMenuLayout.landscape .topSection {
-    grid-area: top;
+  .playerInfoContainer {
     position: absolute;
     top: 1rem;
-    left: 0;
-    display: flex;
-    flex-direction: row;
-    align-items: flex-start;
-    gap: 1rem;
-  }
-
-  .mainMenuLayout.landscape .playerInfoContainer {
-    position: relative;
     left: -0.5rem;
+    max-width: 95vw;
   }
-
-  .mainMenuLayout.landscape .resourceContainer {
+  
+  .resourceContainer {
     position: absolute;
-    top: 0.9rem;
-    right: 0.5rem;
+    top: 1rem;
+    right: 1rem;
   }
 
-  .mainMenuLayout.landscape .bannerSection {
-    grid-area: banner;
+  .portrait .resourceContainer {
+    top: 6rem;
+    left: 0.5rem;
+  }
+
+  .bannerContainer {
+    position: absolute;
+    left: 1em;
+    bottom: 1em;
+  }
+
+  .portrait .bannerContainer {
+    left: 0.5rem;
+    top: 10.5rem;
+  }
+
+  .buttonContainer {
     position: absolute;
     bottom: 1rem;
-    left: 1rem;
+    right: 1rem;
+    width: 15rem;
   }
-
-  .mainMenuLayout.landscape .buttonSection {
-    grid-area: buttons;
-    position: absolute;
-    right: 4rem;
-    bottom: 4rem;
+  
+  .portrait .buttonContainer {
+    bottom: 1rem;
+    width: 100%;
   }
 </style>

@@ -3,22 +3,3 @@
 // See: https://svelte.dev/docs/kit/single-page-apps
 // See: https://v2.tauri.app/start/frontend/sveltekit/ for more info
 export const ssr = false;
-
-import { writable } from 'svelte/store';
-import { browser } from '$app/environment';
-
-// Screen orientation store
-export const isPortrait = writable(false);
-
-if (browser) {
-  // Initialize orientation
-  const updateOrientation = () => {
-    isPortrait.set(window.innerHeight > window.innerWidth);
-  };
-
-  // Set initial value
-  updateOrientation();
-
-  // Listen for resize events
-  window.addEventListener('resize', updateOrientation);
-}

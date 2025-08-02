@@ -38,7 +38,6 @@
     }
 
     updateTranslate();
-    // 恢復輪播
     intervalId = setInterval(() => {
       activeIndex = (activeIndex + 1) % banners.length;
       updateTranslate();
