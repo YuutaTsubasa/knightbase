@@ -45,7 +45,7 @@
   // Game settings
   const GRAVITY = 0.8;
   const JUMP_FORCE = -15;
-  const GROUND_Y = 400;
+  const GROUND_Y = 320;
   const BASE_SCROLL_SPEED = 2;
   
   // Asset loading
@@ -225,7 +225,7 @@
     
     // Update enemies with progressive speed
     enemies = enemies.filter(enemy => {
-      enemy.x -= currentScrollSpeed * 2;
+      enemy.x -= currentScrollSpeed;
       return enemy.x > -enemy.width;
     });
     
