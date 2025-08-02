@@ -29,7 +29,7 @@
         id: shop.merchandiseId,
         nameKey: item?.ItemNameKey || "",
         descriptionKey: item?.ItemDescriptionKey || "",
-        iconKey: getItemIconKey(shop.itemId),
+        iconKey: item?.ItemIconKey || "defaultIcon",
         price: shop.cost,
         currency: "coin"
       };
@@ -40,7 +40,7 @@
         id: shop.merchandiseId,
         nameKey: item?.ItemNameKey || "",
         descriptionKey: item?.ItemDescriptionKey || "",
-        iconKey: getItemIconKey(shop.itemId),
+        iconKey: item?.ItemIconKey || "defaultIcon",
         price: shop.cost,
         currency: "diamond"
       };
@@ -51,28 +51,12 @@
         id: shop.merchandiseId,
         nameKey: item?.ItemNameKey || "",
         descriptionKey: item?.ItemDescriptionKey || "",
-        iconKey: getItemIconKey(shop.itemId),
+        iconKey: item?.ItemIconKey || "defaultIcon",
         price: shop.cost,
         currency: "ruby"
       };
     })
   };
-
-  // Helper function to map item IDs to icon keys (this could be added to CSV later)
-  function getItemIconKey(itemId: number): string {
-    const iconMap: Record<number, string> = {
-      1: "healingPotion",
-      2: "ironSword", 
-      3: "leatherArmor",
-      4: "premiumPotion",
-      5: "expBooster",
-      6: "rareWeapon",
-      7: "legendaryArtifact",
-      8: "mysticalCharm",
-      9: "ancientRelic"
-    };
-    return iconMap[itemId] || "defaultIcon";
-  }
 
   let goToNextScene: Writable<string | null>;
   async function main() {
@@ -88,11 +72,7 @@
   async function purchaseItem(item: any) {
     const result = await PopupStore.open({
       title: $t("confirmPurchase"),
-      content: $t("confirmPurchaseContent", { 
-        item: $t(item.nameKey), 
-        price: item.price, 
-        currency: $t(item.currency) 
-      }),
+      content: `${$t("confirmPurchaseContent")} ${$t(item.nameKey)} for ${item.price} ${$t(item.currency)}?`,
       buttons: [
         {
           text: $t("cancel"),

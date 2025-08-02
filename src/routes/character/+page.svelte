@@ -29,7 +29,7 @@
       name: $t(char.characterNameKey),
       nameKey: char.characterNameKey,
       descriptionKey: char.characterDescriptionKey,
-      imageKey: "yuutaPortrait", // Default image key, could be added to CSV later
+      imageKey: char.characterIconKey,
       level: levelAbility.characterLevel,
       hp: char.BaseHp + levelAbility.IncreasedHp,
       sp: char.BaseSp + levelAbility.IncreasedSp,

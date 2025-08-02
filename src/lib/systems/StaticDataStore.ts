@@ -11,6 +11,7 @@ export interface CharacterData {
   characterId: number;
   characterNameKey: string;
   characterDescriptionKey: string;
+  characterIconKey: string;
   BaseHp: number;
   BaseSp: number;
   BaseAtk: number;
@@ -33,6 +34,7 @@ export interface ItemData {
   ItemId: number;
   ItemNameKey: string;
   ItemDescriptionKey: string;
+  ItemIconKey: string;
 }
 
 export interface EquipmentData {
@@ -67,6 +69,7 @@ export interface MissionData {
   missionCategoryId: number;
   missionTitleKey: string;
   missionDescriptionKey: string;
+  missionIconKey: string;
   missionConditions: string;
 }
 
@@ -114,7 +117,11 @@ export class StaticDataStore {
     try {
       const res = await fetch(this.basePath + filename);
       const text = await res.text();
-      const parsed = parse(text, { header: true, skipEmptyLines: true }).data as T[];
+      const parsed = parse(text, { 
+        header: true, 
+        skipEmptyLines: true,
+        dynamicTyping: true  // This will automatically convert strings to numbers/booleans where appropriate
+      }).data as T[];
       this.loadedFiles.add(filename);
       return parsed;
     } catch (error) {

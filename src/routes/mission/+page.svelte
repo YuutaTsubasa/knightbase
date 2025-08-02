@@ -25,55 +25,41 @@
       id: mission.missionId,
       nameKey: mission.missionTitleKey,
       descriptionKey: mission.missionDescriptionKey,
-      iconKey: getMissionIconKey(mission.missionId),
+      iconKey: mission.missionIconKey,
       rewards: getMissionRewards(mission.missionId),
-      completed: Math.random() > 0.7, // Mock completion status
-      progress: getMissionProgress(mission.missionConditions)
+      completed: false, // Reduced mock data - only use actual player progress
+      progress: { current: 0, max: getMissionMaxProgress(mission.missionConditions) }
     })),
     weekly: missionDataValues.filter(mission => mission.missionCategoryId === 2).map(mission => ({
       id: mission.missionId,
       nameKey: mission.missionTitleKey,
       descriptionKey: mission.missionDescriptionKey,
-      iconKey: getMissionIconKey(mission.missionId),
+      iconKey: mission.missionIconKey,
       rewards: getMissionRewards(mission.missionId),
-      completed: Math.random() > 0.8,
-      progress: getMissionProgress(mission.missionConditions)
+      completed: false,
+      progress: { current: 0, max: getMissionMaxProgress(mission.missionConditions) }
     })),
     monthly: missionDataValues.filter(mission => mission.missionCategoryId === 3).map(mission => ({
       id: mission.missionId,
       nameKey: mission.missionTitleKey,
       descriptionKey: mission.missionDescriptionKey,
-      iconKey: getMissionIconKey(mission.missionId),
+      iconKey: mission.missionIconKey,
       rewards: getMissionRewards(mission.missionId),
-      completed: Math.random() > 0.9,
-      progress: getMissionProgress(mission.missionConditions)
+      completed: false,
+      progress: { current: 0, max: getMissionMaxProgress(mission.missionConditions) }
     })),
     achievement: missionDataValues.filter(mission => mission.missionCategoryId === 4).map(mission => ({
       id: mission.missionId,
       nameKey: mission.missionTitleKey,
       descriptionKey: mission.missionDescriptionKey,
-      iconKey: getMissionIconKey(mission.missionId),
+      iconKey: mission.missionIconKey,
       rewards: getMissionRewards(mission.missionId),
-      completed: Math.random() > 0.95,
-      progress: getMissionProgress(mission.missionConditions)
+      completed: false,
+      progress: { current: 0, max: getMissionMaxProgress(mission.missionConditions) }
     }))
   };
 
   // Helper functions for mission data
-  function getMissionIconKey(missionId: number): string {
-    const iconMap: Record<number, string> = {
-      1: "loginIcon",
-      2: "battleIcon", 
-      3: "upgradeIcon",
-      4: "stageIcon",
-      5: "rewardIcon",
-      6: "streakIcon",
-      7: "victoryIcon",
-      8: "levelIcon"
-    };
-    return iconMap[missionId] || "defaultIcon";
-  }
-
   function getMissionRewards(missionId: number): Array<{type: string, amount: number}> {
     const rewardMap: Record<number, Array<{type: string, amount: number}>> = {
       1: [{ type: "coin", amount: 100 }],
@@ -88,12 +74,10 @@
     return rewardMap[missionId] || [{ type: "coin", amount: 10 }];
   }
 
-  function getMissionProgress(conditions: string): {current: number, max: number} {
+  function getMissionMaxProgress(conditions: string): number {
     // Parse conditions like "login:1", "battle_win:3", etc.
     const [, maxStr] = conditions.split(':');
-    const max = parseInt(maxStr) || 1;
-    const current = Math.floor(Math.random() * (max + 1));
-    return { current, max };
+    return parseInt(maxStr) || 1;
   }
   let goToNextScene: Writable<string | null>;
   async function main() {
