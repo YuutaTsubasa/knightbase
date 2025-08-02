@@ -40,12 +40,13 @@
   let enemies: Array<{x: number, y: number, width: number, height: number}> = [];
   let gameCoins: Array<{x: number, y: number, width: number, height: number, collected: boolean}> = [];
   let projectiles: Array<{x: number, y: number, width: number, height: number, velocityX: number, animationFrame: number, animationTimer: number}> = [];
+  let traps: Array<{x: number, y: number, width: number, height: number}> = [];
   
   // Game settings
   const GRAVITY = 0.8;
   const JUMP_FORCE = -15;
   const GROUND_Y = 400;
-  const SCROLL_SPEED = 2;
+  const BASE_SCROLL_SPEED = 2;
   
   // Asset loading
   let assetsLoaded = false;
@@ -59,7 +60,8 @@
       yuutaAttack: imageAssets.yuutaAttack,
       attackEffect: imageAssets.attackEffect,
       enemy: imageAssets.enemy,
-      coin: imageAssets.coin
+      coin: imageAssets.coin,
+      trap: imageAssets.trap
     }).map(([key, src]) => {
       return new Promise<void>((resolve) => {
         const img = new Image();
@@ -108,6 +110,7 @@
     enemies = [];
     gameCoins = [];
     projectiles = [];
+    traps = [];
     
     // Spawn initial coins
     for (let i = 0; i < 5; i++) {
@@ -156,10 +159,35 @@
     });
   }
   
+  function spawnCoin() {
+    gameCoins.push({
+      x: canvas.width + 50 + Math.random() * 200,
+      y: GROUND_Y - 100 - Math.random() * 100,
+      width: 32,
+      height: 32,
+      collected: false
+    });
+  }
+  
+  function spawnTrap() {
+    traps.push({
+      x: canvas.width + 50,
+      y: GROUND_Y - 32,
+      width: 64,
+      height: 32
+    });
+  }
+  
+  function getCurrentScrollSpeed(): number {
+    // Speed increases over time, starting at BASE_SCROLL_SPEED and increasing by 0.1 every 10 seconds
+    return BASE_SCROLL_SPEED + Math.floor(survivalTime / 10) * 0.1;
+  }
+  
   function updateGame(deltaTime: number) {
     if (gameState !== 'playing' || !assetsLoaded) return;
     
     survivalTime += deltaTime / 1000;
+    const currentScrollSpeed = getCurrentScrollSpeed();
     
     // Award 1 point per second for survival
     const currentSecond = Math.floor(survivalTime);
@@ -168,8 +196,8 @@
       lastSurvivalSecond = currentSecond;
     }
     
-    // Update background scrolling
-    backgroundOffset -= SCROLL_SPEED;
+    // Update background scrolling with progressive speed
+    backgroundOffset -= currentScrollSpeed;
     
     // Update player physics
     player.velocityY += GRAVITY;
@@ -195,15 +223,21 @@
       }
     }
     
-    // Update enemies
+    // Update enemies with progressive speed
     enemies = enemies.filter(enemy => {
-      enemy.x -= SCROLL_SPEED * 2;
+      enemy.x -= currentScrollSpeed * 2;
       return enemy.x > -enemy.width;
     });
     
-    // Update coins
+    // Update coins with progressive speed
     gameCoins.forEach(coin => {
-      coin.x -= SCROLL_SPEED;
+      coin.x -= currentScrollSpeed;
+    });
+    
+    // Update traps with progressive speed
+    traps = traps.filter(trap => {
+      trap.x -= currentScrollSpeed;
+      return trap.x > -trap.width;
     });
     
     // Update projectiles
@@ -251,6 +285,27 @@
       }
     });
     
+    // Collision detection - traps
+    traps.forEach(trap => {
+      if (player.x < trap.x + trap.width &&
+          player.x + player.width > trap.x &&
+          player.y < trap.y + trap.height &&
+          player.y + player.height > trap.y) {
+        lives--;
+        if (lives <= 0) {
+          handleGameOver();
+        } else {
+          // Brief invincibility by moving player back and up (jump away from trap)
+          player.x = Math.max(50, player.x - 50);
+          if (player.onGround) {
+            player.velocityY = JUMP_FORCE * 0.7; // Smaller jump to escape trap
+            player.onGround = false;
+            player.animation = 'jump';
+          }
+        }
+      }
+    });
+    
     // Collision detection - projectiles vs enemies
     projectiles.forEach((projectile, projIndex) => {
       enemies.forEach((enemy, enemyIndex) => {
@@ -265,9 +320,19 @@
       });
     });
     
-    // Spawn enemies periodically (less frequently at start)
-    if (Math.random() < Math.min(0.002 + survivalTime * 0.0001, 0.01)) {
+    // Spawn enemies more frequently (increased spawn rate)
+    if (Math.random() < Math.min(0.008 + survivalTime * 0.0005, 0.025)) {
       spawnEnemy();
+    }
+    
+    // Spawn coins more frequently
+    if (Math.random() < Math.min(0.006 + survivalTime * 0.0003, 0.018)) {
+      spawnCoin();
+    }
+    
+    // Spawn traps occasionally 
+    if (Math.random() < Math.min(0.003 + survivalTime * 0.0002, 0.012)) {
+      spawnTrap();
     }
   }
   
@@ -340,6 +405,29 @@
       }
     });
     
+    // Draw traps
+    traps.forEach(trap => {
+      if (loadedImages.trap) {
+        ctx.drawImage(loadedImages.trap, trap.x, trap.y, trap.width, trap.height);
+      } else {
+        // Fallback trap spikes
+        ctx.fillStyle = '#8b0000';
+        ctx.fillRect(trap.x, trap.y, trap.width, trap.height);
+        // Draw spike pattern
+        ctx.fillStyle = '#ff0000';
+        const spikeCount = 4;
+        const spikeWidth = trap.width / spikeCount;
+        for (let i = 0; i < spikeCount; i++) {
+          ctx.beginPath();
+          ctx.moveTo(trap.x + i * spikeWidth, trap.y + trap.height);
+          ctx.lineTo(trap.x + i * spikeWidth + spikeWidth/2, trap.y);
+          ctx.lineTo(trap.x + (i + 1) * spikeWidth, trap.y + trap.height);
+          ctx.closePath();
+          ctx.fill();
+        }
+      }
+    });
+    
     // Draw projectiles
     projectiles.forEach(projectile => {
       if (loadedImages.attackEffect) {
@@ -373,13 +461,18 @@
     
     const result = await PopupStore.open({
       title: $t("gameOver"),
-      content: `🎮 Game Over! 🎮
-
-⏱️ Survival Time: ${formatTime(survivalTime)}
-🪙 Coins Collected: ${coins}
-🎯 Final Score: ${score}
-
-Great job! Try again to beat your high score!`,
+      content: `<div style="background: rgba(0,0,0,0.8); color: white; padding: 20px; border-radius: 10px; text-align: center; line-height: 1.8;">
+        <div style="font-size: 1.2em; margin-bottom: 15px;">🎮 Game Over! 🎮</div>
+        
+        <div style="margin: 10px 0;"><strong>⏱️ Survival Time:</strong> ${formatTime(survivalTime)}</div>
+        <div style="margin: 10px 0;"><strong>🪙 Coins Collected:</strong> ${coins}</div>
+        <div style="margin: 10px 0;"><strong>🎯 Final Score:</strong> ${score}</div>
+        <div style="margin: 10px 0;"><strong>⚡ Final Speed:</strong> ${getCurrentScrollSpeed().toFixed(1)}x</div>
+        
+        <div style="margin-top: 20px; font-style: italic; color: #fbbf24;">
+          Great job! Try again to beat your high score!
+        </div>
+      </div>`,
       buttons: [
         {
           text: $t("playAgain"),
@@ -406,14 +499,19 @@ Great job! Try again to beat your high score!`,
       
       const result = await PopupStore.open({
         title: $t("gamePaused"),
-        content: `⏸️ Game Paused ⏸️
-
-⏱️ Time: ${formatTime(survivalTime)}
-🎯 Score: ${score}
-🪙 Coins: ${coins}
-❤️ Lives: ${lives}
-
-Take a break and come back when you're ready!`,
+        content: `<div style="background: rgba(0,0,0,0.8); color: white; padding: 20px; border-radius: 10px; text-align: center; line-height: 1.8;">
+          <div style="font-size: 1.2em; margin-bottom: 15px;">⏸️ Game Paused ⏸️</div>
+          
+          <div style="margin: 10px 0;"><strong>⏱️ Time:</strong> ${formatTime(survivalTime)}</div>
+          <div style="margin: 10px 0;"><strong>🎯 Score:</strong> ${score}</div>
+          <div style="margin: 10px 0;"><strong>🪙 Coins:</strong> ${coins}</div>
+          <div style="margin: 10px 0;"><strong>❤️ Lives:</strong> ${lives}</div>
+          <div style="margin: 10px 0;"><strong>⚡ Current Speed:</strong> ${getCurrentScrollSpeed().toFixed(1)}x</div>
+          
+          <div style="margin-top: 20px; font-style: italic; color: #fbbf24;">
+            Take a break and come back when you're ready!
+          </div>
+        </div>`,
         buttons: [
           {
             text: $t("resume"),

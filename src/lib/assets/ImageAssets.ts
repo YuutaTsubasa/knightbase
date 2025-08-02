@@ -17,4 +17,5 @@ export const imageAssets: Record<string, string> = {
   attackEffect: '/assets/images/attackEffect.webp',
   enemy: '/assets/images/enemy.webp',
   coin: '/assets/images/coin.webp',
+  trap: '/assets/images/trap.webp',
 };
