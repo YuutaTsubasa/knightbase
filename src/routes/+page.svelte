@@ -53,7 +53,7 @@
     justify-content: center;
 
     width: 50%;
-    height: 100px;
+    height: 20%;
   }
 
   .logoBox :global(.logo) {

@@ -12,7 +12,9 @@
   import { AudioManager } from "$lib/systems/AudioManager";
   import { t } from "$lib/assets/LocalizationAssets";
   import { get, writable, type Writable } from "svelte/store";
-    import { format } from "$lib/utils/StringUtils";
+  import { format } from "$lib/utils/StringUtils";
+  import { isPortrait } from "$lib/systems/Orientation";
+  import { CoinsIcon, DiamondIcon, GemIcon } from "lucide-svelte";
 
   let playerData = $playerStore;
 
@@ -34,31 +36,38 @@
     <Video key="titleBackground" />
   </div>
 
-  <PlayerInfoBox level={playerLevel} expPercent={playerExperience} name={playerName} title={$t(playerTitle)} />
-  <div class="rightTopSection">
-    <ResourceBar
-      resources={[
-        { key: "coin", amount: "33645678" },
-        { key: "diamond", amount: "25000", onAdd: () => console.log("add ticket") },
-        { key: "gem", amount: "124680", onAdd: () => console.log("add gem") },
-      ]}
-  />
+  <div class="mainMenuLayout" class:portrait={$isPortrait} class:landscape={!$isPortrait}>
+    <div class="playerInfoContainer">
+      <PlayerInfoBox level={playerLevel} expPercent={playerExperience} name={playerName} title={$t(playerTitle)} />
+    </div>
+    <div class="resourceContainer">
+      <ResourceBar
+        resources={[
+          { key: CoinsIcon, amount: "33645678", color: "gold" },
+          { key: DiamondIcon, amount: "25000", color:"lightblue", onAdd: () => console.log("add ticket") },
+          { key: GemIcon, amount: "124680", color:"lightpink", onAdd: () => console.log("add gem") },
+        ]}
+      />
+    </div>
+    <div class="bannerContainer">
+      <BannerCarousel banners={[
+        { key: 'banner01' },
+        { key: 'banner02' }
+      ]} />
+    </div>
+     <div class="buttonContainer">
+      <MainMenuButtonGroup progressText={format($t("stageProgress"), $t("none"))}
+        isPortrait={$isPortrait}
+        onBattle={() => { 
+          AudioManager.play("sfx_confirm");
+          goToNextScene?.set("/battlemenu"); 
+        }}
+        onSettings={() => { 
+          AudioManager.play("sfx_confirm");
+          goToNextScene?.set("/settings"); 
+        }} />
+    </div>
   </div>
-  
-  <BannerCarousel banners={[
-    { key: 'banner01' },
-    { key: 'banner02' }
-  ]} />
-
-  <MainMenuButtonGroup progressText={format($t("stageProgress"), $t("none"))}
-    onBattle={() => { 
-      AudioManager.play("sfx_confirm");
-      goToNextScene?.set("/battlemenu"); 
-    }}
-    onSettings={() => { 
-      AudioManager.play("sfx_confirm");
-      goToNextScene?.set("/settings"); 
-    }} />
 </Page>
 
 <style>
@@ -77,13 +86,51 @@
     z-index: 0;
   }
 
-  .rightTopSection {
-    position: absolute;
-    top: 0.9rem;
-    right: 0.5rem;
+  .mainMenuLayout {
+    position: relative;
+    width: 100%;
+    height: 100vh;
+  }
 
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  .playerInfoContainer {
+    position: absolute;
+    top: 1rem;
+    left: -0.5rem;
+    max-width: 95vw;
+  }
+  
+  .resourceContainer {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+  }
+
+  .portrait .resourceContainer {
+    top: 18vh;
+    left: 1rem;
+  }
+
+  .bannerContainer {
+    position: absolute;
+    left: 1em;
+    bottom: 1em;
+  }
+
+  .portrait .bannerContainer {
+    left: 1rem;
+    top: 33vh;
+  }
+
+  .buttonContainer {
+    position: absolute;
+    bottom: 2vh;
+    right: 2vw;
+    width: 45vw;
+  }
+  
+  .portrait .buttonContainer {
+    bottom: 1rem;
+    right: 0;
+    width: 100%;
   }
 </style>

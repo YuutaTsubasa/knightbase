@@ -38,7 +38,6 @@
     }
 
     updateTranslate();
-    // 恢復輪播
     intervalId = setInterval(() => {
       activeIndex = (activeIndex + 1) % banners.length;
       updateTranslate();
@@ -108,9 +107,6 @@
 
 <style>
   .banner-box {
-    position: absolute;
-    bottom: 1rem;
-    left: 1rem;
     overflow: hidden;
   }
 

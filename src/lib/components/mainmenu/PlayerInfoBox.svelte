@@ -29,9 +29,6 @@
 
 <style>
   .playerInfoBox {
-    position: absolute;
-    top: 1rem;
-    left: -0.5rem;
     display: flex;
     align-items: center;
     gap: 1rem;
@@ -40,18 +37,19 @@
     border-radius: 0.75rem;
     backdrop-filter: blur(6px);
     color: white;
+    height: 8vh;
   }
 
   .expRing {
-    width: 60px;
-    height: 60px;
+    aspect-ratio: 1 / 1;
+    min-height: 130%;
   }
 
   svg {
-    width: 150%;
-    height: 150%;
-    margin-top: -25%;
-    margin-left: -25%;
+    aspect-ratio: 1 / 1;
+    height: 130%;
+    margin-left: -15%;
+    margin-top: -15%;
   }
 
   circle.bg {
@@ -84,11 +82,11 @@
 
   .name {
     font-weight: bold;
-    font-size: 1.1rem;
+    font-size: min(6vw, 5vh, 1.3rem);
   }
 
   .title {
-    font-size: 0.9rem;
+    font-size: min(3.6vw, 3vh, 0.78rem);
     opacity: 0.8;
   }
 </style>
