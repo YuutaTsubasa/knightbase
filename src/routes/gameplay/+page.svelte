@@ -6,6 +6,7 @@
   import { waitUntil } from "$lib/utils/Wait";
   import { get, writable, type Writable } from "svelte/store";
   import { onMount } from "svelte";
+  import { PopupStore, PopupResult } from "$lib/systems/PopupStore";
 
   let goToNextScene: Writable<string | null>;
   let canvas: HTMLCanvasElement;
@@ -31,9 +32,12 @@
     animationTimer: 0
   };
   
+  // Background scrolling
+  let backgroundOffset = 0;
+  
   let enemies: Array<{x: number, y: number, width: number, height: number}> = [];
   let gameCoins: Array<{x: number, y: number, width: number, height: number, collected: boolean}> = [];
-  let projectiles: Array<{x: number, y: number, width: number, height: number, velocityX: number}> = [];
+  let projectiles: Array<{x: number, y: number, width: number, height: number, velocityX: number, animationFrame: number, animationTimer: number}> = [];
   
   // Game settings
   const GRAVITY = 0.8;
@@ -81,6 +85,7 @@
     coins = 0;
     lives = 3;
     isPaused = false;
+    backgroundOffset = 0;
     
     // Reset player
     player = {
@@ -131,7 +136,9 @@
         y: player.y + player.height / 2,
         width: 32,
         height: 16,
-        velocityX: 8
+        velocityX: 8,
+        animationFrame: 0,
+        animationTimer: 0
       });
     }
   }
@@ -150,6 +157,9 @@
     
     survivalTime += deltaTime / 1000;
     
+    // Update background scrolling
+    backgroundOffset -= SCROLL_SPEED;
+    
     // Update player physics
     player.velocityY += GRAVITY;
     player.y += player.velocityY;
@@ -163,10 +173,10 @@
       }
     }
     
-    // Update animation
+    // Update animation (6 frames per sprite sheet)
     player.animationTimer += deltaTime;
-    if (player.animationTimer > 200) {
-      player.animationFrame = (player.animationFrame + 1) % 4;
+    if (player.animationTimer > 100) { // Faster animation for 6 frames
+      player.animationFrame = (player.animationFrame + 1) % 6;
       player.animationTimer = 0;
       
       if (player.animation === 'attack' && player.animationFrame === 0) {
@@ -188,6 +198,14 @@
     // Update projectiles
     projectiles = projectiles.filter(projectile => {
       projectile.x += projectile.velocityX;
+      
+      // Update projectile animation
+      projectile.animationTimer += deltaTime;
+      if (projectile.animationTimer > 100) {
+        projectile.animationFrame = (projectile.animationFrame + 1) % 6; // Assume 6 frames for attack effect
+        projectile.animationTimer = 0;
+      }
+      
       return projectile.x < canvas.width + 50;
     });
     
@@ -213,7 +231,7 @@
         // Remove the enemy that hit the player
         enemies.splice(enemyIndex, 1);
         if (lives <= 0) {
-          gameState = 'gameOver';
+          handleGameOver();
         } else {
           // Brief invincibility by moving player back
           player.x = Math.max(50, player.x - 50);
@@ -245,9 +263,15 @@
     
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    // Draw background
+    // Draw scrolling background
     if (loadedImages.background) {
-      ctx.drawImage(loadedImages.background, 0, 0, canvas.width, canvas.height);
+      const bgWidth = canvas.width;
+      const bgX1 = backgroundOffset % bgWidth;
+      const bgX2 = bgX1 + bgWidth;
+      
+      // Draw two copies of the background for seamless scrolling
+      ctx.drawImage(loadedImages.background, bgX1, 0, bgWidth, canvas.height);
+      ctx.drawImage(loadedImages.background, bgX2, 0, bgWidth, canvas.height);
     } else {
       // Fallback background
       ctx.fillStyle = '#4a90e2';
@@ -256,13 +280,21 @@
       ctx.fillRect(0, GROUND_Y, canvas.width, canvas.height - GROUND_Y);
     }
     
-    // Draw player
+    // Draw player with sprite sheet animation (6 frames horizontally)
     let playerImage = loadedImages.yuutaRun;
     if (player.animation === 'jump') playerImage = loadedImages.yuutaJump;
     if (player.animation === 'attack') playerImage = loadedImages.yuutaAttack;
     
     if (playerImage) {
-      ctx.drawImage(playerImage, player.x, player.y, player.width, player.height);
+      const frameWidth = playerImage.width / 6; // 6 frames per sprite sheet
+      const frameHeight = playerImage.height;
+      const frameX = player.animationFrame * frameWidth;
+      
+      ctx.drawImage(
+        playerImage,
+        frameX, 0, frameWidth, frameHeight, // Source rectangle (sprite frame)
+        player.x, player.y, player.width, player.height // Destination rectangle
+      );
     } else {
       // Fallback player rectangle
       ctx.fillStyle = '#ff6b6b';
@@ -298,7 +330,15 @@
     // Draw projectiles
     projectiles.forEach(projectile => {
       if (loadedImages.attackEffect) {
-        ctx.drawImage(loadedImages.attackEffect, projectile.x, projectile.y, projectile.width, projectile.height);
+        const frameWidth = loadedImages.attackEffect.width / 6; // Assume 6 frames
+        const frameHeight = loadedImages.attackEffect.height;
+        const frameX = projectile.animationFrame * frameWidth;
+        
+        ctx.drawImage(
+          loadedImages.attackEffect,
+          frameX, 0, frameWidth, frameHeight, // Source rectangle (sprite frame)
+          projectile.x, projectile.y, projectile.width, projectile.height // Destination rectangle
+        );
       } else {
         // Fallback projectile rectangle
         ctx.fillStyle = '#9b59b6';
@@ -315,9 +355,61 @@
     requestAnimationFrame(gameLoop);
   }
   
-  function togglePause() {
-    isPaused = !isPaused;
-    gameState = isPaused ? 'paused' : 'playing';
+  async function handleGameOver() {
+    gameState = 'gameOver';
+    const finalScore = Math.floor(survivalTime * 10 + coins * 50);
+    
+    const result = await PopupStore.open({
+      title: $t("gameOver"),
+      content: `Survival Time: ${formatTime(survivalTime)}\nCoins Collected: ${coins}\nScore: ${finalScore}`,
+      buttons: [
+        {
+          text: $t("playAgain"),
+          onClick: () => {
+            initGame();
+            return PopupResult.Close;
+          }
+        },
+        {
+          text: $t("backToMenu"),
+          onClick: () => {
+            goToNextScene.set("/stage");
+            return PopupResult.Close;
+          }
+        }
+      ]
+    });
+  }
+
+  async function togglePause() {
+    if (gameState === 'playing') {
+      isPaused = true;
+      gameState = 'paused';
+      
+      const result = await PopupStore.open({
+        title: $t("gamePaused"),
+        content: `Time: ${formatTime(survivalTime)}\nCoins: ${coins}\nLives: ${lives}`,
+        buttons: [
+          {
+            text: $t("resume"),
+            onClick: () => PopupResult.Close
+          },
+          {
+            text: $t("quitToMenu"),
+            onClick: () => {
+              goToNextScene.set("/stage");
+              return PopupResult.Close;
+            }
+          }
+        ]
+      });
+      
+      // Resume game if popup was closed without quitting
+      if (gameState === 'paused') {
+        isPaused = false;
+        gameState = 'playing';
+      }
+    }
   }
   
   function formatTime(seconds: number): string {
@@ -418,40 +510,6 @@
       <p>Collect coins and survive as long as possible!</p>
     </div>
   </div>
-
-  <!-- Pause Popup -->
-  {#if gameState === 'paused'}
-    <div class="popup pausePopup">
-      <div class="popupContent">
-        <h2 style={FontAssets.getCssStyle("titleBold")}>Game Paused</h2>
-        <p>Time: {formatTime(survivalTime)}</p>
-        <p>Coins: {coins}</p>
-        <p>Lives: {lives}</p>
-        <div class="popupButtons">
-          <button on:click={togglePause} class="resumeBtn">Resume</button>
-          <button on:click={() => goToNextScene.set("/stage")} class="quitBtn">Quit to Menu</button>
-        </div>
-      </div>
-    </div>
-  {/if}
-
-  <!-- Game Over Popup -->
-  {#if gameState === 'gameOver'}
-    <div class="popup gameOverPopup">
-      <div class="popupContent">
-        <h2 style={FontAssets.getCssStyle("titleBold")}>Game Over!</h2>
-        <div class="finalStats">
-          <p>Survival Time: <strong>{formatTime(survivalTime)}</strong></p>
-          <p>Coins Collected: <strong>{coins}</strong></p>
-          <p>Score: <strong>{Math.floor(survivalTime * 10 + coins * 50)}</strong></p>
-        </div>
-        <div class="popupButtons">
-          <button on:click={initGame} class="restartBtn">Play Again</button>
-          <button on:click={() => goToNextScene.set("/stage")} class="quitBtn">Back to Menu</button>
-        </div>
-      </div>
-    </div>
-  {/if}
 </Page>
 
 <style>
@@ -579,97 +637,6 @@
     color: rgba(255, 255, 255, 0.8);
     font-size: 0.9rem;
     line-height: 1.4;
-  }
-
-  .popup {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.8);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 100;
-    backdrop-filter: blur(10px);
-  }
-
-  .popupContent {
-    background: linear-gradient(135deg, #1f2937 0%, #374151 100%);
-    padding: 2rem;
-    border-radius: 1rem;
-    border: 2px solid #4b5563;
-    text-align: center;
-    min-width: 300px;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
-  }
-
-  .popupContent h2 {
-    margin: 0 0 1.5rem 0;
-    color: #fbbf24;
-    font-size: 2rem;
-  }
-
-  .popupContent p {
-    margin: 0.5rem 0;
-    color: rgba(255, 255, 255, 0.9);
-    font-size: 1.1rem;
-  }
-
-  .finalStats {
-    margin: 1.5rem 0;
-    padding: 1rem;
-    background: rgba(0, 0, 0, 0.3);
-    border-radius: 0.5rem;
-  }
-
-  .finalStats p {
-    margin: 0.8rem 0;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-  .finalStats strong {
-    color: #10b981;
-  }
-
-  .popupButtons {
-    display: flex;
-    gap: 1rem;
-    margin-top: 1.5rem;
-    justify-content: center;
-  }
-
-  .popupButtons button {
-    padding: 0.8rem 1.5rem;
-    border: none;
-    border-radius: 0.5rem;
-    font-size: 1rem;
-    font-weight: bold;
-    cursor: pointer;
-    transition: all 0.3s;
-  }
-
-  .resumeBtn, .restartBtn {
-    background: #10b981;
-    color: white;
-  }
-
-  .resumeBtn:hover, .restartBtn:hover {
-    background: #059669;
-    transform: translateY(-2px);
-  }
-
-  .quitBtn {
-    background: #ef4444;
-    color: white;
-  }
-
-  .quitBtn:hover {
-    background: #dc2626;
-    transform: translateY(-2px);
   }
 
   /* Mobile responsiveness */
