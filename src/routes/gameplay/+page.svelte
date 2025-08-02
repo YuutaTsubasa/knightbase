@@ -15,8 +15,10 @@
   // Game state
   let gameState: 'playing' | 'paused' | 'gameOver' = 'playing';
   let survivalTime = 0;
+  let lastSurvivalSecond = 0;
   let coins = 0;
   let lives = 3;
+  let score = 0;
   let isPaused = false;
   
   // Game entities
@@ -82,8 +84,10 @@
     // Reset game state
     gameState = 'playing';
     survivalTime = 0;
+    lastSurvivalSecond = 0;
     coins = 0;
     lives = 3;
+    score = 0;
     isPaused = false;
     backgroundOffset = 0;
     
@@ -157,6 +161,13 @@
     
     survivalTime += deltaTime / 1000;
     
+    // Award 1 point per second for survival
+    const currentSecond = Math.floor(survivalTime);
+    if (currentSecond > lastSurvivalSecond) {
+      score += (currentSecond - lastSurvivalSecond);
+      lastSurvivalSecond = currentSecond;
+    }
+    
     // Update background scrolling
     backgroundOffset -= SCROLL_SPEED;
     
@@ -218,6 +229,7 @@
           player.y + player.height > coin.y) {
         coin.collected = true;
         coins++;
+        score += 10; // Award 10 points for collecting a coin
       }
     });
     
@@ -248,6 +260,7 @@
             projectile.y + projectile.height > enemy.y) {
           enemies.splice(enemyIndex, 1);
           projectiles.splice(projIndex, 1);
+          score += 10; // Award 10 points for defeating an enemy
         }
       });
     });
@@ -357,11 +370,16 @@
   
   async function handleGameOver() {
     gameState = 'gameOver';
-    const finalScore = Math.floor(survivalTime * 10 + coins * 50);
     
     const result = await PopupStore.open({
       title: $t("gameOver"),
-      content: `Survival Time: ${formatTime(survivalTime)}\nCoins Collected: ${coins}\nScore: ${finalScore}`,
+      content: `🎮 Game Over! 🎮
+
+⏱️ Survival Time: ${formatTime(survivalTime)}
+🪙 Coins Collected: ${coins}
+🎯 Final Score: ${score}
+
+Great job! Try again to beat your high score!`,
       buttons: [
         {
           text: $t("playAgain"),
@@ -388,7 +406,14 @@
       
       const result = await PopupStore.open({
         title: $t("gamePaused"),
-        content: `Time: ${formatTime(survivalTime)}\nCoins: ${coins}\nLives: ${lives}`,
+        content: `⏸️ Game Paused ⏸️
+
+⏱️ Time: ${formatTime(survivalTime)}
+🎯 Score: ${score}
+🪙 Coins: ${coins}
+❤️ Lives: ${lives}
+
+Take a break and come back when you're ready!`,
         buttons: [
           {
             text: $t("resume"),
@@ -416,30 +441,6 @@
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = Math.floor(seconds % 60);
     return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
-  }
-  
-  function handleCanvasTouch(event: TouchEvent) {
-    event.preventDefault();
-    const rect = canvas.getBoundingClientRect();
-    const touch = event.touches[0];
-    const x = touch.clientX - rect.left;
-    
-    if (x < canvas.width / 2) {
-      jump();
-    } else {
-      attack();
-    }
-  }
-  
-  function handleCanvasClick(event: MouseEvent) {
-    const rect = canvas.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    
-    if (x < canvas.width / 2) {
-      jump();
-    } else {
-      attack();
-    }
   }
   
   async function main() {
@@ -472,6 +473,10 @@
             <span class="statValue">{formatTime(survivalTime)}</span>
           </div>
           <div class="statItem">
+            <span class="statLabel">Score:</span>
+            <span class="statValue">{score}</span>
+          </div>
+          <div class="statItem">
             <span class="statLabel">Coins:</span>
             <span class="statValue">{coins}</span>
           </div>
@@ -489,17 +494,15 @@
     <!-- Game Canvas -->
     <canvas 
       bind:this={canvas}
-      on:click={handleCanvasClick}
-      on:touchstart={handleCanvasTouch}
       class="gameCanvas"
     ></canvas>
 
     <!-- Touch Controls Overlay -->
     <div class="touchControls">
-      <div class="touchZone left" on:touchstart={() => jump()}>
+      <div class="touchZone left" on:touchstart={() => jump()} on:click={() => jump()}>
         <span>JUMP</span>
       </div>
-      <div class="touchZone right" on:touchstart={() => attack()}>
+      <div class="touchZone right" on:touchstart={() => attack()} on:click={() => attack()}>
         <span>ATTACK</span>
       </div>
     </div>
@@ -656,11 +659,19 @@
     }
     
     .gameStats {
-      gap: 1rem;
+      gap: 0.75rem;
     }
     
     .statItem {
-      font-size: 0.9rem;
+      font-size: 0.85rem;
+    }
+    
+    .statLabel {
+      font-size: 0.7rem;
+    }
+    
+    .statValue {
+      font-size: 1rem;
     }
     
     .touchZone {
