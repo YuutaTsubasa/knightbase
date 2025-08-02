@@ -53,7 +53,7 @@
 </script>
 
 <Page mainProgress={main} 
-  wrapperStyle="position: relative; background-image: url({imageAssets["backgroundWhite"]}); background-size: cover; background-position: center; background-color: white;"
+  wrapperStyle="background-image: url({imageAssets["backgroundWhite"]}); background-size: cover; background-position: center; background-color: white;"
   contentStyle="box-sizing: border-box; height: 100vh;">
   <slot name="outside">
     <Topbar 

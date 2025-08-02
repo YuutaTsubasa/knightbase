@@ -57,6 +57,7 @@
     </div>
      <div class="buttonContainer">
       <MainMenuButtonGroup progressText={format($t("stageProgress"), $t("none"))}
+        isPortrait={$isPortrait}
         onBattle={() => { 
           AudioManager.play("sfx_confirm");
           goToNextScene?.set("/battlemenu"); 

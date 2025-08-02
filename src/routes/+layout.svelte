@@ -5,6 +5,7 @@
   import { StaticDataStore } from '$lib/systems/StaticDataStore';
   import { page } from '$app/state';
   import { onMount } from 'svelte';
+  let { children } = $props();
 
   FontAssets.preload();
   
@@ -13,6 +14,7 @@
     LocalizationAssets.initialize();
     StaticDataStore.initialize();
   });
+
 
   // Function to update body class
   function updateBodyClass(pathname: string) {
@@ -38,7 +40,7 @@
 </script>
 
 <PopupHost />
-<slot />
+{@render children()}
 
 <link rel="stylesheet" href="/styles/adjustment.css" />
 <link rel="stylesheet" href="/styles/animations.css" />

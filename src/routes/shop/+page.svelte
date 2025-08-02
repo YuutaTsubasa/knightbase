@@ -12,6 +12,7 @@
   import { waitUntil } from "$lib/utils/Wait";
   import { get, writable, type Writable } from "svelte/store";
   import { Coins, Diamond, Gem } from "lucide-svelte";
+  import { format } from "$lib/utils/StringUtils";
 
   $: topbarHeight = 0;
   let activeTab: 'coin' | 'diamond' | 'ruby' = 'coin';
@@ -72,7 +73,10 @@
   async function purchaseItem(item: any) {
     const result = await PopupStore.open({
       title: $t("confirmPurchase"),
-      content: `${$t("confirmPurchaseContent")} ${$t(item.nameKey)} for ${item.price} ${$t(item.currency)}?`,
+      content: format($t("confirmPurchaseContent"),
+        $t(item.nameKey),
+        item.price,
+        $t(item.currency)),
       buttons: [
         {
           text: $t("cancel"),
@@ -109,7 +113,7 @@
 </script>
 
 <Page mainProgress={main} 
-  wrapperStyle="position: relative; background-image: url({imageAssets["backgroundWhite"]}); background-size: cover; background-position: center; background-color: white;"
+  wrapperStyle="background-image: url({imageAssets["backgroundWhite"]}); background-size: cover; background-position: center; background-color: white;"
   contentStyle="box-sizing: border-box; height: 100vh;">
   <slot name="outside">
     <Topbar 

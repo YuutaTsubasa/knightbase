@@ -38,7 +38,7 @@
 </script>
 
 <Page mainProgress={main} 
-  wrapperStyle="position: relative; background: linear-gradient(135deg, #1e293b 0%, #334155 50%, #475569 100%); color: white;"
+  wrapperStyle="background: linear-gradient(135deg, #1e293b 0%, #334155 50%, #475569 100%); color: white;"
   contentStyle="box-sizing: border-box; height: 100vh; display: flex; align-items: center; justify-content: center;">
   
   <div class="gameplayPage">

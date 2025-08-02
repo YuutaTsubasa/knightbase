@@ -3,23 +3,18 @@
 }
 
 /* Route-specific overflow settings for body element */
-body.route-root {
-  overflow: hidden !important;
-}
-
-body.route-title {
-  overflow: hidden !important;
-}
-
-body.route-mainmenu {
+body.route-root,
+body.route-title,
+body.route-mainmenu,
+body.route-battlemenu,
+body.route-character,
+body.route-stage,
+body.route-mission,
+body.route-shop {
   overflow: hidden !important;
 }
 
 body.route-settings {
   overflow-x: hidden !important;
   overflow-y: scroll !important;
-}
-
-body.route-battlemenu {
-  overflow: hidden !important;
 }

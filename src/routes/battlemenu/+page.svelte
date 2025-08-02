@@ -4,7 +4,7 @@
   import { t } from "$lib/assets/LocalizationAssets";
   import Image from "$lib/components/Image.svelte";
   import Page from "$lib/components/Page.svelte";
-    import SpaceBetweenTextGroup from "$lib/components/SpaceBetweenTextGroup.svelte";
+  import SpaceBetweenTextGroup from "$lib/components/SpaceBetweenTextGroup.svelte";
   import Topbar from "$lib/components/Topbar.svelte";
   import { BACK_PATH } from "$lib/utils/Constant";
   import { format } from "$lib/utils/StringUtils";
@@ -27,7 +27,7 @@
 </script>
 
 <Page mainProgress={main} 
-  wrapperStyle="position: relative; background-image: url({imageAssets["backgroundWhite"]}); background-size: cover; background-position: center; background-color: white;"
+  wrapperStyle="background-image: url({imageAssets["backgroundWhite"]}); background-attachment: fixed; background-size: cover; background-position: center; background-color: white;"
   contentStyle="box-sizing: border-box; height: 100vh;">
   <slot name="outside">
     <Topbar 
