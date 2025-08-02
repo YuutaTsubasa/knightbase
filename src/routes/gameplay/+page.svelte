@@ -462,15 +462,15 @@
     const result = await PopupStore.open({
       title: $t("gameOver"),
       content: `<div style="background: rgba(0,0,0,0.8); color: white; padding: 20px; border-radius: 10px; text-align: center; line-height: 1.8;">
-        <div style="font-size: 1.2em; margin-bottom: 15px;">🎮 Game Over! 🎮</div>
+        <div style="font-size: 1.2em; margin-bottom: 15px;">${$t("gameOverTitle")}</div>
         
-        <div style="margin: 10px 0;"><strong>⏱️ Survival Time:</strong> ${formatTime(survivalTime)}</div>
-        <div style="margin: 10px 0;"><strong>🪙 Coins Collected:</strong> ${coins}</div>
-        <div style="margin: 10px 0;"><strong>🎯 Final Score:</strong> ${score}</div>
-        <div style="margin: 10px 0;"><strong>⚡ Final Speed:</strong> ${getCurrentScrollSpeed().toFixed(1)}x</div>
+        <div style="margin: 10px 0;"><strong>${$t("survivalTimeLabel")}:</strong> ${formatTime(survivalTime)}</div>
+        <div style="margin: 10px 0;"><strong>${$t("coinsCollectedLabel")}:</strong> ${coins}</div>
+        <div style="margin: 10px 0;"><strong>${$t("finalScoreLabel")}:</strong> ${score}</div>
+        <div style="margin: 10px 0;"><strong>${$t("finalSpeedLabel")}:</strong> ${getCurrentScrollSpeed().toFixed(1)}x</div>
         
         <div style="margin-top: 20px; font-style: italic; color: #fbbf24;">
-          Great job! Try again to beat your high score!
+          ${$t("encouragementMessage")}
         </div>
       </div>`,
       buttons: [
@@ -500,16 +500,16 @@
       const result = await PopupStore.open({
         title: $t("gamePaused"),
         content: `<div style="background: rgba(0,0,0,0.8); color: white; padding: 20px; border-radius: 10px; text-align: center; line-height: 1.8;">
-          <div style="font-size: 1.2em; margin-bottom: 15px;">⏸️ Game Paused ⏸️</div>
+          <div style="font-size: 1.2em; margin-bottom: 15px;">${$t("gamePausedTitle")}</div>
           
-          <div style="margin: 10px 0;"><strong>⏱️ Time:</strong> ${formatTime(survivalTime)}</div>
-          <div style="margin: 10px 0;"><strong>🎯 Score:</strong> ${score}</div>
-          <div style="margin: 10px 0;"><strong>🪙 Coins:</strong> ${coins}</div>
-          <div style="margin: 10px 0;"><strong>❤️ Lives:</strong> ${lives}</div>
-          <div style="margin: 10px 0;"><strong>⚡ Current Speed:</strong> ${getCurrentScrollSpeed().toFixed(1)}x</div>
+          <div style="margin: 10px 0;"><strong>${$t("pauseTimeLabel")}:</strong> ${formatTime(survivalTime)}</div>
+          <div style="margin: 10px 0;"><strong>${$t("pauseScoreLabel")}:</strong> ${score}</div>
+          <div style="margin: 10px 0;"><strong>${$t("pauseCoinsLabel")}:</strong> ${coins}</div>
+          <div style="margin: 10px 0;"><strong>${$t("pauseLivesLabel")}:</strong> ${lives}</div>
+          <div style="margin: 10px 0;"><strong>${$t("currentSpeedLabel")}:</strong> ${getCurrentScrollSpeed().toFixed(1)}x</div>
           
           <div style="margin-top: 20px; font-style: italic; color: #fbbf24;">
-            Take a break and come back when you're ready!
+            ${$t("pauseMessage")}
           </div>
         </div>`,
         buttons: [
@@ -567,19 +567,19 @@
       <div class="topUI">
         <div class="gameStats">
           <div class="statItem">
-            <span class="statLabel">Time:</span>
+            <span class="statLabel">{$t("timeLabel")}:</span>
             <span class="statValue">{formatTime(survivalTime)}</span>
           </div>
           <div class="statItem">
-            <span class="statLabel">Score:</span>
+            <span class="statLabel">{$t("scoreLabel")}:</span>
             <span class="statValue">{score}</span>
           </div>
           <div class="statItem">
-            <span class="statLabel">Coins:</span>
+            <span class="statLabel">{$t("coinsLabel")}:</span>
             <span class="statValue">{coins}</span>
           </div>
           <div class="statItem">
-            <span class="statLabel">Lives:</span>
+            <span class="statLabel">{$t("livesLabel")}:</span>
             <span class="statValue">{'❤️'.repeat(lives)}</span>
           </div>
         </div>
@@ -607,8 +607,8 @@
 
     <!-- Game Instructions -->
     <div class="instructions">
-      <p>Touch left side to JUMP • Touch right side to ATTACK</p>
-      <p>Collect coins and survive as long as possible!</p>
+      <p>{$t("touchControlsInstruction")}</p>
+      <p>{$t("gameObjective")}</p>
     </div>
   </div>
 </Page>
