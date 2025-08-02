@@ -7,7 +7,7 @@
   import { get, writable, type Writable } from "svelte/store";
   import { onMount } from "svelte";
   import { PopupStore, PopupResult } from "$lib/systems/PopupStore";
-  import { Play, Pause, Heart } from "lucide-svelte";
+  import { Play, Pause, Heart, Keyboard, Mouse, Gamepad2, ArrowUpFromLine, Sword } from "lucide-svelte";
 
   let goToNextScene: Writable<string | null>;
   let canvas: HTMLCanvasElement;
@@ -160,6 +160,7 @@
   function initGame() {
     if (!canvas || !ctx) return;
     
+    // Set canvas internal resolution
     canvas.width = 800;
     canvas.height = 600;
     
@@ -309,6 +310,11 @@
     // Update player physics
     player.velocityY += GRAVITY;
     player.y += player.velocityY;
+    
+    // Add horizontal movement during jump to help clear obstacles
+    if (!player.onGround && player.velocityY < 0) {
+      player.x += currentScrollSpeed * 1.2; // Move slightly faster than scroll speed when jumping up
+    }
     
     if (player.y >= GROUND_Y - player.height) {
       player.y = GROUND_Y - player.height;
@@ -571,8 +577,6 @@
     const result = await PopupStore.open({
       title: $t("gameOver"),
       content: `<div style="background: rgba(0,0,0,0.8); color: white; padding: 20px; border-radius: 10px; text-align: center; line-height: 1.8;">
-        <div style="font-size: 1.2em; margin-bottom: 15px;">${$t("gameOverTitle")}</div>
-        
         <div style="margin: 10px 0;"><strong>${$t("survivalTimeLabel")}:</strong> ${formatTime(survivalTime)}</div>
         <div style="margin: 10px 0;"><strong>${$t("coinsCollectedLabel")}:</strong> ${coins}</div>
         <div style="margin: 10px 0;"><strong>${$t("finalScoreLabel")}:</strong> ${score}</div>
@@ -609,8 +613,6 @@
       const result = await PopupStore.open({
         title: $t("gamePaused"),
         content: `<div style="background: rgba(0,0,0,0.8); color: white; padding: 20px; border-radius: 10px; text-align: center; line-height: 1.8;">
-          <div style="font-size: 1.2em; margin-bottom: 15px;">${$t("gamePausedTitle")}</div>
-          
           <div style="margin: 10px 0;"><strong>${$t("pauseTimeLabel")}:</strong> ${formatTime(survivalTime)}</div>
           <div style="margin: 10px 0;"><strong>${$t("pauseScoreLabel")}:</strong> ${score}</div>
           <div style="margin: 10px 0;"><strong>${$t("pauseCoinsLabel")}:</strong> ${coins}</div>
@@ -671,18 +673,18 @@
     return get(goToNextScene) ?? "/stage";
   }
 
-  onMount(async () => {
+  onMount(() => {
     if (canvas) {
       ctx = canvas.getContext('2d')!;
-      await loadAssets();
-      
-      // Setup input event listeners
-      window.addEventListener('keydown', handleKeyDown);
-      window.addEventListener('keyup', handleKeyUp);
-      setupGamepadSupport();
-      
-      initGame();
-      gameLoop();
+      loadAssets().then(() => {
+        // Setup input event listeners
+        window.addEventListener('keydown', handleKeyDown);
+        window.addEventListener('keyup', handleKeyUp);
+        setupGamepadSupport();
+        
+        initGame();
+        gameLoop();
+      });
     }
     
     // Cleanup event listeners on unmount
@@ -739,22 +741,50 @@
       class="gameCanvas"
     ></canvas>
 
-    <!-- Touch Controls Overlay -->
+    <!-- Hidden Touch Controls (without text overlay) -->
     <div class="touchControls">
-      <div class="touchZone left" on:touchstart={() => jump()} on:click={() => jump()}>
-        <span>JUMP</span>
-      </div>
-      <div class="touchZone right" on:touchstart={() => attack()} on:click={() => attack()}>
-        <span>ATTACK</span>
-      </div>
+      <div class="touchZone left" 
+           role="button" 
+           tabindex="0" 
+           on:touchstart={() => jump()} 
+           on:click={() => jump()}
+           on:keydown={(e) => e.key === 'Enter' && jump()}
+           aria-label="Jump"></div>
+      <div class="touchZone right" 
+           role="button" 
+           tabindex="0" 
+           on:touchstart={() => attack()} 
+           on:click={() => attack()}
+           on:keydown={(e) => e.key === 'Enter' && attack()}
+           aria-label="Attack"></div>
     </div>
 
-    <!-- Game Instructions -->
+    <!-- Game Instructions with Lucide Icons -->
     <div class="instructions">
-      <p>{$t("touchControlsInstruction")}</p>
-      <p>Keyboard: Space/W/↑ = Jump, Enter/X/Z/→/D = Attack, P/Esc = Pause</p>
-      <p>Controller: A = Jump, B/X = Attack, Start = Pause</p>
-      <p>{$t("gameObjective")}</p>
+      <div class="objective">
+        <strong>{$t("gameObjective")}</strong>
+      </div>
+      <div class="controlsTable">
+        <div class="controlsRow">
+          <div class="controlsHeader">
+            <div class="inputMethod"><Keyboard size={16} /> Keyboard</div>
+            <div class="inputMethod"><Mouse size={16} /> Mouse/Touch</div>
+            <div class="inputMethod"><Gamepad2 size={16} /> Controller</div>
+          </div>
+        </div>
+        <div class="controlsRow">
+          <div class="actionIcon"><ArrowUpFromLine size={16} /> Jump</div>
+          <div class="controlMethod">Space / W / ↑</div>
+          <div class="controlMethod">Left Side Tap</div>
+          <div class="controlMethod">A Button</div>
+        </div>
+        <div class="controlsRow">
+          <div class="actionIcon"><Sword size={16} /> Attack</div>
+          <div class="controlMethod">Enter / X / Z / D / →</div>
+          <div class="controlMethod">Right Side Tap</div>
+          <div class="controlMethod">B / X Button</div>
+        </div>
+      </div>
     </div>
   </div>
 </Page>
@@ -783,13 +813,15 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background-image: url('{imageAssets.backgroundWhiteButton}');
-    background-size: cover;
-    background-position: 50% 15%;
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9));
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(148, 163, 184, 0.3);
+    box-shadow: 
+      0 0 20px rgba(59, 130, 246, 0.3),
+      inset 0 1px 0 rgba(148, 163, 184, 0.1);
     color: white;
     padding: 0.5rem 1rem;
-    border-radius: 0.5rem;
-    backdrop-filter: blur(10px);
+    border-radius: 0.75rem;
     position: relative;
     overflow: hidden;
   }
@@ -798,10 +830,14 @@
     content: "";
     position: absolute;
     inset: 0;
-    background-color: #0000ff;
-    mix-blend-mode: multiply;
-    opacity: 1;
+    background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.1), transparent);
+    animation: techScan 3s ease-in-out infinite;
     z-index: 1;
+  }
+
+  @keyframes techScan {
+    0%, 100% { transform: translateX(-100%); }
+    50% { transform: translateX(100%); }
   }
 
   .topUI > * {
@@ -855,13 +891,16 @@
   }
 
   .gameCanvas {
-    border: 2px solid #374151;
+    border: 2px solid rgba(148, 163, 184, 0.3);
     border-radius: 0.5rem;
     background: #000;
     margin-top: 4rem;
     cursor: pointer;
-    max-width: 100%;
-    max-height: calc(100vh - 200px);
+    width: 100%;
+    height: calc(100vh - 300px);
+    object-fit: contain;
+    max-width: 800px;
+    max-height: 600px;
   }
 
   .touchControls {
@@ -869,7 +908,7 @@
     top: 4rem;
     left: 0;
     right: 0;
-    bottom: 100px;
+    bottom: 200px;
     display: flex;
     pointer-events: none;
     z-index: 5;
@@ -880,26 +919,23 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(255, 255, 255, 0.05);
-    border: 2px dashed rgba(0, 0, 0, 0.5);
-    color: rgba(0, 0, 0, 0.8);
-    font-size: 1.2rem;
-    font-weight: bold;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px dashed rgba(148, 163, 184, 0.2);
     pointer-events: auto;
     cursor: pointer;
     transition: background 0.3s;
   }
 
   .touchZone:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(59, 130, 246, 0.1);
   }
 
   .touchZone.left {
-    border-right: 1px dashed rgba(0, 0, 0, 0.5);
+    border-right: 1px dashed rgba(148, 163, 184, 0.2);
   }
 
   .touchZone.right {
-    border-left: 1px dashed rgba(0, 0, 0, 0.5);
+    border-left: 1px dashed rgba(148, 163, 184, 0.2);
   }
 
   .instructions {
@@ -909,11 +945,61 @@
     transform: translateX(-50%);
     text-align: center;
     color: white;
-    background: rgba(0, 0, 0, 0.7);
-    padding: 0.5rem 1rem;
-    border-radius: 0.5rem;
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9));
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(148, 163, 184, 0.3);
+    padding: 1rem;
+    border-radius: 0.75rem;
     font-size: 0.9rem;
     line-height: 1.4;
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.2);
+    max-width: 90%;
+  }
+
+  .objective {
+    margin-bottom: 1rem;
+    color: #fbbf24;
+    font-weight: bold;
+  }
+
+  .controlsTable {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .controlsRow {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
+  .controlsHeader {
+    display: contents;
+  }
+
+  .inputMethod, .actionIcon, .controlMethod {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.5rem;
+    background: rgba(59, 130, 246, 0.1);
+    border-radius: 0.25rem;
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    font-size: 0.8rem;
+  }
+
+  .actionIcon {
+    background: rgba(34, 197, 94, 0.1);
+    border-color: rgba(34, 197, 94, 0.3);
+  }
+
+  .inputMethod {
+    background: rgba(168, 85, 247, 0.1);
+    border-color: rgba(168, 85, 247, 0.3);
+    font-weight: bold;
   }
 
   /* Mobile responsiveness */
@@ -924,12 +1010,12 @@
     
     .gameCanvas {
       margin-top: 5rem;
-      max-height: calc(100vh - 250px);
+      height: calc(100vh - 350px);
     }
     
     .touchControls {
       top: 5rem;
-      bottom: 80px;
+      bottom: 250px;
     }
     
     .gameStats {
@@ -948,13 +1034,24 @@
       font-size: 1rem;
     }
     
-    .touchZone {
-      font-size: 1rem;
-    }
-    
     .instructions {
       font-size: 0.8rem;
-      padding: 0 1rem;
+      padding: 0.75rem;
+      max-width: 95%;
+    }
+
+    .controlsRow {
+      grid-template-columns: 1fr;
+      gap: 0.25rem;
+    }
+
+    .controlsHeader .inputMethod {
+      display: none;
+    }
+
+    .actionIcon, .controlMethod {
+      font-size: 0.7rem;
+      padding: 0.2rem 0.4rem;
     }
   }
 </style>
