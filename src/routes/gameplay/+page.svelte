@@ -7,6 +7,7 @@
   import { get, writable, type Writable } from "svelte/store";
   import { onMount } from "svelte";
   import { PopupStore, PopupResult } from "$lib/systems/PopupStore";
+  import { Play, Pause, Heart } from "lucide-svelte";
 
   let goToNextScene: Writable<string | null>;
   let canvas: HTMLCanvasElement;
@@ -21,12 +22,12 @@
   let score = 0;
   let isPaused = false;
   
-  // Game entities
+  // Game entities (doubled size)
   let player = {
     x: 100,
     y: 300,
-    width: 64,
-    height: 64,
+    width: 128,
+    height: 128,
     velocityY: 0,
     onGround: false,
     animation: 'run',
@@ -37,7 +38,7 @@
   // Background scrolling
   let backgroundOffset = 0;
   
-  let enemies: Array<{x: number, y: number, width: number, height: number}> = [];
+  let enemies: Array<{x: number, y: number, width: number, height: number, facingLeft: boolean}> = [];
   let gameCoins: Array<{x: number, y: number, width: number, height: number, collected: boolean}> = [];
   let projectiles: Array<{x: number, y: number, width: number, height: number, velocityX: number, animationFrame: number, animationTimer: number}> = [];
   let traps: Array<{x: number, y: number, width: number, height: number}> = [];
@@ -51,6 +52,10 @@
   // Asset loading
   let assetsLoaded = false;
   let loadedImages: Record<string, HTMLImageElement> = {};
+  
+  // Input handling
+  let keysPressed: Record<string, boolean> = {};
+  let gamepadIndex: number | null = null;
   
   async function loadAssets() {
     const imagePromises = Object.entries({
@@ -77,6 +82,72 @@
     assetsLoaded = true;
   }
   
+  // Input handling functions
+  function handleKeyDown(event: KeyboardEvent) {
+    keysPressed[event.code] = true;
+    
+    switch(event.code) {
+      case 'Space':
+      case 'ArrowUp':
+      case 'KeyW':
+        event.preventDefault();
+        jump();
+        break;
+      case 'ArrowRight':
+      case 'KeyD':
+      case 'Enter':
+      case 'KeyX':
+      case 'KeyZ':
+        event.preventDefault();
+        attack();
+        break;
+      case 'Escape':
+      case 'KeyP':
+        event.preventDefault();
+        togglePause();
+        break;
+    }
+  }
+  
+  function handleKeyUp(event: KeyboardEvent) {
+    keysPressed[event.code] = false;
+  }
+  
+  function setupGamepadSupport() {
+    // Check for gamepad connection
+    window.addEventListener('gamepadconnected', (e) => {
+      console.log('Gamepad connected:', e.gamepad);
+      gamepadIndex = e.gamepad.index;
+    });
+    
+    window.addEventListener('gamepaddisconnected', (e) => {
+      console.log('Gamepad disconnected:', e.gamepad);
+      if (gamepadIndex === e.gamepad.index) {
+        gamepadIndex = null;
+      }
+    });
+  }
+  
+  function handleGamepadInput() {
+    if (gamepadIndex === null) return;
+    
+    const gamepads = navigator.getGamepads();
+    const gamepad = gamepads[gamepadIndex];
+    
+    if (!gamepad) return;
+    
+    // Button mapping: A button (0) = jump, B button (1) = attack, Start button (9) = pause
+    if (gamepad.buttons[0]?.pressed) {
+      jump();
+    }
+    if (gamepad.buttons[1]?.pressed || gamepad.buttons[2]?.pressed) {
+      attack();
+    }
+    if (gamepad.buttons[9]?.pressed) {
+      togglePause();
+    }
+  }
+  
   function initGame() {
     if (!canvas || !ctx) return;
     
@@ -93,12 +164,12 @@
     isPaused = false;
     backgroundOffset = 0;
     
-    // Reset player
+    // Reset player (doubled size)
     player = {
       x: 100,
-      y: GROUND_Y - 64,
-      width: 64,
-      height: 64,
+      y: GROUND_Y - 128,
+      width: 128,
+      height: 128,
       velocityY: 0,
       onGround: true,
       animation: 'run',
@@ -112,13 +183,13 @@
     projectiles = [];
     traps = [];
     
-    // Spawn initial coins
+    // Spawn initial coins (doubled size)
     for (let i = 0; i < 5; i++) {
       gameCoins.push({
         x: 300 + i * 200,
         y: GROUND_Y - 100 - Math.random() * 100,
-        width: 32,
-        height: 32,
+        width: 64,
+        height: 64,
         collected: false
       });
     }
@@ -137,12 +208,12 @@
       player.animation = 'attack';
       player.animationTimer = 0;
       
-      // Create projectile
+      // Create projectile (doubled size)
       projectiles.push({
         x: player.x + player.width,
         y: player.y + player.height / 2,
-        width: 32,
-        height: 16,
+        width: 64,
+        height: 32,
         velocityX: 8,
         animationFrame: 0,
         animationTimer: 0
@@ -153,9 +224,10 @@
   function spawnEnemy() {
     enemies.push({
       x: canvas.width + 50,
-      y: GROUND_Y - 48,
-      width: 48,
-      height: 48
+      y: GROUND_Y - 96,
+      width: 96,
+      height: 96,
+      facingLeft: true
     });
   }
   
@@ -163,8 +235,8 @@
     gameCoins.push({
       x: canvas.width + 50 + Math.random() * 200,
       y: GROUND_Y - 100 - Math.random() * 100,
-      width: 32,
-      height: 32,
+      width: 64,
+      height: 64,
       collected: false
     });
   }
@@ -172,9 +244,9 @@
   function spawnTrap() {
     traps.push({
       x: canvas.width + 50,
-      y: GROUND_Y - 32,
-      width: 64,
-      height: 32
+      y: GROUND_Y - 48,
+      width: 128,
+      height: 48
     });
   }
   
@@ -379,10 +451,17 @@
       ctx.fillRect(player.x, player.y, player.width, player.height);
     }
     
-    // Draw enemies
+    // Draw enemies with horizontal flipping
     enemies.forEach(enemy => {
       if (loadedImages.enemy) {
-        ctx.drawImage(loadedImages.enemy, enemy.x, enemy.y, enemy.width, enemy.height);
+        ctx.save();
+        if (enemy.facingLeft) {
+          ctx.scale(-1, 1);
+          ctx.drawImage(loadedImages.enemy, -enemy.x - enemy.width, enemy.y, enemy.width, enemy.height);
+        } else {
+          ctx.drawImage(loadedImages.enemy, enemy.x, enemy.y, enemy.width, enemy.height);
+        }
+        ctx.restore();
       } else {
         // Fallback enemy rectangle
         ctx.fillStyle = '#e74c3c';
@@ -450,6 +529,7 @@
   
   function gameLoop() {
     if (!isPaused) {
+      handleGamepadInput(); // Check gamepad input each frame
       updateGame(16.67); // Approximately 60 FPS
     }
     render();
@@ -551,14 +631,26 @@
     if (canvas) {
       ctx = canvas.getContext('2d')!;
       await loadAssets();
+      
+      // Setup input event listeners
+      window.addEventListener('keydown', handleKeyDown);
+      window.addEventListener('keyup', handleKeyUp);
+      setupGamepadSupport();
+      
       initGame();
       gameLoop();
     }
+    
+    // Cleanup event listeners on unmount
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
   });
 </script>
 
 <Page mainProgress={main} 
-  wrapperStyle="background: #000; color: white; overflow: hidden;"
+  wrapperStyle="background-image: url({imageAssets.backgroundWhite}); background-size: cover; background-position: center; background-color: white;"
   contentStyle="box-sizing: border-box; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative;">
   
   <div class="gameContainer">
@@ -580,11 +672,19 @@
           </div>
           <div class="statItem">
             <span class="statLabel">{$t("livesLabel")}:</span>
-            <span class="statValue">{'❤️'.repeat(lives)}</span>
+            <span class="statValue">
+              {#each Array(lives) as _, i}
+                <Heart size={16} fill="currentColor" class="heartIcon" />
+              {/each}
+            </span>
           </div>
         </div>
         <button class="pauseBtn" on:click={togglePause}>
-          {isPaused ? '▶️' : '⏸️'}
+          {#if isPaused}
+            <Play size={20} />
+          {:else}
+            <Pause size={20} />
+          {/if}
         </button>
       </div>
     </div>
@@ -608,6 +708,8 @@
     <!-- Game Instructions -->
     <div class="instructions">
       <p>{$t("touchControlsInstruction")}</p>
+      <p>Keyboard: Space/W/↑ = Jump, Enter/X/Z/→/D = Attack, P/Esc = Pause</p>
+      <p>Controller: A = Jump, B/X = Attack, Start = Pause</p>
       <p>{$t("gameObjective")}</p>
     </div>
   </div>
@@ -637,7 +739,10 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: rgba(0, 0, 0, 0.8);
+    background-image: url('{imageAssets.backgroundWhiteButton}');
+    background-size: cover;
+    background-position: center;
+    color: white;
     padding: 0.5rem 1rem;
     border-radius: 0.5rem;
     backdrop-filter: blur(10px);
@@ -657,13 +762,20 @@
 
   .statLabel {
     font-size: 0.8rem;
-    color: rgba(255, 255, 255, 0.7);
+    color: rgba(255, 255, 255, 0.9);
   }
 
   .statValue {
     font-size: 1.1rem;
     font-weight: bold;
     color: #fbbf24;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  .statValue :global(.heartIcon) {
+    color: #ef4444;
   }
 
   .pauseBtn {
@@ -735,7 +847,10 @@
     left: 50%;
     transform: translateX(-50%);
     text-align: center;
-    color: rgba(255, 255, 255, 0.8);
+    color: white;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
     font-size: 0.9rem;
     line-height: 1.4;
   }
