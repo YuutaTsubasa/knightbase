@@ -2,6 +2,7 @@
   import { FontAssets } from "$lib/assets/FontAssets";
   import { imageAssets } from "$lib/assets/ImageAssets";
   import { t } from "$lib/assets/LocalizationAssets";
+  import { StaticDataStore } from "$lib/systems/StaticDataStore";
   import Image from "$lib/components/Image.svelte";
   import Page from "$lib/components/Page.svelte";
   import Button from "$lib/components/Button.svelte";
@@ -15,86 +16,46 @@
   $: topbarHeight = 0;
   let activeTab: 'coin' | 'diamond' | 'ruby' = 'coin';
 
-  // Mock shop data
+  // Shop data from StaticDataStore
+  const { shopData, itemData } = StaticDataStore;
+  $: shopDataValues = $shopData;
+  $: itemDataValues = $itemData;
+
+  // Map shop categories: 1=coin, 2=diamond, 3=ruby
   $: shops = {
-    coin: [
-      {
-        id: 1,
-        nameKey: "smallHealingPotion",
-        descriptionKey: "smallHealingPotionDesc",
-        iconKey: "healingPotion",
-        price: 100,
+    coin: shopDataValues.filter(shop => shop.shopCategoryId === 1).map(shop => {
+      const item = itemDataValues.find(item => item.ItemId === shop.itemId);
+      return {
+        id: shop.merchandiseId,
+        nameKey: item?.ItemNameKey || "",
+        descriptionKey: item?.ItemDescriptionKey || "",
+        iconKey: item?.ItemIconKey || "defaultIcon",
+        price: shop.cost,
         currency: "coin"
-      },
-      {
-        id: 2,
-        nameKey: "ironSword",
-        descriptionKey: "ironSwordDesc", 
-        iconKey: "ironSword",
-        price: 500,
-        currency: "coin"
-      },
-      {
-        id: 3,
-        nameKey: "leatherArmor",
-        descriptionKey: "leatherArmorDesc",
-        iconKey: "leatherArmor", 
-        price: 800,
-        currency: "coin"
-      }
-    ],
-    diamond: [
-      {
-        id: 4,
-        nameKey: "premiumHealingPotion",
-        descriptionKey: "premiumHealingPotionDesc",
-        iconKey: "premiumPotion",
-        price: 10,
+      };
+    }),
+    diamond: shopDataValues.filter(shop => shop.shopCategoryId === 2).map(shop => {
+      const item = itemDataValues.find(item => item.ItemId === shop.itemId);
+      return {
+        id: shop.merchandiseId,
+        nameKey: item?.ItemNameKey || "",
+        descriptionKey: item?.ItemDescriptionKey || "",
+        iconKey: item?.ItemIconKey || "defaultIcon",
+        price: shop.cost,
         currency: "diamond"
-      },
-      {
-        id: 5,
-        nameKey: "experienceBooster",
-        descriptionKey: "experienceBoosterDesc",
-        iconKey: "expBooster",
-        price: 25,
-        currency: "diamond"
-      },
-      {
-        id: 6,
-        nameKey: "rareWeapon",
-        descriptionKey: "rareWeaponDesc",
-        iconKey: "rareWeapon",
-        price: 100,
-        currency: "diamond"
-      }
-    ],
-    ruby: [
-      {
-        id: 7,
-        nameKey: "legendaryArtifact",
-        descriptionKey: "legendaryArtifactDesc",
-        iconKey: "legendaryArtifact",
-        price: 5,
+      };
+    }),
+    ruby: shopDataValues.filter(shop => shop.shopCategoryId === 3).map(shop => {
+      const item = itemDataValues.find(item => item.ItemId === shop.itemId);
+      return {
+        id: shop.merchandiseId,
+        nameKey: item?.ItemNameKey || "",
+        descriptionKey: item?.ItemDescriptionKey || "",
+        iconKey: item?.ItemIconKey || "defaultIcon",
+        price: shop.cost,
         currency: "ruby"
-      },
-      {
-        id: 8,
-        nameKey: "mysticalCharm",
-        descriptionKey: "mysticalCharmDesc",
-        iconKey: "mysticalCharm",
-        price: 15,
-        currency: "ruby"
-      },
-      {
-        id: 9,
-        nameKey: "ancientRelic",
-        descriptionKey: "ancientRelicDesc",
-        iconKey: "ancientRelic",
-        price: 50,
-        currency: "ruby"
-      }
-    ]
+      };
+    })
   };
 
   let goToNextScene: Writable<string | null>;
@@ -111,11 +72,7 @@
   async function purchaseItem(item: any) {
     const result = await PopupStore.open({
       title: $t("confirmPurchase"),
-      content: $t("confirmPurchaseContent", { 
-        item: $t(item.nameKey), 
-        price: item.price, 
-        currency: $t(item.currency) 
-      }),
+      content: `${$t("confirmPurchaseContent")} ${$t(item.nameKey)} for ${item.price} ${$t(item.currency)}?`,
       buttons: [
         {
           text: $t("cancel"),

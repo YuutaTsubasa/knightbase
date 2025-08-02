@@ -1,0 +1,9 @@
+missionId,missionCategoryId,missionTitleKey,missionDescriptionKey,missionIconKey,missionConditions
+1,1,dailyLogin,dailyLoginDesc,loginIcon,login:1
+2,1,winBattles,winBattlesDesc,battleIcon,battle_win:3
+3,1,upgradeCharacter,upgradeCharacterDesc,upgradeIcon,character_upgrade:1
+4,2,completeStages,completeStagesDesc,stageIcon,stage_complete:15
+5,2,collectRewards,collectRewardsDesc,rewardIcon,reward_collect:20
+6,3,loginStreak,loginStreakDesc,streakIcon,login_streak:30
+7,4,firstVictory,firstVictoryDesc,victoryIcon,battle_win:1
+8,4,reachLevel50,reachLevel50Desc,levelIcon,character_level:50

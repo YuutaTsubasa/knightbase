@@ -1,0 +1,4 @@
+characterId,characterLevel,characterExp,IncreasedHp,IncreasedSp,IncreasedAtk,IncreasedDef,IncreasedSkillCd
+1,45,12000,350,30,20,20,0
+2,32,8000,200,20,20,20,0
+3,28,6500,150,20,20,20,0

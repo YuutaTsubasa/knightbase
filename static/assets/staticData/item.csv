@@ -1,0 +1,10 @@
+ItemId,ItemNameKey,ItemDescriptionKey,ItemIconKey
+1,smallHealingPotion,smallHealingPotionDesc,healingPotion
+2,ironSword,ironSwordDesc,ironSword
+3,leatherArmor,leatherArmorDesc,leatherArmor
+4,premiumHealingPotion,premiumHealingPotionDesc,premiumPotion
+5,experienceBooster,experienceBoosterDesc,expBooster
+6,rareWeapon,rareWeaponDesc,rareWeapon
+7,legendaryArtifact,legendaryArtifactDesc,legendaryArtifact
+8,mysticalCharm,mysticalCharmDesc,mysticalCharm
+9,ancientRelic,ancientRelicDesc,ancientRelic
