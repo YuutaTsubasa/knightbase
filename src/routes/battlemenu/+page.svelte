@@ -39,7 +39,7 @@
   <div class="battlemenu" style={`--topbarHeight: ${topbarHeight}px;`}>
     <div class="menuButtonContainer">
       <button class="menuButton leftButton" style="background-image: url({imageAssets["characterBackground"]}); background-size: cover; background-position: center center; "
-          on:click={() => {}}>
+          on:click={() => goToNextScene.set("/character")}>
         <div class="bg"><Image key={character.imageKey} alt={character.name} className="portrait fadeinPortrait" /></div>
         <div class="content">
           <div class="title" style={FontAssets.getCssStyle("titleBold")}>
@@ -51,7 +51,7 @@
     </div>
     <div class="menuButtonContainer">
       <button class="menuButton rightButton" style="background-image: url({imageAssets["stageBackground"]}); background-size: cover; background-position: center center; "
-          on:click={() => {}}>
+          on:click={() => goToNextScene.set("/stage")}>
         <div class="content">
           <div class="title" style={FontAssets.getCssStyle("titleBold")}>
             <SpaceBetweenTextGroup content={$t('stage')} spacing="0.3em" />

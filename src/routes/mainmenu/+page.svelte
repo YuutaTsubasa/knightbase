@@ -55,6 +55,14 @@
       AudioManager.play("sfx_confirm");
       goToNextScene?.set("/battlemenu"); 
     }}
+    onMission={() => {
+      AudioManager.play("sfx_confirm");
+      goToNextScene?.set("/mission");
+    }}
+    onShop={() => {
+      AudioManager.play("sfx_confirm");
+      goToNextScene?.set("/shop");
+    }}
     onSettings={() => { 
       AudioManager.play("sfx_confirm");
       goToNextScene?.set("/settings"); 
