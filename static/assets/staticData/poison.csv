@@ -1,0 +1,4 @@
+ItemId,duration,IncreasedHp,IncreasedSp,IncreasedAtk,IncreasedDef,IncreasedSkillCd
+1,60,100,0,0,0,0
+4,180,300,50,0,0,0
+5,300,0,0,0,0,0

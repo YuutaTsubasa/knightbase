@@ -2,7 +2,7 @@ import { PlayerDataManager } from "$lib/systems/PlayerStore";
 import { parse } from 'papaparse';
 import { writable, get, type Writable, derived } from "svelte/store";
 
-const FILE_PATH = "/assets/localizations/localization.csv"
+const FILE_PATH = "/assets/staticData/localization.csv"
 const DEFAULT_LOCALE = "en-us";
 const NOTHING = "#NOTHING#";
 export class LocalizationAssets {

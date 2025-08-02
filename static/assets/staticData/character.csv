@@ -1,0 +1,4 @@
+characterId,characterNameKey,characterDescriptionKey,BaseHp,BaseSp,BaseAtk,BaseDef,BaseSkillCd
+1,yuutaName,yuutaDescription,2500,120,300,220,12
+2,characterExample2,characterExample2Description,2000,100,260,180,15
+3,characterExample3,characterExample3Description,1800,80,230,160,18

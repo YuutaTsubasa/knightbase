@@ -2,6 +2,7 @@
   import { FontAssets } from "$lib/assets/FontAssets";
   import { imageAssets } from "$lib/assets/ImageAssets";
   import { t } from "$lib/assets/LocalizationAssets";
+  import { StaticDataStore } from "$lib/systems/StaticDataStore";
   import Image from "$lib/components/Image.svelte";
   import Page from "$lib/components/Page.svelte";
   import Button from "$lib/components/Button.svelte";
@@ -14,90 +15,86 @@
   $: topbarHeight = 0;
   let activeMissionType: 'daily' | 'weekly' | 'monthly' | 'achievement' = 'daily';
 
-  // Mock mission data
+  // Mission data from StaticDataStore
+  const { missionData } = StaticDataStore;
+  $: missionDataValues = $missionData;
+
+  // Map mission categories: 1=daily, 2=weekly, 3=monthly, 4=achievement
   $: missions = {
-    daily: [
-      {
-        id: 1,
-        nameKey: "dailyLogin",
-        descriptionKey: "dailyLoginDesc",
-        iconKey: "loginIcon",
-        rewards: [{ type: "coin", amount: 100 }],
-        completed: false,
-        progress: { current: 0, max: 1 }
-      },
-      {
-        id: 2,
-        nameKey: "winBattles",
-        descriptionKey: "winBattlesDesc",
-        iconKey: "battleIcon",
-        rewards: [{ type: "coin", amount: 200 }, { type: "exp", amount: 50 }],
-        completed: false,
-        progress: { current: 2, max: 3 }
-      },
-      {
-        id: 3,
-        nameKey: "upgradeCharacter",
-        descriptionKey: "upgradeCharacterDesc",
-        iconKey: "upgradeIcon",
-        rewards: [{ type: "diamond", amount: 5 }],
-        completed: true,
-        progress: { current: 1, max: 1 }
-      }
-    ],
-    weekly: [
-      {
-        id: 4,
-        nameKey: "completeStages",
-        descriptionKey: "completeStagesDesc",
-        iconKey: "stageIcon",
-        rewards: [{ type: "coin", amount: 1000 }, { type: "diamond", amount: 20 }],
-        completed: false,
-        progress: { current: 8, max: 15 }
-      },
-      {
-        id: 5,
-        nameKey: "collectRewards",
-        descriptionKey: "collectRewardsDesc",
-        iconKey: "rewardIcon",
-        rewards: [{ type: "ruby", amount: 3 }],
-        completed: false,
-        progress: { current: 12, max: 20 }
-      }
-    ],
-    monthly: [
-      {
-        id: 6,
-        nameKey: "loginStreak",
-        descriptionKey: "loginStreakDesc",
-        iconKey: "streakIcon",
-        rewards: [{ type: "diamond", amount: 100 }, { type: "ruby", amount: 10 }],
-        completed: false,
-        progress: { current: 18, max: 30 }
-      }
-    ],
-    achievement: [
-      {
-        id: 7,
-        nameKey: "firstVictory",
-        descriptionKey: "firstVictoryDesc",
-        iconKey: "victoryIcon",
-        rewards: [{ type: "coin", amount: 500 }],
-        completed: true,
-        progress: { current: 1, max: 1 }
-      },
-      {
-        id: 8,
-        nameKey: "reachLevel50",
-        descriptionKey: "reachLevel50Desc",
-        iconKey: "levelIcon",
-        rewards: [{ type: "diamond", amount: 50 }, { type: "ruby", amount: 5 }],
-        completed: false,
-        progress: { current: 45, max: 50 }
-      }
-    ]
+    daily: missionDataValues.filter(mission => mission.missionCategoryId === 1).map(mission => ({
+      id: mission.missionId,
+      nameKey: mission.missionTitleKey,
+      descriptionKey: mission.missionDescriptionKey,
+      iconKey: getMissionIconKey(mission.missionId),
+      rewards: getMissionRewards(mission.missionId),
+      completed: Math.random() > 0.7, // Mock completion status
+      progress: getMissionProgress(mission.missionConditions)
+    })),
+    weekly: missionDataValues.filter(mission => mission.missionCategoryId === 2).map(mission => ({
+      id: mission.missionId,
+      nameKey: mission.missionTitleKey,
+      descriptionKey: mission.missionDescriptionKey,
+      iconKey: getMissionIconKey(mission.missionId),
+      rewards: getMissionRewards(mission.missionId),
+      completed: Math.random() > 0.8,
+      progress: getMissionProgress(mission.missionConditions)
+    })),
+    monthly: missionDataValues.filter(mission => mission.missionCategoryId === 3).map(mission => ({
+      id: mission.missionId,
+      nameKey: mission.missionTitleKey,
+      descriptionKey: mission.missionDescriptionKey,
+      iconKey: getMissionIconKey(mission.missionId),
+      rewards: getMissionRewards(mission.missionId),
+      completed: Math.random() > 0.9,
+      progress: getMissionProgress(mission.missionConditions)
+    })),
+    achievement: missionDataValues.filter(mission => mission.missionCategoryId === 4).map(mission => ({
+      id: mission.missionId,
+      nameKey: mission.missionTitleKey,
+      descriptionKey: mission.missionDescriptionKey,
+      iconKey: getMissionIconKey(mission.missionId),
+      rewards: getMissionRewards(mission.missionId),
+      completed: Math.random() > 0.95,
+      progress: getMissionProgress(mission.missionConditions)
+    }))
   };
 
+  // Helper functions for mission data
+  function getMissionIconKey(missionId: number): string {
+    const iconMap: Record<number, string> = {
+      1: "loginIcon",
+      2: "battleIcon", 
+      3: "upgradeIcon",
+      4: "stageIcon",
+      5: "rewardIcon",
+      6: "streakIcon",
+      7: "victoryIcon",
+      8: "levelIcon"
+    };
+    return iconMap[missionId] || "defaultIcon";
+  }
+
+  function getMissionRewards(missionId: number): Array<{type: string, amount: number}> {
+    const rewardMap: Record<number, Array<{type: string, amount: number}>> = {
+      1: [{ type: "coin", amount: 100 }],
+      2: [{ type: "coin", amount: 200 }, { type: "exp", amount: 50 }],
+      3: [{ type: "diamond", amount: 5 }],
+      4: [{ type: "coin", amount: 500 }, { type: "exp", amount: 100 }],
+      5: [{ type: "coin", amount: 300 }, { type: "diamond", amount: 10 }],
+      6: [{ type: "ruby", amount: 2 }],
+      7: [{ type: "coin", amount: 50 }],
+      8: [{ type: "diamond", amount: 50 }, { type: "ruby", amount: 5 }]
+    };
+    return rewardMap[missionId] || [{ type: "coin", amount: 10 }];
+  }
+
+  function getMissionProgress(conditions: string): {current: number, max: number} {
+    // Parse conditions like "login:1", "battle_win:3", etc.
+    const [, maxStr] = conditions.split(':');
+    const max = parseInt(maxStr) || 1;
+    const current = Math.floor(Math.random() * (max + 1));
+    return { current, max };
+  }
   let goToNextScene: Writable<string | null>;
   async function main() {
     goToNextScene = writable(null);

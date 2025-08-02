@@ -2,6 +2,7 @@
   import { FontAssets } from "$lib/assets/FontAssets";
   import { imageAssets } from "$lib/assets/ImageAssets";
   import { t } from "$lib/assets/LocalizationAssets";
+  import { StaticDataStore } from "$lib/systems/StaticDataStore";
   import Image from "$lib/components/Image.svelte";
   import Page from "$lib/components/Page.svelte";
   import Button from "$lib/components/Button.svelte";
@@ -12,48 +13,31 @@
 
   $: topbarHeight = 0;
 
-  // Mock character data
-  $: characters = [
-    {
-      id: 1,
-      name: $t("yuutaName"),
-      nameKey: "yuutaName",
-      descriptionKey: "yuutaDescription",
-      imageKey: "yuutaPortrait",
-      level: 45,
-      hp: 2850,
-      sp: 150,
-      atk: 320,
-      def: 240,
-      skillCd: 12
-    },
-    {
-      id: 2,
-      name: $t("characterExample2"),
-      nameKey: "characterExample2",
-      descriptionKey: "characterExample2Description",
-      imageKey: "yuutaPortrait", // Reusing for now
-      level: 32,
-      hp: 2200,
-      sp: 120,
-      atk: 280,
-      def: 200,
-      skillCd: 15
-    },
-    {
-      id: 3,
-      name: $t("characterExample3"),
-      nameKey: "characterExample3", 
-      descriptionKey: "characterExample3Description",
-      imageKey: "yuutaPortrait", // Reusing for now
-      level: 28,
-      hp: 1950,
-      sp: 100,
-      atk: 250,
-      def: 180,
-      skillCd: 18
-    }
-  ];
+  // Character data from StaticDataStore
+  const { characterData, characterLevelAbilityData } = StaticDataStore;
+  $: charactersData = $characterData;
+  $: characterLevelData = $characterLevelAbilityData;
+
+  // Transform static data to display format
+  $: characters = charactersData.map(char => {
+    const levelAbility = characterLevelData.find(level => 
+      level.characterId === char.characterId && level.characterLevel > 0
+    ) || { characterLevel: 1, IncreasedHp: 0, IncreasedSp: 0, IncreasedAtk: 0, IncreasedDef: 0, IncreasedSkillCd: 0 };
+    
+    return {
+      id: char.characterId,
+      name: $t(char.characterNameKey),
+      nameKey: char.characterNameKey,
+      descriptionKey: char.characterDescriptionKey,
+      imageKey: "yuutaPortrait", // Default image key, could be added to CSV later
+      level: levelAbility.characterLevel,
+      hp: char.BaseHp + levelAbility.IncreasedHp,
+      sp: char.BaseSp + levelAbility.IncreasedSp,
+      atk: char.BaseAtk + levelAbility.IncreasedAtk,
+      def: char.BaseDef + levelAbility.IncreasedDef,
+      skillCd: char.BaseSkillCd + levelAbility.IncreasedSkillCd
+    };
+  });
 
   let goToNextScene: Writable<string | null>;
   async function main() {
