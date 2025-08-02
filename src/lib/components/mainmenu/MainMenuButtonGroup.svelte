@@ -3,6 +3,7 @@
   import { t } from "$lib/assets/LocalizationAssets";
 
   export let progressText = "";
+  export let isPortrait = false;
   export let onBattle = () => {};
   export let onMission = () => {};
   export let onShop = () => {};
@@ -11,7 +12,7 @@
   $: marqueeText = Array(16).fill(progressText).join("　") + "　";
 </script>
 
-<div class="mainMenuButtonArea">
+<div class="mainMenuButtonArea" class:portrait={isPortrait}>
   <button class="battleButton" on:click={onBattle}>
     <div class="label"><SwordIcon size="6vh" class="icon" /> {$t("battle")}</div>
     <div class="marquee">
@@ -39,6 +40,13 @@
     align-items: stretch;
     gap: 0.5rem;
     font-size: 5vh;
+    margin-right: 1rem;
+  }
+
+  .mainMenuButtonArea.portrait {
+    transform: none;
+    margin-left: 1rem;
+    margin-right: 1rem;
   }
 
   .battleButton {
@@ -113,6 +121,7 @@
     cursor: pointer;
     text-align: left;
     height: 6vh;
+    padding-left: 0.8rem;
   }
 
   .smallButton:hover {

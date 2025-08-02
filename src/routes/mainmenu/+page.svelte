@@ -57,6 +57,7 @@
     </div>
      <div class="buttonContainer">
       <MainMenuButtonGroup progressText={format($t("stageProgress"), $t("none"))}
+        isPortrait={$isPortrait}
         onBattle={() => { 
           AudioManager.play("sfx_confirm");
           goToNextScene?.set("/battlemenu"); 
@@ -105,8 +106,8 @@
   }
 
   .portrait .resourceContainer {
-    top: 6rem;
-    left: 0.5rem;
+    top: 18vh;
+    left: 1rem;
   }
 
   .bannerContainer {
@@ -116,19 +117,20 @@
   }
 
   .portrait .bannerContainer {
-    left: 0.5rem;
-    top: 10.5rem;
+    left: 1rem;
+    top: 33vh;
   }
 
   .buttonContainer {
     position: absolute;
-    bottom: 1rem;
-    right: 1rem;
-    width: 15rem;
+    bottom: 2vh;
+    right: 2vw;
+    width: 45vw;
   }
   
   .portrait .buttonContainer {
     bottom: 1rem;
+    right: 0;
     width: 100%;
   }
 </style>
