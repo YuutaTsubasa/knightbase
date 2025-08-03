@@ -7,7 +7,7 @@
   import { get, writable, type Writable } from "svelte/store";
   import { onMount } from "svelte";
   import { PopupStore, PopupResult } from "$lib/systems/PopupStore";
-  import { Play, Pause, Heart, Keyboard, Smartphone, Gamepad2, ArrowUpFromLine, Sword, Clock, Trophy, Coins, Zap } from "lucide-svelte";
+  import { Play, Pause, Heart, Keyboard, Smartphone, Gamepad2, ArrowUpFromLine, Sword, Clock, Trophy, DollarSign, Zap, CircleDollarSign, Target } from "lucide-svelte";
   import { isPortrait } from "$lib/systems/Orientation";
 
   let goToNextScene: Writable<string | null>;
@@ -51,9 +51,9 @@
   
   // Game settings
   const GRAVITY = 0.8;
-  const JUMP_FORCE = -15;
+  const JUMP_FORCE = -20; // Increased from -15 to account for larger objects
   const GROUND_Y = 480; // Moved down 160px as requested (was 320)
-  const BASE_SCROLL_SPEED = 8  ; // Increased 3x from 1.5 to make gameplay faster
+  const BASE_SCROLL_SPEED = 4.5; // Increased 3x from 1.5 to make gameplay faster
 
   // Trap spawning control - increased interval 3x
   let lastTrapSpawnTime = 0;
@@ -275,14 +275,14 @@
   function spawnTrap() {
     traps.push({
       x: canvas.width + 50,
-      y: GROUND_Y - 96, // Adjusted for new trap height
-      width: 256, // Increased from 128 to 256 (2x scale)
-      height: 96, // Increased from 48 to 96 (2x scale)
+      y: GROUND_Y - 48, // Adjusted for new trap height (halved back)
+      width: 128, // Reduced from 256 to 128 (halved back)
+      height: 48, // Reduced from 96 to 48 (halved back)
       // Collision box (smaller than visual sprite for better gameplay)
-      collisionOffsetX: 32, // Scaled proportionally
-      collisionOffsetY: 16, // Scaled proportionally
-      collisionWidth: 192, // Scaled proportionally
-      collisionHeight: 64 // Scaled proportionally
+      collisionOffsetX: 16, // Scaled proportionally
+      collisionOffsetY: 8, // Scaled proportionally
+      collisionWidth: 96, // Scaled proportionally
+      collisionHeight: 32 // Scaled proportionally
     });
   }
   
@@ -439,12 +439,20 @@
     // Draw scrolling background with enhanced layered effects
     if (loadedImages.background) {
       const bgWidth = canvas.width;
+      const bgHeight = canvas.height;
+      
+      // Background moved down 160px, need to fill the top and draw extended background
+      const backgroundYOffset = 160;
+      const extendedHeight = bgHeight + backgroundYOffset;
+      
       const bgX1 = backgroundOffset % bgWidth;
       const bgX2 = bgX1 + bgWidth;
       
-      // Draw two copies of the background for seamless scrolling
-      ctx.drawImage(loadedImages.background, bgX1, 0, bgWidth, canvas.height);
-      ctx.drawImage(loadedImages.background, bgX2, 0, bgWidth, canvas.height);
+      // Draw background pattern to fill entire extended area including top 160px
+      for (let y = -backgroundYOffset; y < extendedHeight; y += bgHeight) {
+        ctx.drawImage(loadedImages.background, bgX1, y, bgWidth, bgHeight);
+        ctx.drawImage(loadedImages.background, bgX2, y, bgWidth, bgHeight);
+      }
       
       // Add 0.5 transparent black overlay with blur effect
       ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
@@ -590,11 +598,11 @@
           <strong>${$t("survivalTimeLabel")}:</strong> ${formatTime(survivalTime)}
         </div>
         <div style="margin: 3px 0; display: flex; align-items: center; gap: 8px;">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6"/><path d="m13.25 13.25l4.75 4.75"/></svg>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="2"/></svg>
           <strong>${$t("coinsCollectedLabel")}:</strong> ${coins}
         </div>
         <div style="margin: 3px 0; display: flex; align-items: center; gap: 8px;">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M14 9h1.5a2.5 2.5 0 0 0 0-5H14"/><path d="M6 9v6"/><path d="M14 9v6"/><path d="M6 15h1.5a2.5 2.5 0 0 0 0 5H6"/><path d="M14 15h1.5a2.5 2.5 0 0 1 0 5H14"/></svg>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 18V6"/></svg>
           <strong>${$t("finalScoreLabel")}:</strong> ${score}
         </div>
         <div style="margin: 3px 0; display: flex; align-items: center; gap: 8px;">
@@ -638,11 +646,11 @@
             <strong>${$t("pauseTimeLabel")}:</strong> ${formatTime(survivalTime)}
           </div>
           <div style="margin: 3px 0; display: flex; align-items: center; gap: 8px;">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M14 9h1.5a2.5 2.5 0 0 0 0-5H14"/><path d="M6 9v6"/><path d="M14 9v6"/><path d="M6 15h1.5a2.5 2.5 0 0 0 0 5H6"/><path d="M14 15h1.5a2.5 2.5 0 0 1 0 5H14"/></svg>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 18V6"/></svg>
             <strong>${$t("pauseScoreLabel")}:</strong> ${score}
           </div>
           <div style="margin: 3px 0; display: flex; align-items: center; gap: 8px;">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6"/><path d="m13.25 13.25l4.75 4.75"/></svg>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="2"/></svg>
             <strong>${$t("pauseCoinsLabel")}:</strong> ${coins}
           </div>
           <div style="margin: 3px 0; display: flex; align-items: center; gap: 8px;">
@@ -731,8 +739,11 @@
 </script>
 
 <Page mainProgress={main} 
-  wrapperStyle="background-image: url({imageAssets.stage01background}), url({imageAssets.backgroundWhite}); background-size: repeat, cover; background-position: center, center; background-color: white;"
+  wrapperStyle="background-image: url({imageAssets.stage01background}); background-size: repeat; background-position: center; background-color: white;"
   contentStyle="box-sizing: border-box; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)); backdrop-filter: blur(10px);">
+  
+  <!-- Layered background effects for page wrapper -->
+  <div slot="outside" class="pageBackground" style="background-image: url({imageAssets.stage01background});"></div>
   
   <div class="gameContainer">
     <!-- Game UI -->
@@ -853,12 +864,9 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9));
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(148, 163, 184, 0.3);
-    box-shadow: 
-      0 0 20px rgba(59, 130, 246, 0.3),
-      inset 0 1px 0 rgba(148, 163, 184, 0.1);
+    background-image: url({imageAssets.backgroundWhiteButton});
+    background-size: cover;
+    background-position: 50% 15%;
     color: white;
     padding: 0.5rem 1rem;
     border-radius: 0.75rem;
@@ -870,14 +878,10 @@
     content: "";
     position: absolute;
     inset: 0;
-    background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.1), transparent);
-    animation: techScan 3s ease-in-out infinite;
+    background-color: #0000ff;
+    mix-blend-mode: multiply;
+    opacity: 1;
     z-index: 1;
-  }
-
-  @keyframes techScan {
-    0%, 100% { transform: translateX(-100%); }
-    50% { transform: translateX(100%); }
   }
 
   .topUI > * {
@@ -1066,5 +1070,38 @@
     .controls {
       font-size: 0.75em;
     }
+  }
+
+  .pageBackground {
+    position: absolute;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    background-size: repeat;
+    background-position: center;
+    z-index: 0;
+  }
+
+  .pageBackground::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(10px);
+    z-index: 1;
+  }
+
+  .pageBackground::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: 
+      linear-gradient(45deg, rgba(255,255,255,0.1) 25%, transparent 25%), 
+      linear-gradient(-45deg, rgba(255,255,255,0.1) 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, rgba(255,255,255,0.1) 75%), 
+      linear-gradient(-45deg, transparent 75%, rgba(255,255,255,0.1) 75%);
+    background-size: 50px 50px;
+    background-position: 0 0, 0 25px, 25px -25px, -25px 0px;
+    z-index: 2;
   }
 </style>
