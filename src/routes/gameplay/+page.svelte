@@ -120,6 +120,8 @@
       AudioManager.preload("sfx_explosion"),
       AudioManager.preload("sfx_countdown"),
       AudioManager.preload("sfx_countdownFinish"),
+      AudioManager.preload("sfx_pause"),
+      AudioManager.preload("sfx_gameover"),
     ];
     
     await Promise.all([...imagePromises, ...audioPreloadPromises]);
@@ -756,6 +758,7 @@
   }
   
   async function handleGameOver() {
+    AudioManager.play("sfx_gameover");
     gameState = 'gameOver';
     
     const result = await PopupStore.open({
@@ -802,6 +805,7 @@
   }
 
   async function togglePause() {
+    AudioManager.play("sfx_pause");
     if (gameState === 'playing') {
       isPaused = true;
       gameState = 'paused';

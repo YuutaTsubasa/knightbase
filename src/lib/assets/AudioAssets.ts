@@ -22,4 +22,6 @@ export const audioAssets: Record<string, {
   sfx_yuutaWalk: { url: '/assets/audios/sfx_yuutaWalk.mp3', group: 'sfx' },
   sfx_countdown: { url: '/assets/audios/sfx_countdown.mp3', group: 'sfx' },
   sfx_countdownFinish: { url: '/assets/audios/sfx_countdownFinish.mp3', group: 'sfx' },
+  sfx_pause: { url: '/assets/audios/sfx_pause.mp3', group: 'sfx' },
+  sfx_gameover: { url: '/assets/audios/sfx_gameover.mp3', group: 'sfx' },
 };
