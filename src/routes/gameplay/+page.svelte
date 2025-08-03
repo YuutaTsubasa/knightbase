@@ -118,9 +118,8 @@
       AudioManager.preload("sfx_coin"),
       AudioManager.preload("sfx_hurt"),
       AudioManager.preload("sfx_explosion"),
-      // Countdown SFX - uncomment when actual files are available
-      // AudioManager.preload("sfx_countdown"),
-      // AudioManager.preload("sfx_countdownFinish"),
+      AudioManager.preload("sfx_countdown"),
+      AudioManager.preload("sfx_countdownFinish"),
     ];
     
     await Promise.all([...imagePromises, ...audioPreloadPromises]);
@@ -264,8 +263,7 @@
     // Start playing stage BGM when countdown begins
     if (!shouldStop) {
       AudioManager.play(stageBgmAudioKey(selectedStage));
-      // Play initial countdown sound for "3" - uncomment when sfx_countdown is available
-      // AudioManager.play("sfx_countdown");
+      AudioManager.play("sfx_countdown");
     }
   }
 
@@ -435,12 +433,10 @@
         countdown--;
         if (countdown > 0) {
           countdownText = countdown.toString();
-          // Play countdown sound for 3, 2, 1 - uncomment when sfx_countdown is available
-          // AudioManager.play("sfx_countdown");
+          AudioManager.play("sfx_countdown");
         } else if (countdown === 0) {
           countdownText = "GO!";
-          // Play countdown finish sound for GO! - uncomment when sfx_countdownFinish is available
-          // AudioManager.play("sfx_countdownFinish");
+          AudioManager.play("sfx_countdownFinish");
         } else {
           showCountdown = false;
           isStop = false;

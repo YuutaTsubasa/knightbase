@@ -20,7 +20,6 @@ export const audioAssets: Record<string, {
   sfx_yuutaAttack: { url: '/assets/audios/sfx_yuutaAttack.mp3', group: 'sfx' },
   sfx_aliceWalk: { url: '/assets/audios/sfx_aliceWalk.mp3', group: 'sfx' },
   sfx_yuutaWalk: { url: '/assets/audios/sfx_yuutaWalk.mp3', group: 'sfx' },
-  // Countdown audio files - uncomment when actual files are available
-  // sfx_countdown: { url: '/assets/audios/sfx_countdown.mp3', group: 'sfx' },
-  // sfx_countdownFinish: { url: '/assets/audios/sfx_countdownFinish.mp3', group: 'sfx' },
+  sfx_countdown: { url: '/assets/audios/sfx_countdown.mp3', group: 'sfx' },
+  sfx_countdownFinish: { url: '/assets/audios/sfx_countdownFinish.mp3', group: 'sfx' },
 };
