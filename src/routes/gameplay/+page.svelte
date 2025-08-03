@@ -284,7 +284,7 @@
       AudioManager.play(characterAttackAudioKey(selectedCharacter));
       
       projectiles.push({
-        x: player.x + player.width,
+        x: player.x + player.width / 2,
         y: player.y,
         width: 128, // Increased from 64 to 128 (2x scale)
         height: 256, // Increased from 128 to 256 (2x scale)
