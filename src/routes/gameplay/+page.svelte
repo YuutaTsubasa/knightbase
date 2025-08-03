@@ -398,28 +398,32 @@
         }
       }
 
-      // Update explosions animation
-      explosions = explosions.filter(explosion => {
+      // Update explosions animation (optimized)
+      for (let i = explosions.length - 1; i >= 0; i--) {
+        const explosion = explosions[i];
         explosion.animationTimer += deltaTime;
         if (explosion.animationTimer > 100) {
           explosion.animationTimer %= 100;
           explosion.animationFrame = (explosion.animationFrame + 1); 
           if (explosion.animationFrame >= 6) {
-            return false;
+            explosions.splice(i, 1);
+            continue;
           }
         }
         explosion.x -= currentScrollSpeed;
         if (explosion.x < -explosion.width) {
-          return false;
+          explosions.splice(i, 1);
         }
-        return true;
-      });
+      }
 
-      // Update projectiles
-      projectiles = projectiles.filter(projectile => {
+      // Update projectiles (optimized)
+      for (let i = projectiles.length - 1; i >= 0; i--) {
+        const projectile = projectiles[i];
         projectile.x += projectile.velocityX;
-        return projectile.x < canvas.width + 50;
-      });
+        if (projectile.x > canvas.width + 50) {
+          projectiles.splice(i, 1);
+        }
+      }
     }
 
     if (waitForCountdown) {
@@ -457,86 +461,116 @@
       lastSurvivalSecond = currentSecond;
     }
     
-    // Update enemies with progressive speed
-    enemies = enemies.filter(enemy => {
+    // Update enemies with progressive speed and early exit optimization
+    for (let i = enemies.length - 1; i >= 0; i--) {
+      const enemy = enemies[i];
       enemy.x -= currentScrollSpeed;
-      return enemy.x > -enemy.width;
-    });
+      if (enemy.x < -enemy.width) {
+        enemies.splice(i, 1);
+      }
+    }
 
-    // Update coins with progressive speed
-    gameCoins.forEach(coin => {
+    // Update coins with progressive speed and remove off-screen coins
+    for (let i = gameCoins.length - 1; i >= 0; i--) {
+      const coin = gameCoins[i];
       coin.x -= currentScrollSpeed;
-    });
+      if (coin.x < -coin.width) {
+        gameCoins.splice(i, 1);
+      }
+    }
     
-    // Update traps with progressive speed
-    traps = traps.filter(trap => {
+    // Update traps with progressive speed and early exit optimization
+    for (let i = traps.length - 1; i >= 0; i--) {
+      const trap = traps[i];
       trap.x -= currentScrollSpeed;
-      return trap.x > -trap.width;
-    });
-    
-    // Collision detection - coins
-    gameCoins.forEach(coin => {
-      if (!coin.collected && checkCollision(player, coin)) {
-        coin.collected = true;
-        coins++;
-        score += 10; // Award 10 points for collecting a coin
-        // Play coin audio
-        AudioManager.play("sfx_coin");
+      if (trap.x < -trap.width) {
+        traps.splice(i, 1);
       }
-    });
+    }
     
-    // Collision detection - enemies (only if player is vulnerable)
-    enemies.forEach((enemy, enemyIndex) => {
-      if (checkCollision(player, enemy)) {
-        if (!isInvincible) {
-          lives--;
-          isInvincible = true;
-          invincibleTimer = INVINCIBLE_DURATION;
-          // Play hurt audio
-          AudioManager.play("sfx_hurt");
+    // Collision detection - coins (optimized for performance)
+    for (let i = 0; i < gameCoins.length; i++) {
+      const coin = gameCoins[i];
+      if (!coin.collected && coin.x < canvas.width && coin.x + coin.width > 0) {
+        if (checkCollision(player, coin)) {
+          coin.collected = true;
+          coins++;
+          score += 10; // Award 10 points for collecting a coin
+          // Play coin audio
+          AudioManager.play("sfx_coin");
         }
-        // Remove the enemy that hit the player
-        enemies.splice(enemyIndex, 1);
-        if (lives <= 0) {
-          handleGameOver();
-        }
-        // No backward movement on hit - removed as requested
       }
-    });
+    }
     
-    // Collision detection - traps
-    traps.forEach(trap => {
-      if (checkCollision(player, trap)) {
-        if (!isInvincible) {
-          lives--;
-          isInvincible = true;
-          invincibleTimer = INVINCIBLE_DURATION;
-          // Play hurt audio
-          AudioManager.play("sfx_hurt");
+    // Collision detection - enemies (only if player is vulnerable and on screen)
+    for (let i = enemies.length - 1; i >= 0; i--) {
+      const enemy = enemies[i];
+      if (enemy.x < canvas.width && enemy.x + enemy.width > 0) {
+        if (checkCollision(player, enemy)) {
+          if (!isInvincible) {
+            lives--;
+            isInvincible = true;
+            invincibleTimer = INVINCIBLE_DURATION;
+            // Play hurt audio
+            AudioManager.play("sfx_hurt");
+          }
+          // Remove the enemy that hit the player
+          enemies.splice(i, 1);
+          if (lives <= 0) {
+            handleGameOver();
+          }
+          break; // Early exit after collision
         }
-        if (lives <= 0) {
-          handleGameOver();
-        }
-        // No backward movement on hit - removed as requested
       }
-    });
+    }
     
-    // Collision detection - projectiles vs enemies
-    projectiles.forEach((projectile, projIndex) => {
-      enemies.forEach((enemy, enemyIndex) => {
-        if (projectile.x < enemy.x + enemy.width &&
-            projectile.x + projectile.width > enemy.x &&
-            projectile.y < enemy.y + enemy.height &&
-            projectile.y + projectile.height > enemy.y) {
-          enemies.splice(enemyIndex, 1);
-          projectiles.splice(projIndex, 1);
-          spawnExplosion(enemy);
-          score += 10; // Award 10 points for defeating an enemy
-          // Play explosion audio
-          AudioManager.play("sfx_explosion");
+    // Collision detection - traps (optimized for performance)
+    for (let i = 0; i < traps.length; i++) {
+      const trap = traps[i];
+      if (trap.x < canvas.width && trap.x + trap.width > 0) {
+        if (checkCollision(player, trap)) {
+          if (!isInvincible) {
+            lives--;
+            isInvincible = true;
+            invincibleTimer = INVINCIBLE_DURATION;
+            // Play hurt audio
+            AudioManager.play("sfx_hurt");
+          }
+          if (lives <= 0) {
+            handleGameOver();
+          }
+          break; // Early exit after collision
         }
-      });
-    });
+      }
+    }
+    
+    // Collision detection - projectiles vs enemies (optimized)
+    for (let p = projectiles.length - 1; p >= 0; p--) {
+      const projectile = projectiles[p];
+      let projectileHit = false;
+      
+      for (let e = enemies.length - 1; e >= 0; e--) {
+        const enemy = enemies[e];
+        // Only check collision if entities are on screen
+        if (projectile.x < canvas.width && enemy.x < canvas.width) {
+          if (projectile.x < enemy.x + enemy.width &&
+              projectile.x + projectile.width > enemy.x &&
+              projectile.y < enemy.y + enemy.height &&
+              projectile.y + projectile.height > enemy.y) {
+            enemies.splice(e, 1);
+            projectiles.splice(p, 1);
+            spawnExplosion(enemy);
+            score += 10; // Award 10 points for defeating an enemy
+            // Play explosion audio
+            AudioManager.play("sfx_explosion");
+            projectileHit = true;
+            break; // Exit enemy loop when projectile hits
+          }
+        }
+      }
+      
+      if (projectileHit) break; // Exit projectile loop if hit occurred
+    }
     
     // 每 frame 增加機率
     spawnChance += spawnChanceIncreasePerFrame;
@@ -575,24 +609,39 @@
   function render() {
     if (!ctx || !assetsLoaded) return;
     
+    // Clear canvas efficiently
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    // Draw scrolling background with enhanced layered effects
+    // Mobile performance optimization: reduce quality on performance mode
+    if (performanceMode === 'performance') {
+      ctx.imageSmoothingEnabled = false;
+    }
+    
+    // Draw scrolling background with optimized rendering
     if (loadedImages.background) {
       const bgWidth = canvas.width;
       const bgHeight = canvas.height;
       
       // Background moved down 160px, need to fill the top and draw extended background
       const backgroundYOffset = bgHeight - 160;
-      const extendedHeight = bgHeight + backgroundYOffset; // Extend background height by 160px
+      const extendedHeight = bgHeight + backgroundYOffset;
 
       const bgX1 = backgroundOffset % bgWidth;
       const bgX2 = bgX1 + bgWidth;
       
-      // Draw background pattern to fill entire extended area including top 160px
-      for (let y = -backgroundYOffset; y < extendedHeight; y += bgHeight) {
-        ctx.drawImage(loadedImages.background, bgX1, y, bgWidth, bgHeight);
-        ctx.drawImage(loadedImages.background, bgX2, y, bgWidth, bgHeight);
+      // Optimize background rendering for mobile
+      if (isMobile && performanceMode === 'performance') {
+        // Simplified background for mobile performance
+        ctx.drawImage(loadedImages.background, bgX1, 0, bgWidth, bgHeight);
+        if (bgX2 < bgWidth) {
+          ctx.drawImage(loadedImages.background, bgX2, 0, bgWidth, bgHeight);
+        }
+      } else {
+        // Full quality background rendering
+        for (let y = -backgroundYOffset; y < extendedHeight; y += bgHeight) {
+          ctx.drawImage(loadedImages.background, bgX1, y, bgWidth, bgHeight);
+          ctx.drawImage(loadedImages.background, bgX2, y, bgWidth, bgHeight);
+        }
       }
     } else {
       // Fallback background
@@ -602,13 +651,15 @@
       ctx.fillRect(0, GROUND_Y, canvas.width, canvas.height - GROUND_Y);
     }
     
-    // Draw explosions
+    // Draw explosions (only those on screen)
     explosions.forEach(explosion => {
-      if (loadedImages.explosion) {
-        const frameWidth = loadedImages.explosion.width / 6; // 6 frames per sprite sheet
-        const frameHeight = loadedImages.explosion.height;
-        const frameX = explosion.animationFrame * frameWidth;
-        ctx.drawImage(loadedImages.explosion, frameX, 0, frameWidth, frameHeight, explosion.x, explosion.y, explosion.width, explosion.height);
+      if (explosion.x < canvas.width && explosion.x + explosion.width > 0) {
+        if (loadedImages.explosion) {
+          const frameWidth = loadedImages.explosion.width / 6; // 6 frames per sprite sheet
+          const frameHeight = loadedImages.explosion.height;
+          const frameX = explosion.animationFrame * frameWidth;
+          ctx.drawImage(loadedImages.explosion, frameX, 0, frameWidth, frameHeight, explosion.x, explosion.y, explosion.width, explosion.height);
+        }
       }
     });
 
@@ -641,27 +692,29 @@
       }
     }
     
-    // Draw enemies with horizontal flipping
+    // Draw enemies with horizontal flipping (only those on screen)
     enemies.forEach(enemy => {
-      if (loadedImages.enemy) {
-        ctx.save();
-        if (enemy.facingLeft) {
-          ctx.scale(-1, 1);
-          ctx.drawImage(loadedImages.enemy, -enemy.x - enemy.width, enemy.y, enemy.width, enemy.height);
+      if (enemy.x < canvas.width && enemy.x + enemy.width > 0) {
+        if (loadedImages.enemy) {
+          ctx.save();
+          if (enemy.facingLeft) {
+            ctx.scale(-1, 1);
+            ctx.drawImage(loadedImages.enemy, -enemy.x - enemy.width, enemy.y, enemy.width, enemy.height);
+          } else {
+            ctx.drawImage(loadedImages.enemy, enemy.x, enemy.y, enemy.width, enemy.height);
+          }
+          ctx.restore();
         } else {
-          ctx.drawImage(loadedImages.enemy, enemy.x, enemy.y, enemy.width, enemy.height);
+          // Fallback enemy rectangle
+          ctx.fillStyle = '#e74c3c';
+          ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
         }
-        ctx.restore();
-      } else {
-        // Fallback enemy rectangle
-        ctx.fillStyle = '#e74c3c';
-        ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
       }
     });
     
-    // Draw coins
+    // Draw coins (only those on screen and not collected)
     gameCoins.forEach(coin => {
-      if (!coin.collected) {
+      if (!coin.collected && coin.x < canvas.width && coin.x + coin.width > 0) {
         if (loadedImages.coin) {
           ctx.drawImage(loadedImages.coin, coin.x, coin.y, coin.width, coin.height);
         } else {
@@ -674,44 +727,48 @@
       }
     });
     
-    // Draw traps
+    // Draw traps (only those on screen)
     traps.forEach(trap => {
-      if (loadedImages.trap) {
-        ctx.drawImage(loadedImages.trap, trap.x, trap.y, trap.width, trap.height);
-      } else {
-        // Fallback trap spikes
-        ctx.fillStyle = '#8b0000';
-        ctx.fillRect(trap.x, trap.y, trap.width, trap.height);
-        // Draw spike pattern
-        ctx.fillStyle = '#ff0000';
-        const spikeCount = 4;
-        const spikeWidth = trap.width / spikeCount;
-        for (let i = 0; i < spikeCount; i++) {
-          ctx.beginPath();
-          ctx.moveTo(trap.x + i * spikeWidth, trap.y + trap.height);
-          ctx.lineTo(trap.x + i * spikeWidth + spikeWidth/2, trap.y);
-          ctx.lineTo(trap.x + (i + 1) * spikeWidth, trap.y + trap.height);
-          ctx.closePath();
-          ctx.fill();
+      if (trap.x < canvas.width && trap.x + trap.width > 0) {
+        if (loadedImages.trap) {
+          ctx.drawImage(loadedImages.trap, trap.x, trap.y, trap.width, trap.height);
+        } else {
+          // Fallback trap spikes
+          ctx.fillStyle = '#8b0000';
+          ctx.fillRect(trap.x, trap.y, trap.width, trap.height);
+          // Draw spike pattern
+          ctx.fillStyle = '#ff0000';
+          const spikeCount = 4;
+          const spikeWidth = trap.width / spikeCount;
+          for (let i = 0; i < spikeCount; i++) {
+            ctx.beginPath();
+            ctx.moveTo(trap.x + i * spikeWidth, trap.y + trap.height);
+            ctx.lineTo(trap.x + i * spikeWidth + spikeWidth/2, trap.y);
+            ctx.lineTo(trap.x + (i + 1) * spikeWidth, trap.y + trap.height);
+            ctx.closePath();
+            ctx.fill();
+          }
         }
       }
     });
     
-    // Draw projectiles
+    // Draw projectiles (only those on screen)
     projectiles.forEach(projectile => {
-      if (loadedImages.attackEffect) {
-        const frameWidth = loadedImages.attackEffect.width; // Assume 6 frames
-        const frameHeight = loadedImages.attackEffect.height;
-        
-        ctx.drawImage(
-          loadedImages.attackEffect,
-          0, 0, frameWidth, frameHeight, // Source rectangle (sprite frame)
-          projectile.x, projectile.y, projectile.width, projectile.height // Destination rectangle
-        );
-      } else {
-        // Fallback projectile rectangle
-        ctx.fillStyle = '#9b59b6';
-        ctx.fillRect(projectile.x, projectile.y, projectile.width, projectile.height);
+      if (projectile.x < canvas.width && projectile.x + projectile.width > 0) {
+        if (loadedImages.attackEffect) {
+          const frameWidth = loadedImages.attackEffect.width; // Assume 6 frames
+          const frameHeight = loadedImages.attackEffect.height;
+          
+          ctx.drawImage(
+            loadedImages.attackEffect,
+            0, 0, frameWidth, frameHeight, // Source rectangle (sprite frame)
+            projectile.x, projectile.y, projectile.width, projectile.height // Destination rectangle
+          );
+        } else {
+          // Fallback projectile rectangle
+          ctx.fillStyle = '#9b59b6';
+          ctx.fillRect(projectile.x, projectile.y, projectile.width, projectile.height);
+        }
       }
     });
     
@@ -744,11 +801,43 @@
     
   }
   
+  // Game loop and performance variables
   let lastFrameTime = 0;
+  let frameTimeAccumulator = 0;
+  const TARGET_FPS = 60;
+  const FRAME_TIME = 1000 / TARGET_FPS;
+  const MAX_DELTA_TIME = 50; // Cap delta time to prevent large jumps
+  
+  // Mobile performance optimizations
+  let isMobile = false;
+  let performanceMode = 'auto'; // 'auto', 'performance', 'quality'
+  
+  function detectMobile() {
+    isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+               !!(navigator.maxTouchPoints && navigator.maxTouchPoints > 2 && /MacIntel/.test(navigator.platform));
+    
+    // Auto-adjust performance mode for mobile
+    if (isMobile && performanceMode === 'auto') {
+      performanceMode = 'performance';
+    }
+  }
+  
   function gameLoop() {
     const now = performance.now();
-    const deltaTime = now - lastFrameTime;
+    let deltaTime = Math.min(now - lastFrameTime, MAX_DELTA_TIME);
     lastFrameTime = now;
+    
+    // Frame rate limiting for mobile devices
+    if (isMobile) {
+      frameTimeAccumulator += deltaTime;
+      if (frameTimeAccumulator < FRAME_TIME) {
+        requestAnimationFrame(gameLoop);
+        return;
+      }
+      deltaTime = frameTimeAccumulator;
+      frameTimeAccumulator = 0;
+    }
+    
     if (!isPaused) {
       handleGamepadInput();
       updateGame(deltaTime);
@@ -890,8 +979,17 @@
   }
 
   onMount(() => {
+    // Detect mobile device for performance optimizations
+    detectMobile();
+    
     if (canvas) {
       ctx = canvas.getContext('2d')!;
+      
+      // Mobile-specific canvas optimizations
+      if (isMobile) {
+        ctx.imageSmoothingQuality = 'low';
+      }
+      
       loadAssets().then(() => {
         // Setup input event listeners
         window.addEventListener('keydown', handleKeyDown);
