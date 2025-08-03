@@ -8,11 +8,12 @@
   import { onMount } from "svelte";
   import { PopupStore, PopupResult } from "$lib/systems/PopupStore";
   import { Play, Pause, Heart, Keyboard, Smartphone, Gamepad2, ArrowUpFromLine, Sword, Clock, Trophy, Coins, Zap } from "lucide-svelte";
+  import { isPortrait } from "$lib/systems/Orientation";
 
   let goToNextScene: Writable<string | null>;
   let canvas: HTMLCanvasElement;
   let ctx: CanvasRenderingContext2D;
-  
+
   // Game state
   let gameState: 'playing' | 'paused' | 'gameOver' = 'playing';
   let survivalTime = 0;
@@ -583,25 +584,25 @@
     
     const result = await PopupStore.open({
       title: $t("gameOver"),
-      content: `<div style="background: rgba(0,0,0,0.8); color: white; padding: 20px; border-radius: 10px; text-align: left; line-height: 1.6;">
-        <div style="margin: 5px 0; display: flex; align-items: center; gap: 8px;">
+      content: `<div style="background: rgba(0,0,0,0.8); color: white; padding: 20px; border-radius: 10px; text-align: left; line-height: 1.2; font-size: 1rem;">
+        <div style="margin: 3px 0; display: flex; align-items: center; gap: 8px;">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
           <strong>${$t("survivalTimeLabel")}:</strong> ${formatTime(survivalTime)}
         </div>
-        <div style="margin: 5px 0; display: flex; align-items: center; gap: 8px;">
+        <div style="margin: 3px 0; display: flex; align-items: center; gap: 8px;">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6"/><path d="m13.25 13.25l4.75 4.75"/></svg>
           <strong>${$t("coinsCollectedLabel")}:</strong> ${coins}
         </div>
-        <div style="margin: 5px 0; display: flex; align-items: center; gap: 8px;">
+        <div style="margin: 3px 0; display: flex; align-items: center; gap: 8px;">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M14 9h1.5a2.5 2.5 0 0 0 0-5H14"/><path d="M6 9v6"/><path d="M14 9v6"/><path d="M6 15h1.5a2.5 2.5 0 0 0 0 5H6"/><path d="M14 15h1.5a2.5 2.5 0 0 1 0 5H14"/></svg>
           <strong>${$t("finalScoreLabel")}:</strong> ${score}
         </div>
-        <div style="margin: 5px 0; display: flex; align-items: center; gap: 8px;">
+        <div style="margin: 3px 0; display: flex; align-items: center; gap: 8px;">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13,2 3,14 12,14 11,22 21,10 12,10"/></svg>
           <strong>${$t("finalSpeedLabel")}:</strong> ${getCurrentScrollSpeed().toFixed(1)}x
         </div>
-        
-        <div style="margin-top: 15px; font-style: italic; color: #fbbf24;">
+
+        <div style="margin-top: 5px; font-style: italic; color: #fbbf24;">
           ${$t("encouragementMessage")}
         </div>
       </div>`,
@@ -631,29 +632,29 @@
       
       const result = await PopupStore.open({
         title: $t("gamePaused"),
-        content: `<div style="background: rgba(0,0,0,0.8); color: white; padding: 20px; border-radius: 10px; text-align: left; line-height: 1.6;">
-          <div style="margin: 5px 0; display: flex; align-items: center; gap: 8px;">
+        content: `<div style="background: rgba(0,0,0,0.8); color: white; padding: 20px; border-radius: 10px; text-align: left; line-height: 1.2; font-size: 1rem;">
+          <div style="margin: 3px 0; display: flex; align-items: center; gap: 8px;">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
             <strong>${$t("pauseTimeLabel")}:</strong> ${formatTime(survivalTime)}
           </div>
-          <div style="margin: 5px 0; display: flex; align-items: center; gap: 8px;">
+          <div style="margin: 3px 0; display: flex; align-items: center; gap: 8px;">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M14 9h1.5a2.5 2.5 0 0 0 0-5H14"/><path d="M6 9v6"/><path d="M14 9v6"/><path d="M6 15h1.5a2.5 2.5 0 0 0 0 5H6"/><path d="M14 15h1.5a2.5 2.5 0 0 1 0 5H14"/></svg>
             <strong>${$t("pauseScoreLabel")}:</strong> ${score}
           </div>
-          <div style="margin: 5px 0; display: flex; align-items: center; gap: 8px;">
+          <div style="margin: 3px 0; display: flex; align-items: center; gap: 8px;">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6"/><path d="m13.25 13.25l4.75 4.75"/></svg>
             <strong>${$t("pauseCoinsLabel")}:</strong> ${coins}
           </div>
-          <div style="margin: 5px 0; display: flex; align-items: center; gap: 8px;">
+          <div style="margin: 3px 0; display: flex; align-items: center; gap: 8px;">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.29 1.51 4.04 3 5.5l7 7Z"/></svg>
             <strong>${$t("pauseLivesLabel")}:</strong> ${lives}
           </div>
-          <div style="margin: 5px 0; display: flex; align-items: center; gap: 8px;">
+          <div style="margin: 3px 0; display: flex; align-items: center; gap: 8px;">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13,2 3,14 12,14 11,22 21,10 12,10"/></svg>
             <strong>${$t("currentSpeedLabel")}:</strong> ${getCurrentScrollSpeed().toFixed(1)}x
           </div>
           
-          <div style="margin-top: 15px; font-style: italic; color: #fbbf24;">
+          <div style="margin-top: 5px; font-style: italic; color: #fbbf24;">
             ${$t("pauseMessage")}
           </div>
         </div>`,
@@ -794,7 +795,7 @@
     </div>
 
     <!-- Game Instructions with Simplified Icon Format -->
-    <div class="instructions">
+    <div class="instructions" class:portrait={$isPortrait}>
       <div class="objective">
         <strong>{$t("gameObjective")}</strong>
       </div>
@@ -965,8 +966,10 @@
   .instructions {
     position: absolute;
     bottom: 1rem;
-    left: 50%;
-    transform: translateX(-50%);
+    right: 1rem;
+    transform: none;
+    width: 30%;
+    max-width: 30%;
     text-align: center;
     color: white;
     background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9));
@@ -974,15 +977,21 @@
     border: 1px solid rgba(148, 163, 184, 0.3);
     padding: 1rem;
     border-radius: 0.75rem;
-    font-size: 0.9rem;
+    font-size: 0.5rem;
     line-height: 1.4;
     box-shadow: 0 0 20px rgba(59, 130, 246, 0.2);
+  }
+
+  .instructions.portrait {
+    bottom: 0.5rem;
+    left: 50%;
+    transform: translateX(-50%);
     width: 90%;
     max-width: 95%;
   }
 
   .objective {
-    margin-bottom: 1rem;
+    margin-bottom: 0.2em;
     color: #fbbf24;
     font-weight: bold;
   }
@@ -990,13 +999,13 @@
   .controlsCompact {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: 0.2em;
   }
 
   .controlGroup {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.5em;
   }
 
   .actionLabel {
@@ -1007,9 +1016,9 @@
   .controls {
     display: flex;
     align-items: center;
-    gap: 0.25rem;
+    gap: 0.25em;
     flex-wrap: wrap;
-    font-size: 0.85rem;
+    font-size: 0.85em;
   }
 
   /* Mobile responsiveness */
@@ -1032,30 +1041,30 @@
     }
     
     .statItem {
-      font-size: 0.85rem;
+      font-size: 0.85em;
     }
     
     .statLabel {
-      font-size: 0.7rem;
+      font-size: 0.7em;
     }
     
     .statValue {
-      font-size: 1rem;
+      font-size: 1em;
     }
     
     .instructions {
-      font-size: 0.8rem;
-      padding: 0.75rem;
+      font-size: 0.5rem;
+      padding: 0.75em;
       max-width: 95%;
     }
 
     .controlGroup {
       align-items: flex-start;
-      gap: 0.25rem;
+      gap: 0.25em;
     }
 
     .controls {
-      font-size: 0.75rem;
+      font-size: 0.75em;
     }
   }
 </style>
