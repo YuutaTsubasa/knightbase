@@ -18,6 +18,7 @@ export type PopupData = {
   content: string;
   buttons: PopupButton[];
   resolve: (index: number) => void;
+  autoClose?: boolean;
 };
 
 const popupList = writable<PopupData[]>([]);
@@ -27,6 +28,7 @@ function open({
   title,
   content,
   buttons,
+  autoClose = false,
 }: Omit<PopupData, 'id' | 'resolve'>): Promise<number> {
   return new Promise<number>((resolve) => {
     const popup: PopupData = {
@@ -34,7 +36,8 @@ function open({
       title,
       content,
       buttons,
-      resolve
+      resolve,
+      autoClose
     };
     popupList.update((list) => [...list, popup]);
   });
@@ -44,8 +47,20 @@ function close(id: number) {
   popupList.update((list) => list.filter((p) => p.id !== id));
 }
 
+function autoClose(id: number) {
+  popupList.update((list) => {
+    const popup = list.find(p => p.id === id);
+    if (popup && popup.autoClose) {
+      popup.resolve(-1); // -1 indicates auto-close
+      return list.filter((p) => p.id !== id);
+    }
+    return list;
+  });
+}
+
 export const PopupStore = {
   subscribe: popupList.subscribe,
   open,
-  close
+  close,
+  autoClose
 };

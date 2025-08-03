@@ -4,7 +4,7 @@
   import Page from "$lib/components/Page.svelte";
   import { wait, waitUntil } from "$lib/utils/Wait";
   import { get, writable, type Writable } from "svelte/store";
-  import { onMount } from "svelte";
+  import { onMount, onDestroy } from "svelte";
   import { PopupStore, PopupResult } from "$lib/systems/PopupStore";
   import { Play, Pause, Heart, Keyboard, Smartphone, Gamepad2, ArrowUpFromLine, Sword, Clock, Trophy, DollarSign, Zap, CircleDollarSign, Target } from "lucide-svelte";
   import { isPortrait } from "$lib/systems/Orientation";
@@ -78,6 +78,14 @@
   let gamepadIndex: number | null = null;
   
   async function loadAssets() {
+    // Show loading popup
+    const loadingPopupPromise = PopupStore.open({
+      title: "Loading Game",
+      content: "Preparing your adventure...",
+      buttons: [],
+      autoClose: true
+    });
+
     const imagePromises = Object.entries({
       background: imageAssets[stageBackgroundImageKey(selectedStage)],
       run: imageAssets[characterRunImageKey(selectedCharacter)],
@@ -110,10 +118,17 @@
       AudioManager.preload("sfx_coin"),
       AudioManager.preload("sfx_hurt"),
       AudioManager.preload("sfx_explosion"),
+      // Countdown SFX
+      AudioManager.preload("sfx_countdown"),
+      AudioManager.preload("sfx_countdownFinish"),
     ];
     
     await Promise.all([...imagePromises, ...audioPreloadPromises]);
     assetsLoaded = true;
+
+    // Close loading popup
+    const loadingPopupId = await loadingPopupPromise;
+    PopupStore.autoClose(loadingPopupId);
   }
   
   // Input handling functions
@@ -246,9 +261,14 @@
     countdownTimer = 0;
     waitForCountdown = false;
     
+    // Stop any existing BGM before starting new one
+    AudioManager.stopBGM();
+    
     // Start playing stage BGM when countdown begins
     if (!shouldStop) {
       AudioManager.play(stageBgmAudioKey(selectedStage));
+      // Play initial countdown sound for "3"
+      AudioManager.play("sfx_countdown");
     }
   }
 
@@ -418,8 +438,12 @@
         countdown--;
         if (countdown > 0) {
           countdownText = countdown.toString();
+          // Play countdown sound for 3, 2, 1
+          AudioManager.play("sfx_countdown");
         } else if (countdown === 0) {
           countdownText = "GO!";
+          // Play countdown finish sound for GO!
+          AudioManager.play("sfx_countdownFinish");
         } else {
           showCountdown = false;
           isStop = false;
@@ -889,6 +913,11 @@
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
+  });
+
+  onDestroy(() => {
+    // Stop BGM when leaving the gameplay page
+    AudioManager.stopBGM();
   });
 </script>
 

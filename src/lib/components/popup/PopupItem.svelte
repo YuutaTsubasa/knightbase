@@ -45,17 +45,28 @@
   <div class="popupBackground" style="background-image: url({imageAssets["backgroundWhite"]}); background-color: white;">
     <div class="popupBox" bind:this={boxElement}>
       <div class="popupTitle" style={FontAssets.getCssStyle("titleBold")}>{popup.title}</div>
-      <div class="popupContent" style={FontAssets.getCssStyle("default")}>{@html popup.content}</div>
-      <div class="popupButtons">
-        {#each popup.buttons as { text, variant }, i}
-          <Button
-            variant={variant}
-            onClick={() => handleClick(i)}
-          >
-            {text}
-          </Button>
-        {/each}
+      <div class="popupContent" style={FontAssets.getCssStyle("default")}>
+        {#if popup.autoClose}
+          <div class="loadingContainer">
+            <div class="loadingSpinner"></div>
+            <div class="loadingText">{@html popup.content}</div>
+          </div>
+        {:else}
+          {@html popup.content}
+        {/if}
       </div>
+      {#if !popup.autoClose && popup.buttons.length > 0}
+        <div class="popupButtons">
+          {#each popup.buttons as { text, variant }, i}
+            <Button
+              variant={variant}
+              onClick={() => handleClick(i)}
+            >
+              {text}
+            </Button>
+          {/each}
+        </div>
+      {/if}
     </div>
   </div>
 </div>
@@ -114,5 +125,30 @@
     justify-content: center;
     gap: 0.5rem;
     flex-wrap: wrap;
+  }
+
+  .loadingContainer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .loadingSpinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #3498db;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+
+  .loadingText {
+    text-align: center;
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
   }
 </style>

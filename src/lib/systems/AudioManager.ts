@@ -69,5 +69,16 @@ export class AudioManager {
     group.connectMediaElement(videoElement);
   }
 
+  static stopGroup(groupId: AudioGroupId) {
+    const group = this.groups.get(groupId);
+    if (group) {
+      group.stop();
+    }
+  }
+
+  static stopBGM() {
+    this.stopGroup("bgm");
+  }
+
   private static buffers: Map<string, { buffer: AudioBuffer; group: AudioGroupId }> = new Map();
 }
