@@ -7,14 +7,14 @@ body.route-root,
 body.route-title,
 body.route-mainmenu,
 body.route-battlemenu,
-body.route-character,
 body.route-stage,
 body.route-mission,
 body.route-shop {
   overflow: hidden !important;
 }
 
-body.route-settings {
+body.route-settings,
+body.route-character {
   overflow-x: hidden !important;
   overflow-y: scroll !important;
 }

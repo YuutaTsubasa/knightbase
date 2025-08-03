@@ -10,11 +10,12 @@
   import { playerStore } from "$lib/systems/PlayerStore";
   import { page } from "$app/state";
   import { AudioManager } from "$lib/systems/AudioManager";
-  import { t } from "$lib/assets/LocalizationAssets";
+  import { t } from "$lib/systems/LocalizationStore";
   import { get, writable, type Writable } from "svelte/store";
   import { format } from "$lib/utils/StringUtils";
   import { isPortrait } from "$lib/systems/Orientation";
   import { CoinsIcon, DiamondIcon, GemIcon } from "lucide-svelte";
+  import { characterBackgroundVideoKey } from "$lib/utils/KeyHelper";
 
   let playerData = $playerStore;
 
@@ -34,7 +35,7 @@
 
 <Page mainProgress={main} wrapperClass="mainMenuPage">
   <div class="videoBackground" slot="outside">
-    <Video key={`${selectedCharacter}Background`} />
+    <Video key={characterBackgroundVideoKey(selectedCharacter)} />
   </div>
 
   <div class="mainMenuLayout" class:portrait={$isPortrait} class:landscape={!$isPortrait}>

@@ -5,7 +5,7 @@ import { writable, get, type Writable, derived } from "svelte/store";
 const FILE_PATH = "/assets/staticData/localization.csv"
 const DEFAULT_LOCALE = "en-us";
 const NOTHING = "#NOTHING#";
-export class LocalizationAssets {
+export class LocalizationStore {
   static data: Writable<Record<string, Record<string, string>>> = writable({});
   static locale = writable(DEFAULT_LOCALE);
   
@@ -30,7 +30,7 @@ export class LocalizationAssets {
 
     // Start loading in background but don't block
     const loadPromise = this.load().then(() => {
-      this.locale.set(PlayerDataManager.getData().locale ?? LocalizationAssets.detectUserLocale());
+      this.locale.set(PlayerDataManager.getData().locale ?? LocalizationStore.detectUserLocale());
     }).catch(error => {
       console.warn('Failed to load localization assets:', error);
       // Set default locale even if loading fails
@@ -63,7 +63,7 @@ export class LocalizationAssets {
   }
 
   static availableLocales = derived(
-    [LocalizationAssets.data],
+    [LocalizationStore.data],
     ([$data]) => Object.keys($data));
 
   static setLocale(newLocale: string) {
@@ -76,15 +76,15 @@ export class LocalizationAssets {
 }
 
 export const t = derived(
-  [LocalizationAssets.locale, LocalizationAssets.data],
+  [LocalizationStore.locale, LocalizationStore.data],
   ([$locale, $data]) => {
     return (key: string) => {
       const lang = $locale.toLowerCase();
       const value = $data[lang]?.[key];
-      if (value && value !== "") return LocalizationAssets.preprocess(value);
+      if (value && value !== "") return LocalizationStore.preprocess(value);
 
       const fallback = $data[DEFAULT_LOCALE]?.[key];
-      if (fallback && fallback !== "") return LocalizationAssets.preprocess(fallback);
+      if (fallback && fallback !== "") return LocalizationStore.preprocess(fallback);
 
       return key;
     };

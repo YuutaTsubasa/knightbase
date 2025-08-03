@@ -6,7 +6,7 @@
   import { imageAssets } from '$lib/assets/ImageAssets';
   import Topbar from '$lib/components/Topbar.svelte';
   import Button from '$lib/components/Button.svelte';
-  import { LocalizationAssets, t } from '$lib/assets/LocalizationAssets';
+  import { LocalizationStore, t } from '$lib/systems/LocalizationStore';
   import { BoxIcon, DrumIcon, FormInputIcon, MessageSquareTextIcon, Music4Icon, Volume2Icon } from 'lucide-svelte';
   import { get, writable, type Writable } from 'svelte/store';
   import StatusBox from '$lib/components/StatusBox.svelte';
@@ -17,8 +17,8 @@
   $: bgmVolume = playerData.bgmVolume;
   $: sfxVolume = playerData.sfxVolume;
 
-  $: locale = LocalizationAssets.locale;
-  $: availableLocales = LocalizationAssets.availableLocales;
+  $: locale = LocalizationStore.locale;
+  $: availableLocales = LocalizationStore.availableLocales;
 
   $: topBarHeight = 0;
   let restoreText = '';
@@ -105,7 +105,7 @@
       <div class="labelTitle">
         <MessageSquareTextIcon class="icon" size="20"/> {$t("language")}
       </div>
-      <select bind:value={$locale} on:change={() => {LocalizationAssets.setLocale(LocalizationAssets.getLocale());}}>
+      <select bind:value={$locale} on:change={() => {LocalizationStore.setLocale(LocalizationStore.getLocale());}}>
         {#each $availableLocales as availableLocale }
           <option value={availableLocale}>{$t(availableLocale)}</option>
         {/each}

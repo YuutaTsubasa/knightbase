@@ -1,6 +1,6 @@
 <script lang="ts">
   import { imageAssets } from "$lib/assets/ImageAssets";
-  import { t } from "$lib/assets/LocalizationAssets";
+  import { t } from "$lib/systems/LocalizationStore";
   import Page from "$lib/components/Page.svelte";
   import { wait, waitUntil } from "$lib/utils/Wait";
   import { get, writable, type Writable } from "svelte/store";
@@ -896,9 +896,9 @@
           <Sword size={16} />
           <span class="actionLabel">Attack:</span>
           <span class="controls">
-            <Keyboard size={12} />: [Enter/X/Z/D/→] | 
+            <Keyboard size={12} />: Enter/X/Z/D/→ | 
             <Smartphone size={12} />: {$t("touchRight")} | 
-            <Gamepad2 size={12} />: [B/X]
+            <Gamepad2 size={12} />: B/X
           </span>
         </div>
       </div>

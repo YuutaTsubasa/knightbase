@@ -1,7 +1,7 @@
 <script lang="ts">
   import PopupHost from '$lib/components/popup/PopupHost.svelte';
   import { FontAssets } from '$lib/assets/FontAssets';
-  import { LocalizationAssets } from '$lib/assets/LocalizationAssets';
+  import { LocalizationStore } from '$lib/systems/LocalizationStore';
   import { StaticDataStore } from '$lib/systems/StaticDataStore';
   import { page } from '$app/state';
   import { onMount } from 'svelte';
@@ -11,7 +11,7 @@
   
   // Initialize static data systems
   onMount(() => {
-    LocalizationAssets.initialize();
+    LocalizationStore.initialize();
     StaticDataStore.initialize();
   });
 

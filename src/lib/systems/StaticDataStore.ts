@@ -1,5 +1,5 @@
 import { parse } from 'papaparse';
-import { writable, get, type Writable } from "svelte/store";
+import { writable, get, type Writable, derived } from "svelte/store";
 
 // Define interfaces for all static data types
 export interface PlayerData {
@@ -11,7 +11,6 @@ export interface CharacterData {
   characterId: string;
   characterNameKey: string;
   characterDescriptionKey: string;
-  characterIconKey: string;
   BaseHp: number;
   BaseSp: number;
   BaseAtk: number;
@@ -20,7 +19,7 @@ export interface CharacterData {
 }
 
 export interface CharacterLevelAbilityData {
-  characterId: number;
+  characterId: string;
   characterLevel: number;
   characterExp: number;
   IncreasedHp: number;
@@ -171,38 +170,38 @@ export class StaticDataStore {
   }
 
   // Utility methods to get data by ID
-  static getCharacterById(id: string): CharacterData | undefined {
-    const characters = get(this.characterData);
-    return characters.find(char => char.characterId === id);
-  }
+  static getCharacterById = (id: string) =>
+    derived(this.characterData, (characterData) =>
+      characterData.find((char) => char.characterId === id)
+    );
 
-  static getItemById(id: number): ItemData | undefined {
-    const items = get(this.itemData);
-    return items.find(item => item.ItemId === id);
-  }
+  static getItemById = (id: number) =>
+    derived(this.itemData, (itemData) =>
+      itemData.find((item) => item.ItemId === id)
+    );
 
-  static getShopItemsByCategory(categoryId: number): ShopData[] {
-    const shopItems = get(this.shopData);
-    return shopItems.filter(item => item.shopCategoryId === categoryId);
-  }
+  static getShopItemsByCategory = (categoryId: number) =>
+    derived(this.shopData, (shopData) =>
+      shopData.filter((item) => item.shopCategoryId === categoryId)
+    );
 
-  static getMissionsByCategory(categoryId: number): MissionData[] {
-    const missions = get(this.missionData);
-    return missions.filter(mission => mission.missionCategoryId === categoryId);
-  }
+  static getMissionByCategory = (categoryId: number) =>
+    derived(this.missionData, (missionData) =>
+      missionData.filter((mission) => mission.missionCategoryId === categoryId)
+    );
 
-  static getCharacterLevelAbility(characterId: number, level: number): CharacterLevelAbilityData | undefined {
-    const abilities = get(this.characterLevelAbilityData);
-    return abilities.find(ability => ability.characterId === characterId && ability.characterLevel === level);
-  }
+  static getCharacterLevelAbility = (characterId: string, level: number) =>
+    derived(this.characterLevelAbilityData, (abilityData) =>
+      abilityData.find((ability) => ability.characterId === characterId && ability.characterLevel === level)
+    );
 
-  static getEquipmentById(itemId: number): EquipmentData | undefined {
-    const equipment = get(this.equipmentData);
-    return equipment.find(eq => eq.ItemId === itemId);
-  }
+  static getEquipmentById = (itemId: number) =>
+    derived(this.equipmentData, (equipmentData) =>
+      equipmentData.find((eq) => eq.ItemId === itemId)
+    );
 
-  static getPoisonById(itemId: number): PoisonData | undefined {
-    const poisons = get(this.poisonData);
-    return poisons.find(poison => poison.ItemId === itemId);
-  }
+  static getPoisonById = (itemId: number) =>
+    derived(this.poisonData, (poisons) =>
+      poisons.find((poison) => poison.ItemId === itemId)
+    );
 }

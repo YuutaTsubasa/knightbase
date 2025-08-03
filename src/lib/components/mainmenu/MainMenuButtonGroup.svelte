@@ -1,6 +1,6 @@
 <script lang="ts">
   import { ListIcon, SettingsIcon, ShoppingCartIcon, SwordIcon } from "lucide-svelte";
-  import { t } from "$lib/assets/LocalizationAssets";
+  import { t } from "$lib/systems/LocalizationStore";
 
   export let progressText = "";
   export let isPortrait = false;

@@ -1,7 +1,7 @@
 <script lang="ts">
   import { FontAssets } from "$lib/assets/FontAssets";
   import { imageAssets } from "$lib/assets/ImageAssets";
-  import { t } from "$lib/assets/LocalizationAssets";
+  import { t } from "$lib/systems/LocalizationStore";
   import Image from "$lib/components/Image.svelte";
   import Page from "$lib/components/Page.svelte";
   import Button from "$lib/components/Button.svelte";

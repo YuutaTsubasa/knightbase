@@ -33,7 +33,7 @@
   .statusBox {
     display: grid;
     grid-template-columns: 60px 1fr;
-    min-height: 60px;
+    min-ssheight: 60px;
     background-color: black;
     overflow: hidden;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);

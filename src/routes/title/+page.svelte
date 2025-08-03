@@ -4,9 +4,10 @@
   import Video from "$lib/components/Video.svelte";
   import { waitUntil } from "$lib/utils/Wait";
   import { AudioManager } from "$lib/systems/AudioManager";
-  import { t } from "$lib/assets/LocalizationAssets";
-  import { get, writable, type Writable } from "svelte/store";
+  import { t } from "$lib/systems/LocalizationStore";
+  import { writable, type Writable } from "svelte/store";
   import { playerStore } from "$lib/systems/PlayerStore";
+  import { characterBackgroundVideoKey } from "$lib/utils/KeyHelper";
 
   $: selectedCharacter = $playerStore.selectedCharacter;
 
@@ -22,7 +23,7 @@
 
 <Page mainProgress={main} wrapperClass="titlePage">
   <div class="videoBackground" slot="outside">
-    <Video key={`${selectedCharacter}Background`} />
+    <Video key={characterBackgroundVideoKey(selectedCharacter)} />
     <div class="videoMask"></div>
   </div>
 

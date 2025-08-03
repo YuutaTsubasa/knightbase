@@ -9,6 +9,7 @@ export const imageAssets: Record<string, string> = {
   stageBackground: '/assets/images/stageBackground.webp',
   stage01background: '/assets/images/stage01background.webp',
   yuutaPortrait: '/assets/images/characters/yuuta/yuutaPortrait.webp',
+  alicePortrait: '/assets/images/characters/alice/alicePortrait.webp',
   // Game character sprites
   yuutaRun: '/assets/images/characters/yuuta/yuutaRun.webp',
   yuutaJump: '/assets/images/characters/yuuta/yuutaJump.webp',

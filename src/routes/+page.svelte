@@ -3,7 +3,7 @@
   import Page from '$lib/components/Page.svelte';
   import { PopupStore, PopupResult } from '$lib/systems/PopupStore';
   import Image from '$lib/components/Image.svelte';
-  import { t } from '$lib/assets/LocalizationAssets';
+  import { t } from '$lib/systems/LocalizationStore';
   
   async function main() {
     await wait(1000);
