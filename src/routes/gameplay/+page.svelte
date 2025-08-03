@@ -928,22 +928,9 @@
     align-items: center;
     justify-content: center;
     background: rgba(255, 255, 255, 0.02);
-    /* border: 1px dashed rgba(0, 0, 0, 0.3); */
     pointer-events: auto;
     cursor: pointer;
     transition: background 0.3s;
-  }
-
-  .touchZone:hover {
-    background: rgba(59, 130, 246, 0.1);
-  }
-
-  .touchZone.left {
-    /* border-right: 1px dashed rgba(0, 0, 0, 0.3); */
-  }
-
-  .touchZone.right {
-    /* border-left: 1px dashed rgba(0, 0, 0, 0.3); */
   }
 
   .instructions {
