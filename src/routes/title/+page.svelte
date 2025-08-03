@@ -5,8 +5,10 @@
   import { waitUntil } from "$lib/utils/Wait";
   import { AudioManager } from "$lib/systems/AudioManager";
   import { t } from "$lib/assets/LocalizationAssets";
-  import { get, writable } from "svelte/store";
-  import type { Writable } from "svelte/store";
+  import { get, writable, type Writable } from "svelte/store";
+  import { playerStore } from "$lib/systems/PlayerStore";
+
+  $: selectedCharacter = $playerStore.selectedCharacter;
 
   let shouldGoToNextPage: Writable<boolean>;
   async function main() {
@@ -20,7 +22,7 @@
 
 <Page mainProgress={main} wrapperClass="titlePage">
   <div class="videoBackground" slot="outside">
-    <Video key="titleBackground" />
+    <Video key={`${selectedCharacter}Background`} />
     <div class="videoMask"></div>
   </div>
 

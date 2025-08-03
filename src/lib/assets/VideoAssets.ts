@@ -5,8 +5,12 @@ export interface VideoAsset {
 }
 
 export const videoAssets: Record<string, VideoAsset> = {
-  titleBackground: {
-    url: "/assets/videos/titleBackground.mp4",
+  yuutaBackground: {
+    url: "/assets/videos/yuutaBackground.mp4",
+    loop: true,
+  },
+  aliceBackground: {
+    url: "/assets/videos/aliceBackground.mp4",
     loop: true,
   },
 };

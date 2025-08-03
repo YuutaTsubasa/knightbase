@@ -22,6 +22,7 @@
   $: playerLevel = playerData.level;
   $: playerTitle = playerData.selectedTitle;
   $: playerExperience = playerData.experience;
+  $: selectedCharacter = playerData.selectedCharacter;
 
   let goToNextScene: Writable<string | null>;
   async function main() {
@@ -33,7 +34,7 @@
 
 <Page mainProgress={main} wrapperClass="mainMenuPage">
   <div class="videoBackground" slot="outside">
-    <Video key="titleBackground" />
+    <Video key={`${selectedCharacter}Background`} />
   </div>
 
   <div class="mainMenuLayout" class:portrait={$isPortrait} class:landscape={!$isPortrait}>

@@ -8,7 +8,7 @@ export interface PlayerData {
 }
 
 export interface CharacterData {
-  characterId: number;
+  characterId: string;
   characterNameKey: string;
   characterDescriptionKey: string;
   characterIconKey: string;
@@ -171,7 +171,7 @@ export class StaticDataStore {
   }
 
   // Utility methods to get data by ID
-  static getCharacterById(id: number): CharacterData | undefined {
+  static getCharacterById(id: string): CharacterData | undefined {
     const characters = get(this.characterData);
     return characters.find(char => char.characterId === id);
   }

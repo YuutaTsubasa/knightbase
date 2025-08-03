@@ -6,16 +6,15 @@
   import Page from "$lib/components/Page.svelte";
   import SpaceBetweenTextGroup from "$lib/components/SpaceBetweenTextGroup.svelte";
   import Topbar from "$lib/components/Topbar.svelte";
+  import { playerStore } from "$lib/systems/PlayerStore";
+    import { StaticDataStore } from "$lib/systems/StaticDataStore";
   import { BACK_PATH } from "$lib/utils/Constant";
   import { format } from "$lib/utils/StringUtils";
   import { waitUntil } from "$lib/utils/Wait";
   import { get, writable, type Writable } from "svelte/store";
  
   $: topbarHeight = 0;
-  $: character = {
-    name: $t("yuutaName"),
-    imageKey: "yuutaPortrait"
-  };
+  $: selectedCharacter = StaticDataStore.getCharacterById($playerStore.selectedCharacter);
   $: progressText = $t("none");
 
   let goToNextScene: Writable<string | null>;
@@ -40,12 +39,12 @@
     <div class="menuButtonContainer">
       <button class="menuButton leftButton" style="background-image: url({imageAssets["characterBackground"]}); background-size: cover; background-position: center center; "
           on:click={() => goToNextScene.set("/character")}>
-        <div class="bg"><Image key={character.imageKey} alt={character.name} className="portrait fadeinPortrait" /></div>
+        <div class="bg"><Image key={`${selectedCharacter?.characterId}Portrait`} alt={$t(selectedCharacter?.characterNameKey ?? "")} className="portrait fadeinPortrait" /></div>
         <div class="content">
           <div class="title" style={FontAssets.getCssStyle("titleBold")}>
             <SpaceBetweenTextGroup content={$t('character')} spacing="0.3em" />
           </div>
-          <div class="description">{format($t('selectedCharacter'), character.name)}</div>
+          <div class="description">{format($t('selectedCharacter'), $t(selectedCharacter?.characterNameKey ?? ""))}</div>
         </div>
       </button>
     </div>
