@@ -14,8 +14,12 @@ export const imageAssets: Record<string, string> = {
   yuutaRun: '/assets/images/characters/yuuta/yuutaRun.webp',
   yuutaJump: '/assets/images/characters/yuuta/yuutaJump.webp',
   yuutaAttack: '/assets/images/characters/yuuta/yuutaAttack.webp',
+  yuutaAttackEffect: '/assets/images/characters/yuuta/yuutaAttackEffect.webp',
+  aliceRun: '/assets/images/characters/alice/aliceRun.webp',
+  aliceJump: '/assets/images/characters/alice/aliceJump.webp',
+  aliceAttack: '/assets/images/characters/alice/aliceAttack.webp',
+  aliceAttackEffect: '/assets/images/characters/alice/aliceAttackEffect.webp',
   // Game objects
-  attackEffect: '/assets/images/attackEffect.webp',
   enemy: '/assets/images/enemy.webp',
   coin: '/assets/images/coin.webp',
   trap: '/assets/images/trap.webp',

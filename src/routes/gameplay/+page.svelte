@@ -8,11 +8,15 @@
   import { PopupStore, PopupResult } from "$lib/systems/PopupStore";
   import { Play, Pause, Heart, Keyboard, Smartphone, Gamepad2, ArrowUpFromLine, Sword, Clock, Trophy, DollarSign, Zap, CircleDollarSign, Target } from "lucide-svelte";
   import { isPortrait } from "$lib/systems/Orientation";
-    import { FontAssets } from "$lib/assets/FontAssets";
+  import { FontAssets } from "$lib/assets/FontAssets";
+  import { playerStore } from "../../lib/systems/PlayerStore";
+  import { characterAttackImageKey, characterJumpImageKey, characterRunImageKey, characterAttackEffectImageKey } from "$lib/utils/KeyHelper";
 
   let goToNextScene: Writable<string | null>;
   let canvas: HTMLCanvasElement;
   let ctx: CanvasRenderingContext2D;
+
+  $: selectedCharacter = $playerStore.selectedCharacter;
 
   // Game state
   let gameState: 'playing' | 'paused' | 'gameOver' = 'playing';
@@ -73,10 +77,10 @@
   async function loadAssets() {
     const imagePromises = Object.entries({
       background: imageAssets.stage01background,
-      yuutaRun: imageAssets.yuutaRun,
-      yuutaJump: imageAssets.yuutaJump,
-      yuutaAttack: imageAssets.yuutaAttack,
-      attackEffect: imageAssets.attackEffect,
+      run: characterRunImageKey(selectedCharacter),
+      jump: characterJumpImageKey(selectedCharacter),
+      attack: characterAttackImageKey(selectedCharacter),
+      attackEffect: characterAttackEffectImageKey(selectedCharacter),
       enemy: imageAssets.enemy,
       coin: imageAssets.coin,
       trap: imageAssets.trap
