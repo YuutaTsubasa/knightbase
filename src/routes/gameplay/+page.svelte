@@ -257,11 +257,9 @@
     countdownTimer = 0;
     waitForCountdown = false;
     
-    // Stop any existing BGM before starting new one
-    AudioManager.stopBGM();
-    
     // Start playing stage BGM when countdown begins
     if (!shouldStop) {
+      AudioManager.stopBGM();
       AudioManager.play(stageBgmAudioKey(selectedStage));
       AudioManager.play("sfx_countdown");
     }

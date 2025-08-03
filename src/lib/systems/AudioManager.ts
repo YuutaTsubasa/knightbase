@@ -6,6 +6,8 @@ import { playerStore, type PlayerData } from "./PlayerStore";
 export class AudioManager {
   private static context = new AudioContext();
   private static groups: Map<AudioGroupId, AudioGroup> = new Map();
+  private static buffers: Map<string, { buffer: AudioBuffer; group: AudioGroupId }> = new Map();
+  private static currentBGMStopFunction: (() => void) | null = null;
 
   static initialize() {
     if (this.groups.entries.length > 0)
@@ -52,7 +54,14 @@ export class AudioManager {
     const source = this.context.createBufferSource();
     source.buffer = data.buffer;
     const group = this.groups.get(data.group)!;
-    return group.play(source.buffer);
+    const stopFunction = group.play(source.buffer);
+
+    // 如果是 BGM，保存停止函數
+    if (data.group === 'bgm') {
+      this.currentBGMStopFunction = stopFunction;
+    }
+
+    return stopFunction;
   }
 
   private static updateVolumeFromPlayerData(playerData: PlayerData){
@@ -88,8 +97,20 @@ export class AudioManager {
   }
 
   static stopBGM() {
-    this.stopGroup("bgm");
+    // 使用保存的停止函數來停止當前 BGM
+    if (this.currentBGMStopFunction) {
+      this.currentBGMStopFunction();
+      this.currentBGMStopFunction = null;
+    }
+
+    // 同時也停止 BGM 群組
+     this.stopGroup("bgm");
   }
 
-  private static buffers: Map<string, { buffer: AudioBuffer; group: AudioGroupId }> = new Map();
+  static stopAll() {
+    this.groups.forEach((group) => {
+      group.stop();
+    });
+    this.currentBGMStopFunction = null;
+  }
 }

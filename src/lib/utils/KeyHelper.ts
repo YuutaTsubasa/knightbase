@@ -31,9 +31,7 @@ export function characterBackgroundVideoKey(characterId: string): string {
 }
 
 export function stageBackgroundImageKey(stageId: string): string {
-  // Map stage1 -> stage01 for current assets  
-  const assetStageId = stageId === "stage1" ? "stage01" : stageId;
-  return `${assetStageId}background`;
+  return `${stageId}Background`;
 }
 
 export function stageBgmAudioKey(stageId: string): string {

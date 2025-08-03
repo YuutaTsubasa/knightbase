@@ -48,7 +48,9 @@ export class AudioGroup {
     if (this.currentNode) {
       try {
         this.currentNode.stop();
-      } catch {}
+      } catch (error) {
+        console.log("🎵 Error stopping audio node:", error);
+      }
       this.currentNode.disconnect();
       this.currentNode = null;
     }
