@@ -10,13 +10,15 @@
   import { isPortrait } from "$lib/systems/Orientation";
   import { FontAssets } from "$lib/assets/FontAssets";
   import { playerStore } from "../../lib/systems/PlayerStore";
-  import { characterAttackImageKey, characterJumpImageKey, characterRunImageKey, characterAttackEffectImageKey } from "$lib/utils/KeyHelper";
+  import { characterAttackImageKey, characterJumpImageKey, characterRunImageKey, characterAttackEffectImageKey, stageBackgroundImageKey, stageBgmAudioKey, characterWalkAudioKey, characterAttackAudioKey } from "$lib/utils/KeyHelper";
+  import { AudioManager } from "$lib/systems/AudioManager";
 
   let goToNextScene: Writable<string | null>;
   let canvas: HTMLCanvasElement;
   let ctx: CanvasRenderingContext2D;
 
   $: selectedCharacter = $playerStore.selectedCharacter;
+  $: selectedStage = $playerStore.selectedStage;
 
   // Game state
   let gameState: 'playing' | 'paused' | 'gameOver' = 'playing';
@@ -77,7 +79,7 @@
   
   async function loadAssets() {
     const imagePromises = Object.entries({
-      background: imageAssets.stage01background,
+      background: imageAssets[stageBackgroundImageKey(selectedStage)],
       run: imageAssets[characterRunImageKey(selectedCharacter)],
       jump: imageAssets[characterJumpImageKey(selectedCharacter)],
       attack: imageAssets[characterAttackImageKey(selectedCharacter)],
@@ -97,7 +99,20 @@
       });
     });
     
-    await Promise.all(imagePromises);
+    // Preload audio assets
+    const audioPreloadPromises = [
+      // Stage BGM
+      AudioManager.preload(stageBgmAudioKey(selectedStage)),
+      // Character audio
+      AudioManager.preload(characterWalkAudioKey(selectedCharacter)),
+      AudioManager.preload(characterAttackAudioKey(selectedCharacter)),
+      // Game SFX
+      AudioManager.preload("sfx_coin"),
+      AudioManager.preload("sfx_hurt"),
+      AudioManager.preload("sfx_explosion"),
+    ];
+    
+    await Promise.all([...imagePromises, ...audioPreloadPromises]);
     assetsLoaded = true;
   }
   
@@ -230,6 +245,11 @@
     showCountdown = true;
     countdownTimer = 0;
     waitForCountdown = false;
+    
+    // Start playing stage BGM when countdown begins
+    if (!shouldStop) {
+      AudioManager.play(stageBgmAudioKey(selectedStage));
+    }
   }
 
   function jump() {
@@ -244,6 +264,9 @@
     if (player.animation !== 'attack' && gameState === 'playing') {
       player.animation = 'attack';
       player.animationTimer = 0;
+      
+      // Play attack audio
+      AudioManager.play(characterAttackAudioKey(selectedCharacter));
       
       projectiles.push({
         x: player.x + player.width,
@@ -344,8 +367,16 @@
       player.animationTimer += deltaTime;
       const animationSpeed = player.animation === 'attack' ? 150 : 100; // Slower for attack animation
       if (player.animationTimer > animationSpeed) {
+        const previousFrame = player.animationFrame;
         player.animationFrame = (player.animationFrame + 1) % 6;
         player.animationTimer = 0;
+        
+        // Play walk audio on specific frames
+        if (player.animation === 'run' && (player.animationFrame === 0 || player.animationFrame === 3)) {
+          AudioManager.play(characterWalkAudioKey(selectedCharacter));
+        } else if (player.animation === 'jump' && (player.animationFrame === 0 || player.animationFrame === 5)) {
+          AudioManager.play(characterWalkAudioKey(selectedCharacter));
+        }
         
         if (player.animation === 'attack' && player.animationFrame === 0) {
           player.animation = player.onGround ? 'run' : 'jump';
@@ -432,6 +463,8 @@
         coin.collected = true;
         coins++;
         score += 10; // Award 10 points for collecting a coin
+        // Play coin audio
+        AudioManager.play("sfx_coin");
       }
     });
     
@@ -442,6 +475,8 @@
           lives--;
           isInvincible = true;
           invincibleTimer = INVINCIBLE_DURATION;
+          // Play hurt audio
+          AudioManager.play("sfx_hurt");
         }
         // Remove the enemy that hit the player
         enemies.splice(enemyIndex, 1);
@@ -459,6 +494,8 @@
           lives--;
           isInvincible = true;
           invincibleTimer = INVINCIBLE_DURATION;
+          // Play hurt audio
+          AudioManager.play("sfx_hurt");
         }
         if (lives <= 0) {
           handleGameOver();
@@ -478,6 +515,8 @@
           projectiles.splice(projIndex, 1);
           spawnExplosion(enemy);
           score += 10; // Award 10 points for defeating an enemy
+          // Play explosion audio
+          AudioManager.play("sfx_explosion");
         }
       });
     });
@@ -857,7 +896,7 @@
   contentStyle="box-sizing: border-box; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative;">
   
   <!-- Layered background effects for page wrapper -->
-  <div slot="outside" class="pageBackground" style="background-image: url({imageAssets.stage01background});">
+  <div slot="outside" class="pageBackground" style="background-image: url({imageAssets[stageBackgroundImageKey(selectedStage)]});">
 
 
   </div>

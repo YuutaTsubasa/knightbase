@@ -10,6 +10,7 @@
   import { get, writable, type Writable } from "svelte/store";
   import { Star, ChevronDown, ChevronUp } from "lucide-svelte";
   import { AudioManager } from "$lib/systems/AudioManager";
+  import { playerStore } from "$lib/systems/PlayerStore";
 
   $: topbarHeight = 0;
   let expandedStage: number | null = null;
@@ -94,6 +95,8 @@
         {
           text: $t("enter"),
           onClick: () => {
+            // Save selected stage to PlayerStore
+            playerStore.update(data => ({ ...data, selectedStage: `stage${stageId}` }));
             // Navigate to gameplay
             goToNextScene.set("/gameplay");
             return PopupResult.Close;

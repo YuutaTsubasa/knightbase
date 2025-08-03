@@ -19,13 +19,23 @@ export function characterAttackEffectImageKey(characterId: string): string {
 }
 
 export function characterWalkAudioKey(characterId: string): string {
-  return `${characterId}Walk`;
+  return `sfx_${characterId}Walk`;
 }
 
 export function characterAttackAudioKey(characterId: string): string {
-  return `${characterId}Attack`;
+  return `sfx_${characterId}Attack`;
 }
 
 export function characterBackgroundVideoKey(characterId: string): string {
   return `${characterId}Background`;
+}
+
+export function stageBackgroundImageKey(stageId: string): string {
+  // Map stage1 -> stage01 for current assets  
+  const assetStageId = stageId === "stage1" ? "stage01" : stageId;
+  return `${assetStageId}background`;
+}
+
+export function stageBgmAudioKey(stageId: string): string {
+  return `bgm_${stageId}`;
 }
