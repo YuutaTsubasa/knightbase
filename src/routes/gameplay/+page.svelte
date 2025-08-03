@@ -1,14 +1,14 @@
 <script lang="ts">
-  import { FontAssets } from "$lib/assets/FontAssets";
   import { imageAssets } from "$lib/assets/ImageAssets";
   import { t } from "$lib/assets/LocalizationAssets";
   import Page from "$lib/components/Page.svelte";
-  import { waitUntil } from "$lib/utils/Wait";
+  import { wait, waitUntil } from "$lib/utils/Wait";
   import { get, writable, type Writable } from "svelte/store";
   import { onMount } from "svelte";
   import { PopupStore, PopupResult } from "$lib/systems/PopupStore";
   import { Play, Pause, Heart, Keyboard, Smartphone, Gamepad2, ArrowUpFromLine, Sword, Clock, Trophy, DollarSign, Zap, CircleDollarSign, Target } from "lucide-svelte";
   import { isPortrait } from "$lib/systems/Orientation";
+    import { FontAssets } from "$lib/assets/FontAssets";
 
   let goToNextScene: Writable<string | null>;
   let canvas: HTMLCanvasElement;
@@ -22,6 +22,9 @@
   let lives = 3;
   let score = 0;
   let isPaused = false;
+  let isInvincible = false;
+  let invincibleTimer = 0;
+  const INVINCIBLE_DURATION = 1500;
   
   // Game entities (4x size for player, 2x size for others) with separate collision boxes
   let player = {
@@ -53,11 +56,11 @@
   const GRAVITY = 0.8;
   const JUMP_FORCE = -20; // Increased from -15 to account for larger objects
   const GROUND_Y = 480; // Moved down 160px as requested (was 320)
-  const BASE_SCROLL_SPEED = 4.5; // Increased 3x from 1.5 to make gameplay faster
+  const BASE_SCROLL_SPEED = 8; 
 
   // Trap spawning control - increased interval 3x
   let lastTrapSpawnTime = 0;
-  const MIN_TRAP_INTERVAL = 5000; // Minimum 5 seconds between traps (3x from 3 seconds)
+  const MIN_TRAP_INTERVAL = 3000; // Minimum 5 seconds between traps (3x from 3 seconds)
   
   // Asset loading
   let assetsLoaded = false;
@@ -175,6 +178,8 @@
     score = 0;
     isPaused = false;
     backgroundOffset = 0;
+    isInvincible = false;
+    invincibleTimer = 0;
     
     // Reset player (4x original size for better visibility)
     player = {
@@ -199,24 +204,27 @@
     gameCoins = [];
     projectiles = [];
     traps = [];
-    
-    // Spawn initial coins (4x size for better visibility)
-    for (let i = 0; i < 5; i++) {
-      gameCoins.push({
-        x: 300 + i * 200,
-        y: GROUND_Y - 200 - Math.random() * 100,
-        width: 128, // Increased from 64 to 128 (2x scale)
-        height: 128, // Increased from 64 to 128 (2x scale)
-        collected: false,
-        // Collision box (smaller than visual sprite)
-        collisionOffsetX: 16, // Scaled proportionally
-        collisionOffsetY: 16, // Scaled proportionally
-        collisionWidth: 96, // Scaled proportionally
-        collisionHeight: 96 // Scaled proportionally
-      });
-    }
+
+    waitForCountdown = true;
+    setTimeout(() => startCountdown(false), 1000);
   }
   
+  let countdown = 3; // 秒數
+  let waitForCountdown = true;
+  let showCountdown = true;
+  let countdownText = "3";
+  let countdownTimer = 0;
+  let isStop = false;
+
+  function startCountdown(shouldStop: boolean = false) {
+    isStop = shouldStop;
+    countdown = 3;
+    countdownText = "3";
+    showCountdown = true;
+    countdownTimer = 0;
+    waitForCountdown = false;
+  }
+
   function jump() {
     if (player.onGround && gameState === 'playing') {
       player.velocityY = JUMP_FORCE;
@@ -226,7 +234,7 @@
   }
   
   function attack() {
-    if (gameState === 'playing') {
+    if (player.animation !== 'attack' && gameState === 'playing') {
       player.animation = 'attack';
       player.animationTimer = 0;
       
@@ -260,7 +268,7 @@
   function spawnCoin() {
     gameCoins.push({
       x: canvas.width + 50 + Math.random() * 200,
-      y: GROUND_Y - 200 - Math.random() * 100,
+      y: GROUND_Y - 200 - Math.random() * 300,
       width: 128, // Increased from 64 to 128 (2x scale)
       height: 128, // Increased from 64 to 128 (2x scale)
       collected: false,
@@ -286,6 +294,9 @@
     });
   }
   
+  let spawnChance = 0.0001; // 0.01%
+  const spawnChanceIncreasePerFrame = (1 - 0.0001) / (60 * 25); // 25秒內從0.01%到100%，假設60FPS
+
   function getCurrentScrollSpeed(): number {
     // Speed increases over time, starting at BASE_SCROLL_SPEED and increasing by 0.05 every 10 seconds (reduced from 0.1)
     return BASE_SCROLL_SPEED + Math.floor(survivalTime / 10) * 0.05;
@@ -293,9 +304,68 @@
   
   function updateGame(deltaTime: number) {
     if (gameState !== 'playing' || !assetsLoaded) return;
+
+    const currentScrollSpeed = getCurrentScrollSpeed();
+    if (!isStop) {
+      backgroundOffset -= currentScrollSpeed;
+    
+      // Update player physics
+      player.velocityY += GRAVITY;
+      player.y += player.velocityY;
+
+      if (player.y >= GROUND_Y - player.height) {
+        player.y = GROUND_Y - player.height;
+        player.velocityY = 0;
+        player.onGround = true;
+        if (player.animation === 'jump') {
+          player.animation = 'run';
+        }
+      }
+      
+      // Update animation (6 frames per sprite sheet)
+      player.animationTimer += deltaTime;
+      const animationSpeed = player.animation === 'attack' ? 150 : 100; // Slower for attack animation
+      if (player.animationTimer > animationSpeed) {
+        player.animationFrame = (player.animationFrame + 1) % 6;
+        player.animationTimer = 0;
+        
+        if (player.animation === 'attack' && player.animationFrame === 0) {
+          player.animation = player.onGround ? 'run' : 'jump';
+        }
+      }
+
+      // Update projectiles
+      projectiles = projectiles.filter(projectile => {
+        projectile.x += projectile.velocityX;
+        return projectile.x < canvas.width + 50;
+      });
+    }
+
+    if (waitForCountdown) {
+      return;
+    }
+
+    if (showCountdown) {
+      countdownTimer += deltaTime;
+      if (countdownTimer >= 1000) {
+        countdownTimer -= 1000;
+        countdown--;
+        if (countdown > 0) {
+          countdownText = countdown.toString();
+        } else if (countdown === 0) {
+          countdownText = "GO!";
+        } else {
+          showCountdown = false;
+          isStop = false;
+          countdownText = "";
+        }
+      }
+      
+      return;
+    }
+
     
     survivalTime += deltaTime / 1000;
-    const currentScrollSpeed = getCurrentScrollSpeed();
     
     // Award 1 point per second for survival
     const currentSecond = Math.floor(survivalTime);
@@ -304,35 +374,6 @@
       lastSurvivalSecond = currentSecond;
     }
     
-    // Update background scrolling with progressive speed
-    backgroundOffset -= currentScrollSpeed;
-    
-    // Update player physics
-    player.velocityY += GRAVITY;
-    player.y += player.velocityY;
-    
-    // No horizontal movement during jump - removed to avoid unintended movement
-    
-    if (player.y >= GROUND_Y - player.height) {
-      player.y = GROUND_Y - player.height;
-      player.velocityY = 0;
-      player.onGround = true;
-      if (player.animation === 'jump') {
-        player.animation = 'run';
-      }
-    }
-    
-    // Update animation (6 frames per sprite sheet)
-    player.animationTimer += deltaTime;
-    const animationSpeed = player.animation === 'attack' ? 150 : 100; // Slower for attack animation
-    if (player.animationTimer > animationSpeed) {
-      player.animationFrame = (player.animationFrame + 1) % 6;
-      player.animationTimer = 0;
-      
-      if (player.animation === 'attack' && player.animationFrame === 0) {
-        player.animation = player.onGround ? 'run' : 'jump';
-      }
-    }
     
     // Update enemies with progressive speed
     enemies = enemies.filter(enemy => {
@@ -351,20 +392,6 @@
       return trap.x > -trap.width;
     });
     
-    // Update projectiles
-    projectiles = projectiles.filter(projectile => {
-      projectile.x += projectile.velocityX;
-      
-      // Update projectile animation
-      // projectile.animationTimer += deltaTime;
-      // if (projectile.animationTimer > 100) {
-      //   projectile.animationFrame = (projectile.animationFrame + 1) % 6; // Assume 6 frames for attack effect
-      //   projectile.animationTimer = 0;
-      // }
-      
-      return projectile.x < canvas.width + 50;
-    });
-    
     // Collision detection - coins
     gameCoins.forEach(coin => {
       if (!coin.collected && checkCollision(player, coin)) {
@@ -377,7 +404,11 @@
     // Collision detection - enemies (only if player is vulnerable)
     enemies.forEach((enemy, enemyIndex) => {
       if (checkCollision(player, enemy)) {
-        lives--;
+        if (!isInvincible) {
+          lives--;
+          isInvincible = true;
+          invincibleTimer = INVINCIBLE_DURATION;
+        }
         // Remove the enemy that hit the player
         enemies.splice(enemyIndex, 1);
         if (lives <= 0) {
@@ -390,7 +421,11 @@
     // Collision detection - traps
     traps.forEach(trap => {
       if (checkCollision(player, trap)) {
-        lives--;
+        if (!isInvincible) {
+          lives--;
+          isInvincible = true;
+          invincibleTimer = INVINCIBLE_DURATION;
+        }
         if (lives <= 0) {
           handleGameOver();
         }
@@ -412,22 +447,37 @@
       });
     });
     
-    // Spawn enemies more frequently (reduced by 3x to compensate for increased speed)
-    if (Math.random() < Math.min(0.0027 + survivalTime * 0.00017, 0.0083)) {
-      spawnEnemy();
+    // 每 frame 增加機率
+    spawnChance += spawnChanceIncreasePerFrame;
+    if (spawnChance > 1) spawnChance = 1;
+
+    // 1~10000的隨機值
+    const rand = Math.random();
+
+    if (rand < spawnChance) {
+      // 決定生什麼
+      const typeRand = Math.random();
+      const now = performance.now();
+      if (typeRand < 0.4) {
+        spawnEnemy();
+      } else if (typeRand < 0.75) {
+        if (now - lastTrapSpawnTime > MIN_TRAP_INTERVAL) {
+          spawnTrap();
+          lastTrapSpawnTime = now;
+        }
+      } else {
+        spawnCoin();
+      }
+      // 歸回初始機率
+      spawnChance = 0.0001;
     }
-    
-    // Spawn coins more frequently (reduced by 3x to compensate for increased speed)
-    if (Math.random() < Math.min(0.002 + survivalTime * 0.0001, 0.006)) {
-      spawnCoin();
-    }
-    
-    // Spawn traps occasionally with minimum interval (reduced by 3x to compensate for increased speed)
-    const currentTime = Date.now();
-    if (Math.random() < Math.min(0.001 + survivalTime * 0.00007, 0.004) && 
-        currentTime - lastTrapSpawnTime > MIN_TRAP_INTERVAL) {
-      spawnTrap();
-      lastTrapSpawnTime = currentTime;
+
+    if (isInvincible) {
+      invincibleTimer -= deltaTime;
+      if (invincibleTimer <= 0) {
+        isInvincible = false;
+        invincibleTimer = 0;
+      }
     }
   }
   
@@ -442,9 +492,9 @@
       const bgHeight = canvas.height;
       
       // Background moved down 160px, need to fill the top and draw extended background
-      const backgroundYOffset = 160;
-      const extendedHeight = bgHeight + backgroundYOffset;
-      
+      const backgroundYOffset = bgHeight - 160;
+      const extendedHeight = bgHeight + backgroundYOffset; // Extend background height by 160px
+
       const bgX1 = backgroundOffset % bgWidth;
       const bgX2 = bgX1 + bgWidth;
       
@@ -453,27 +503,6 @@
         ctx.drawImage(loadedImages.background, bgX1, y, bgWidth, bgHeight);
         ctx.drawImage(loadedImages.background, bgX2, y, bgWidth, bgHeight);
       }
-      
-      // Add 0.5 transparent black overlay with blur effect
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      
-      // Add white diagonal grid pattern
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      
-      // Draw diagonal lines
-      const gridSize = 50;
-      for (let x = -gridSize; x < canvas.width + gridSize; x += gridSize) {
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x + canvas.height, canvas.height);
-      }
-      for (let x = 0; x < canvas.width + gridSize; x += gridSize) {
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x - canvas.height, canvas.height);
-      }
-      ctx.stroke();
     } else {
       // Fallback background
       ctx.fillStyle = '#4a90e2';
@@ -487,20 +516,28 @@
     if (player.animation === 'jump') playerImage = loadedImages.yuutaJump;
     if (player.animation === 'attack') playerImage = loadedImages.yuutaAttack;
     
-    if (playerImage) {
-      const frameWidth = playerImage.width / 6; // 6 frames per sprite sheet
-      const frameHeight = playerImage.height;
-      const frameX = player.animationFrame * frameWidth;
-      
-      ctx.drawImage(
-        playerImage,
-        frameX, 0, frameWidth, frameHeight, // Source rectangle (sprite frame)
-        player.x, player.y, player.width, player.height // Destination rectangle
-      );
-    } else {
-      // Fallback player rectangle
-      ctx.fillStyle = '#ff6b6b';
-      ctx.fillRect(player.x, player.y, player.width, player.height);
+    let shouldDrawPlayer = true;
+    if (isInvincible) {
+      // 每 100ms 閃爍一次
+      shouldDrawPlayer = Math.floor(invincibleTimer / 100) % 2 === 0;
+    }
+
+    if (shouldDrawPlayer) {
+      if (playerImage) {
+        const frameWidth = playerImage.width / 6; // 6 frames per sprite sheet
+        const frameHeight = playerImage.height;
+        const frameX = player.animationFrame * frameWidth;
+        
+        ctx.drawImage(
+          playerImage,
+          frameX, 0, frameWidth, frameHeight, // Source rectangle (sprite frame)
+          player.x, player.y, player.width, player.height // Destination rectangle
+        );
+      } else {
+        // Fallback player rectangle
+        ctx.fillStyle = '#ff6b6b';
+        ctx.fillRect(player.x, player.y, player.width, player.height);
+      }
     }
     
     // Draw enemies with horizontal flipping
@@ -576,12 +613,44 @@
         ctx.fillRect(projectile.x, projectile.y, projectile.width, projectile.height);
       }
     });
+    
+    if (!waitForCountdown && showCountdown) {
+      ctx.save();
+
+      // 純藍底框
+      const boxWidth = 480; // 左右較長
+      const boxHeight = 80; // 沒有上下間隔
+      const boxX = canvas.width / 2 - boxWidth / 2;
+      const boxY = canvas.height / 2 - boxHeight / 2;
+      const radius = 0; // 無圓角
+
+      // 畫純色藍底矩形
+      ctx.beginPath();
+      ctx.rect(boxX, boxY, boxWidth, boxHeight);
+      ctx.closePath();
+      ctx.fillStyle = "#0021ff"; // 或 "#0000ff"
+      ctx.fill();
+
+      // 白色大字
+      ctx.font = `bold 80px ${FontAssets.getFamily("englishNumberBold")}, 'Orbitron', Arial, sans-serif`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillStyle = "#fff";
+      ctx.fillText(countdownText, canvas.width / 2, canvas.height / 2);
+
+      ctx.restore();
+    }
+    
   }
   
+  let lastFrameTime = 0;
   function gameLoop() {
+    const now = performance.now();
+    const deltaTime = now - lastFrameTime;
+    lastFrameTime = now;
     if (!isPaused) {
-      handleGamepadInput(); // Check gamepad input each frame
-      updateGame(16.67); // Approximately 60 FPS
+      handleGamepadInput();
+      updateGame(deltaTime);
     }
     render();
     requestAnimationFrame(gameLoop);
@@ -598,11 +667,11 @@
           <strong>${$t("survivalTimeLabel")}:</strong> ${formatTime(survivalTime)}
         </div>
         <div style="margin: 3px 0; display: flex; align-items: center; gap: 8px;">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="2"/></svg>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 18V6"/></svg>
           <strong>${$t("coinsCollectedLabel")}:</strong> ${coins}
         </div>
         <div style="margin: 3px 0; display: flex; align-items: center; gap: 8px;">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 18V6"/></svg>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="2"/></svg>
           <strong>${$t("finalScoreLabel")}:</strong> ${score}
         </div>
         <div style="margin: 3px 0; display: flex; align-items: center; gap: 8px;">
@@ -646,11 +715,11 @@
             <strong>${$t("pauseTimeLabel")}:</strong> ${formatTime(survivalTime)}
           </div>
           <div style="margin: 3px 0; display: flex; align-items: center; gap: 8px;">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 18V6"/></svg>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="2"/></svg>
             <strong>${$t("pauseScoreLabel")}:</strong> ${score}
           </div>
           <div style="margin: 3px 0; display: flex; align-items: center; gap: 8px;">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="2"/></svg>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 18V6"/></svg>
             <strong>${$t("pauseCoinsLabel")}:</strong> ${coins}
           </div>
           <div style="margin: 3px 0; display: flex; align-items: center; gap: 8px;">
@@ -685,6 +754,7 @@
       if (gameState === 'paused') {
         isPaused = false;
         gameState = 'playing';
+        startCountdown(true);
       }
     }
   }
@@ -725,8 +795,8 @@
         window.addEventListener('keyup', handleKeyUp);
         setupGamepadSupport();
         
-        initGame();
-        gameLoop();
+        initGame();      // 這時才會 startCountdown()
+        gameLoop(); 
       });
     }
     
@@ -739,11 +809,13 @@
 </script>
 
 <Page mainProgress={main} 
-  wrapperStyle="background-image: url({imageAssets.stage01background}); background-size: repeat; background-position: center; background-color: white;"
-  contentStyle="box-sizing: border-box; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)); backdrop-filter: blur(10px);">
+  contentStyle="box-sizing: border-box; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative;">
   
   <!-- Layered background effects for page wrapper -->
-  <div slot="outside" class="pageBackground" style="background-image: url({imageAssets.stage01background});"></div>
+  <div slot="outside" class="pageBackground" style="background-image: url({imageAssets.stage01background});">
+
+
+  </div>
   
   <div class="gameContainer">
     <!-- Game UI -->
@@ -842,13 +914,6 @@
     align-items: center;
     width: 100%;
     height: 100%;
-    background: 
-      linear-gradient(45deg, rgba(255,255,255,0.05) 25%, transparent 25%), 
-      linear-gradient(-45deg, rgba(255,255,255,0.05) 25%, transparent 25%),
-      linear-gradient(45deg, transparent 75%, rgba(255,255,255,0.05) 75%), 
-      linear-gradient(-45deg, transparent 75%, rgba(255,255,255,0.05) 75%);
-    background-size: 50px 50px;
-    background-position: 0 0, 0 25px, 25px -25px, -25px 0px;
   }
 
   .gameUI {
@@ -860,13 +925,16 @@
     padding: 1rem;
   }
 
-  .topUI {
+.topUI {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background-image: url({imageAssets.backgroundWhiteButton});
-    background-size: cover;
-    background-position: 50% 15%;
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9));
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(148, 163, 184, 0.3);
+    box-shadow: 
+      0 0 20px rgba(59, 130, 246, 0.3),
+      inset 0 1px 0 rgba(148, 163, 184, 0.1);
     color: white;
     padding: 0.5rem 1rem;
     border-radius: 0.75rem;
@@ -878,10 +946,14 @@
     content: "";
     position: absolute;
     inset: 0;
-    background-color: #0000ff;
-    mix-blend-mode: multiply;
-    opacity: 1;
+    background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.1), transparent);
+    animation: techScan 3s ease-in-out infinite;
     z-index: 1;
+  }
+
+  @keyframes techScan {
+    0%, 100% { transform: translateX(-100%); }
+    50% { transform: translateX(100%); }
   }
 
   .topUI > * {
@@ -937,7 +1009,7 @@
   .gameCanvas {
     border: 2px solid rgba(148, 163, 184, 0.3);
     border-radius: 0.5rem;
-    background: #000;
+    background: transparent;
     cursor: pointer;
     width: 100%;
     height: 100%;
@@ -949,7 +1021,7 @@
     top: 4rem;
     left: 0;
     right: 0;
-    bottom: 200px;
+    bottom: 0;
     display: flex;
     pointer-events: none;
     z-index: 5;
@@ -960,8 +1032,6 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(255, 255, 255, 0.02);
-    border: 2px dotted black; /* Added black dotted border for better visibility */
     pointer-events: auto;
     cursor: pointer;
     transition: background 0.3s;
@@ -981,7 +1051,7 @@
     border: 1px solid rgba(148, 163, 184, 0.3);
     padding: 1rem;
     border-radius: 0.75rem;
-    font-size: 0.5rem;
+    font-size: max(2vh, 0.5rem);
     line-height: 1.4;
     box-shadow: 0 0 20px rgba(59, 130, 246, 0.2);
   }
@@ -1057,7 +1127,6 @@
     }
     
     .instructions {
-      font-size: 0.5rem;
       padding: 0.75em;
       max-width: 95%;
     }
@@ -1087,21 +1156,25 @@
     position: absolute;
     inset: 0;
     background: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(10px);
-    z-index: 1;
+    backdrop-filter: blur(5px);
   }
 
   .pageBackground::after {
     content: "";
     position: absolute;
     inset: 0;
-    background: 
-      linear-gradient(45deg, rgba(255,255,255,0.1) 25%, transparent 25%), 
-      linear-gradient(-45deg, rgba(255,255,255,0.1) 25%, transparent 25%),
-      linear-gradient(45deg, transparent 75%, rgba(255,255,255,0.1) 75%), 
-      linear-gradient(-45deg, transparent 75%, rgba(255,255,255,0.1) 75%);
-    background-size: 50px 50px;
-    background-position: 0 0, 0 25px, 25px -25px, -25px 0px;
-    z-index: 2;
+    pointer-events: none;
+    background:
+      repeating-linear-gradient(
+        45deg,
+        rgba(255,255,255,0.2) 0 1px,
+        transparent 1px 40px
+      ),
+      repeating-linear-gradient(
+        -45deg,
+        rgba(255,255,255,0.2) 0 1px,
+        transparent 1px 40px
+      );
+    /* 40px 是格線間距，可依需求調整 */
   }
 </style>
