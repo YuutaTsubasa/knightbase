@@ -14,6 +14,7 @@
   import { waitUntil } from "$lib/utils/Wait";
   import { get, writable, type Writable } from "svelte/store";
   import { characterPortraitImageKey } from "$lib/utils/KeyHelper";
+  import { AudioManager } from "$lib/systems/AudioManager";
  
   $: topbarHeight = 0;
   $: selectedCharacter = StaticDataStore.getCharacterById($playerStore.selectedCharacter);
@@ -40,7 +41,10 @@
   <div class="battlemenu" class:landscape={!$isPortrait}  style={`--topbarHeight: ${topbarHeight}px;`}>
     <div class="menuButtonContainer">
       <button class="menuButton leftButton" style="background-image: url({imageAssets["characterBackground"]}); background-size: cover; background-position: center center; "
-          on:click={() => goToNextScene.set("/character")}>
+          on:click={() => {
+            AudioManager.play("sfx_confirm");
+            goToNextScene.set("/character");
+          }}>
         <div class="bg"><Image key={characterPortraitImageKey($selectedCharacter?.characterId ?? "")} alt={$t($selectedCharacter?.characterNameKey ?? "")} className="portrait fadeinPortrait" /></div>
         <div class="content">
           <div class="title" style={FontAssets.getCssStyle("titleBold")}>
@@ -52,7 +56,10 @@
     </div>
     <div class="menuButtonContainer">
       <button class="menuButton rightButton" style="background-image: url({imageAssets["stageBackground"]}); background-size: cover; background-position: center center; "
-          on:click={() => goToNextScene.set("/stage")}>
+          on:click={() => {
+            AudioManager.play("sfx_confirm");
+            goToNextScene.set("/stage");
+          }}>
         <div class="content">
           <div class="title" style={FontAssets.getCssStyle("titleBold")}>
             <SpaceBetweenTextGroup content={$t('stage')} spacing="0.3em" />

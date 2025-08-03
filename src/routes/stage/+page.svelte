@@ -2,15 +2,14 @@
   import { FontAssets } from "$lib/assets/FontAssets";
   import { imageAssets } from "$lib/assets/ImageAssets";
   import { t } from "$lib/systems/LocalizationStore";
-  import Image from "$lib/components/Image.svelte";
   import Page from "$lib/components/Page.svelte";
   import Button from "$lib/components/Button.svelte";
   import Topbar from "$lib/components/Topbar.svelte";
-  import { BACK_PATH } from "$lib/utils/Constant";
   import { PopupStore, PopupResult } from "$lib/systems/PopupStore";
   import { waitUntil } from "$lib/utils/Wait";
   import { get, writable, type Writable } from "svelte/store";
   import { Star, ChevronDown, ChevronUp } from "lucide-svelte";
+  import { AudioManager } from "$lib/systems/AudioManager";
 
   $: topbarHeight = 0;
   let expandedStage: number | null = null;
@@ -20,47 +19,55 @@
     {
       id: 1,
       nameKey: "stage1Name",
-      iconKey: "stageIcon1",
-      stars: 3,
+      iconSvg: `<svg style="color: #fff;" width="100" height="100" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- 盾牌（只有描邊） -->
+  <path d="M50 5 C30 10, 15 30, 20 55 C25 80, 50 95, 50 95 C50 95, 75 80, 80 55 C85 30, 70 10, 50 5 Z" 
+        stroke="currentColor" stroke-width="3" fill="none"/>
+
+  <!-- 劍（實心） -->
+  <rect x="47" y="25" width="6" height="35" fill="currentColor"/>
+  <polygon points="44,25 50,10 56,25" fill="currentColor"/>
+  <rect x="42" y="58" width="16" height="4" fill="currentColor"/>
+
+  <!-- 星星（實心） -->
+  <polygon points="50,35 52,40 57,40 53,43 55,48 50,45 45,48 47,43 43,40 48,40" fill="currentColor"/>
+</svg>
+`,
       description: $t("stage1Description"),
-      drops: [
-        { nameKey: "coinDrop", amount: "100-200" },
-        { nameKey: "expDrop", amount: "50-80" }
-      ]
     },
-    {
-      id: 2,
-      nameKey: "stage2Name", 
-      iconKey: "stageIcon2",
-      stars: 2,
-      description: $t("stage2Description"),
-      drops: [
-        { nameKey: "coinDrop", amount: "150-250" },
-        { nameKey: "gemDrop", amount: "1-3" }
-      ]
-    },
-    {
-      id: 3,
-      nameKey: "stage3Name",
-      iconKey: "stageIcon3", 
-      stars: 1,
-      description: $t("stage3Description"),
-      drops: [
-        { nameKey: "coinDrop", amount: "200-350" },
-        { nameKey: "rareMaterialDrop", amount: "1-2" }
-      ]
-    },
-    {
-      id: 4,
-      nameKey: "stage4Name",
-      iconKey: "stageIcon4",
-      stars: 0,
-      description: $t("stage4Description"),
-      drops: [
-        { nameKey: "coinDrop", amount: "300-500" },
-        { nameKey: "legendaryMaterialDrop", amount: "0-1" }
-      ]
-    }
+    // {
+    //   id: 2,
+    //   nameKey: "stage2Name", 
+    //   iconKey: "stageIcon2",
+    //   stars: 2,
+    //   description: $t("stage2Description"),
+    //   drops: [
+    //     { nameKey: "coinDrop", amount: "150-250" },
+    //     { nameKey: "gemDrop", amount: "1-3" }
+    //   ]
+    // },
+    // {
+    //   id: 3,
+    //   nameKey: "stage3Name",
+    //   iconKey: "stageIcon3", 
+    //   stars: 1,
+    //   description: $t("stage3Description"),
+    //   drops: [
+    //     { nameKey: "coinDrop", amount: "200-350" },
+    //     { nameKey: "rareMaterialDrop", amount: "1-2" }
+    //   ]
+    // },
+    // {
+    //   id: 4,
+    //   nameKey: "stage4Name",
+    //   iconKey: "stageIcon4",
+    //   stars: 0,
+    //   description: $t("stage4Description"),
+    //   drops: [
+    //     { nameKey: "coinDrop", amount: "300-500" },
+    //     { nameKey: "legendaryMaterialDrop", amount: "0-1" }
+    //   ]
+    // }
   ];
 
   let goToNextScene: Writable<string | null>;
@@ -71,6 +78,7 @@
   }
 
   function toggleStageDetails(stageId: number) {
+    AudioManager.play("sfx_confirm");
     expandedStage = expandedStage === stageId ? null : stageId;
   }
 
@@ -120,20 +128,20 @@
           <div class="stageHeader" on:click={() => toggleStageDetails(stage.id)}>
             <div class="stageMainInfo">
               <div class="stageIcon">
-                <Image key={stage.iconKey} alt={$t(stage.nameKey)} className="stageIconImage" />
+                {@html stage.iconSvg}
               </div>
               <div class="stageBasicInfo">
                 <h3 class="stageName" style={FontAssets.getCssStyle("titleBold")}>
                   {$t(stage.nameKey)}
                 </h3>
-                <div class="stageStars">
+                <!-- <div class="stageStars">
                   {#each renderStars(stage.stars) as star}
                     <Star 
                       size={16} 
                       class={star.filled ? "starFilled" : "starEmpty"} 
                       fill={star.filled ? "currentColor" : "none"} />
                   {/each}
-                </div>
+                </div> -->
               </div>
             </div>
             <div class="expandIcon">
@@ -151,7 +159,7 @@
                 <p>{stage.description}</p>
               </div>
               
-              <div class="stageDrops">
+              <!-- <div class="stageDrops">
                 <h4>{$t('estimatedDrops')}:</h4>
                 <div class="dropList">
                   {#each stage.drops as drop}
@@ -161,7 +169,7 @@
                     </div>
                   {/each}
                 </div>
-              </div>
+              </div> -->
               
               <div class="stageActions">
                 <Button 
@@ -181,7 +189,6 @@
   .stagePage {
     display: flex;
     flex-direction: column;
-    height: 100%;
     padding-top: var(--topbarHeight, 0px);
     box-sizing: border-box;
   }
@@ -189,7 +196,6 @@
   .stageList {
     flex: 1;
     padding: 1rem;
-    max-height: calc(100vh - var(--topbarHeight, 0px) - 2rem);
     overflow-y: auto;
     display: flex;
     flex-direction: column;
@@ -230,12 +236,13 @@
   .stageIcon {
     width: 60px;
     height: 60px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: #0021ff;
     border-radius: 0.5rem;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+    padding: 5px;
   }
 
   .stageIcon :global(.stageIconImage) {
@@ -275,7 +282,7 @@
   }
 
   .stageDetails {
-    padding: 0 1rem 1rem 1rem;
+    padding: 1rem 1rem 1rem 1rem;
     border-top: 1px solid #e2e8f0;
     animation: fadeIn 0.3s ease;
     max-height: 60vh;

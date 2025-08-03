@@ -10,7 +10,9 @@
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
     "tauri": "tauri",
-    "convert:images": "node utils/convert-images-to-webp.js"
+    "convert:images": "node utils/convert-images-to-webp.js",
+    "convert:audios": "node utils/convert-audios-to-mp3.js",
+    "convert:audios:advanced": "node utils/convert-audios-to-mp3-advanced.js"
   },
   "license": "MIT",
   "dependencies": {
