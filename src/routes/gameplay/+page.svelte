@@ -52,11 +52,11 @@
   const GRAVITY = 0.8;
   const JUMP_FORCE = -15;
   const GROUND_Y = 320;
-  const BASE_SCROLL_SPEED = 4.5; // Increased 3x from 1.5 to make gameplay faster
+  const BASE_SCROLL_SPEED = 8  ; // Increased 3x from 1.5 to make gameplay faster
 
   // Trap spawning control - increased interval 3x
   let lastTrapSpawnTime = 0;
-  const MIN_TRAP_INTERVAL = 9000; // Minimum 9 seconds between traps (3x from 3 seconds)
+  const MIN_TRAP_INTERVAL = 5000; // Minimum 5 seconds between traps (3x from 3 seconds)
   
   // Asset loading
   let assetsLoaded = false;
@@ -229,12 +229,11 @@
       player.animation = 'attack';
       player.animationTimer = 0;
       
-      // Create projectile (doubled size)
       projectiles.push({
         x: player.x + player.width,
-        y: player.y + player.height / 2,
+        y: player.y,
         width: 64,
-        height: 32,
+        height: 128,
         velocityX: 8,
         animationFrame: 0,
         animationTimer: 0
@@ -356,11 +355,11 @@
       projectile.x += projectile.velocityX;
       
       // Update projectile animation
-      projectile.animationTimer += deltaTime;
-      if (projectile.animationTimer > 100) {
-        projectile.animationFrame = (projectile.animationFrame + 1) % 6; // Assume 6 frames for attack effect
-        projectile.animationTimer = 0;
-      }
+      // projectile.animationTimer += deltaTime;
+      // if (projectile.animationTimer > 100) {
+      //   projectile.animationFrame = (projectile.animationFrame + 1) % 6; // Assume 6 frames for attack effect
+      //   projectile.animationTimer = 0;
+      // }
       
       return projectile.x < canvas.width + 50;
     });
@@ -533,13 +532,12 @@
     // Draw projectiles
     projectiles.forEach(projectile => {
       if (loadedImages.attackEffect) {
-        const frameWidth = loadedImages.attackEffect.width / 6; // Assume 6 frames
+        const frameWidth = loadedImages.attackEffect.width; // Assume 6 frames
         const frameHeight = loadedImages.attackEffect.height;
-        const frameX = projectile.animationFrame * frameWidth;
         
         ctx.drawImage(
           loadedImages.attackEffect,
-          frameX, 0, frameWidth, frameHeight, // Source rectangle (sprite frame)
+          0, 0, frameWidth, frameHeight, // Source rectangle (sprite frame)
           projectile.x, projectile.y, projectile.width, projectile.height // Destination rectangle
         );
       } else {
@@ -784,18 +782,18 @@
           <ArrowUpFromLine size={16} />
           <span class="actionLabel">Jump:</span>
           <span class="controls">
-            <Keyboard size={12} /> [Space/W/↑] / 
-            <Smartphone size={12} /> {$t("touchLeft")} / 
-            <Gamepad2 size={12} /> [A]
+            <Keyboard size={12} />: Space/W/↑ | 
+            <Smartphone size={12} />: {$t("touchLeft")} | 
+            <Gamepad2 size={12} />: A
           </span>
         </div>
         <div class="controlGroup">
           <Sword size={16} />
           <span class="actionLabel">Attack:</span>
           <span class="controls">
-            <Keyboard size={12} /> [Enter/X/Z/D/→] / 
-            <Smartphone size={12} /> {$t("touchRight")} / 
-            <Gamepad2 size={12} /> [B/X]
+            <Keyboard size={12} />: [Enter/X/Z/D/→] | 
+            <Smartphone size={12} />: {$t("touchRight")} | 
+            <Gamepad2 size={12} />: [B/X]
           </span>
         </div>
       </div>
@@ -930,7 +928,7 @@
     align-items: center;
     justify-content: center;
     background: rgba(255, 255, 255, 0.02);
-    border: 1px dashed rgba(0, 0, 0, 0.3);
+    /* border: 1px dashed rgba(0, 0, 0, 0.3); */
     pointer-events: auto;
     cursor: pointer;
     transition: background 0.3s;
@@ -941,11 +939,11 @@
   }
 
   .touchZone.left {
-    border-right: 1px dashed rgba(0, 0, 0, 0.3);
+    /* border-right: 1px dashed rgba(0, 0, 0, 0.3); */
   }
 
   .touchZone.right {
-    border-left: 1px dashed rgba(0, 0, 0, 0.3);
+    /* border-left: 1px dashed rgba(0, 0, 0, 0.3); */
   }
 
   .instructions {
@@ -963,7 +961,8 @@
     font-size: 0.9rem;
     line-height: 1.4;
     box-shadow: 0 0 20px rgba(59, 130, 246, 0.2);
-    max-width: 90%;
+    width: 90%;
+    max-width: 95%;
   }
 
   .objective {
@@ -982,13 +981,11 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    flex-wrap: wrap;
   }
 
   .actionLabel {
     font-weight: bold;
     color: #34d399;
-    min-width: 60px;
   }
 
   .controls {
@@ -1037,7 +1034,6 @@
     }
 
     .controlGroup {
-      flex-direction: column;
       align-items: flex-start;
       gap: 0.25rem;
     }
