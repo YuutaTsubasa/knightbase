@@ -387,7 +387,7 @@
         player.animationTimer = 0;
         
         // Play walk audio on specific frames
-        if (player.animation === 'run' && (player.animationFrame === 0 || player.animationFrame === 3)) {
+        if ((player.animation === 'run' || player.animation === 'attack') && (player.animationFrame === 0 || player.animationFrame === 3)) {
           AudioManager.play(characterWalkAudioKey(selectedCharacter));
         } else if (player.animation === 'jump' && (player.animationFrame === 0 || player.animationFrame === 5)) {
           AudioManager.play(characterWalkAudioKey(selectedCharacter));
@@ -495,8 +495,6 @@
           // Play hurt audio
           AudioManager.play("sfx_hurt");
         }
-        // Remove the enemy that hit the player
-        enemies.splice(enemyIndex, 1);
         if (lives <= 0) {
           handleGameOver();
         }
