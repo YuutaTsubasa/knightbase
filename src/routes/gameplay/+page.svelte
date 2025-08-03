@@ -77,10 +77,10 @@
   async function loadAssets() {
     const imagePromises = Object.entries({
       background: imageAssets.stage01background,
-      run: characterRunImageKey(selectedCharacter),
-      jump: characterJumpImageKey(selectedCharacter),
-      attack: characterAttackImageKey(selectedCharacter),
-      attackEffect: characterAttackEffectImageKey(selectedCharacter),
+      run: imageAssets[characterRunImageKey(selectedCharacter)],
+      jump: imageAssets[characterJumpImageKey(selectedCharacter)],
+      attack: imageAssets[characterAttackImageKey(selectedCharacter)],
+      attackEffect: imageAssets[characterAttackEffectImageKey(selectedCharacter)],
       enemy: imageAssets.enemy,
       coin: imageAssets.coin,
       trap: imageAssets.trap
@@ -287,9 +287,9 @@
   function spawnTrap() {
     traps.push({
       x: canvas.width + 50,
-      y: GROUND_Y - 48, // Adjusted for new trap height (halved back)
+      y: GROUND_Y - 96, // Adjusted for new trap height (halved back)
       width: 128, // Reduced from 256 to 128 (halved back)
-      height: 48, // Reduced from 96 to 48 (halved back)
+      height: 96,
       // Collision box (smaller than visual sprite for better gameplay)
       collisionOffsetX: 16, // Scaled proportionally
       collisionOffsetY: 8, // Scaled proportionally
@@ -516,9 +516,9 @@
     }
     
     // Draw player with sprite sheet animation (6 frames horizontally)
-    let playerImage = loadedImages.yuutaRun;
-    if (player.animation === 'jump') playerImage = loadedImages.yuutaJump;
-    if (player.animation === 'attack') playerImage = loadedImages.yuutaAttack;
+    let playerImage = loadedImages.run;
+    if (player.animation === 'jump') playerImage = loadedImages.jump;
+    if (player.animation === 'attack') playerImage = loadedImages.attack;
     
     let shouldDrawPlayer = true;
     if (isInvincible) {
@@ -1107,11 +1107,6 @@
     
     .gameCanvas {
       height: 100%;
-    }
-    
-    .touchControls {
-      top: 5rem;
-      bottom: 250px;
     }
     
     .gameStats {
