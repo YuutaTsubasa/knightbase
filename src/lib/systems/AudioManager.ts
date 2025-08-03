@@ -26,17 +26,28 @@ export class AudioManager {
     const audioAsset = audioAssets[id];
     if (!audioAsset) return;
 
-    const res = await fetch(audioAsset.url);
-    const arrayBuffer = await res.arrayBuffer();
-    const buffer = await this.context.decodeAudioData(arrayBuffer);
-    this.buffers.set(id, { buffer, group: audioAsset.group });
+    try {
+      const res = await fetch(audioAsset.url);
+      if (!res.ok) {
+        console.warn(`Failed to fetch audio asset: ${id} (${audioAsset.url})`);
+        return;
+      }
+      const arrayBuffer = await res.arrayBuffer();
+      const buffer = await this.context.decodeAudioData(arrayBuffer);
+      this.buffers.set(id, { buffer, group: audioAsset.group });
+    } catch (error) {
+      console.warn(`Failed to preload audio asset: ${id}`, error);
+    }
   }
 
   static async play(id: string) {
     if (this.groups.values.length == 0) this.initialize();
     if (!this.buffers.has(id)) await this.preload(id);
     const data = this.buffers.get(id);
-    if (!data) return null;
+    if (!data) {
+      console.warn(`Audio asset not available: ${id}`);
+      return null;
+    }
 
     const source = this.context.createBufferSource();
     source.buffer = data.buffer;
