@@ -22,17 +22,17 @@
   let score = 0;
   let isPaused = false;
   
-  // Game entities (doubled size) with separate collision boxes
+  // Game entities (4x size for player, 2x size for others) with separate collision boxes
   let player = {
-    x: 100,
+    x: 50, // Moved further left as requested
     y: 300,
-    width: 128,
-    height: 128,
+    width: 256, // Increased from 128 to 256 as requested
+    height: 256, // Increased from 128 to 256 as requested
     // Collision box (smaller than visual sprite)
-    collisionOffsetX: 20,
-    collisionOffsetY: 10,
-    collisionWidth: 88,
-    collisionHeight: 108,
+    collisionOffsetX: 40, // Scaled proportionally
+    collisionOffsetY: 20, // Scaled proportionally
+    collisionWidth: 176, // Scaled proportionally
+    collisionHeight: 216, // Scaled proportionally
     velocityY: 0,
     onGround: false,
     animation: 'run',
@@ -51,7 +51,7 @@
   // Game settings
   const GRAVITY = 0.8;
   const JUMP_FORCE = -15;
-  const GROUND_Y = 320;
+  const GROUND_Y = 480; // Moved down 160px as requested (was 320)
   const BASE_SCROLL_SPEED = 8  ; // Increased 3x from 1.5 to make gameplay faster
 
   // Trap spawning control - increased interval 3x
@@ -175,17 +175,17 @@
     isPaused = false;
     backgroundOffset = 0;
     
-    // Reset player (doubled size)
+    // Reset player (4x original size for better visibility)
     player = {
-      x: 100,
-      y: GROUND_Y - 128,
-      width: 128,
-      height: 128,
+      x: 50, // Moved further left as requested
+      y: GROUND_Y - 256, // Adjusted for new player height
+      width: 256, // Increased from 128 to 256
+      height: 256, // Increased from 128 to 256
       // Collision box (smaller than visual sprite)
-      collisionOffsetX: 20,
-      collisionOffsetY: 10,
-      collisionWidth: 88,
-      collisionHeight: 108,
+      collisionOffsetX: 40, // Scaled proportionally
+      collisionOffsetY: 20, // Scaled proportionally
+      collisionWidth: 176, // Scaled proportionally
+      collisionHeight: 216, // Scaled proportionally
       velocityY: 0,
       onGround: true,
       animation: 'run',
@@ -199,19 +199,19 @@
     projectiles = [];
     traps = [];
     
-    // Spawn initial coins (doubled size)
+    // Spawn initial coins (4x size for better visibility)
     for (let i = 0; i < 5; i++) {
       gameCoins.push({
         x: 300 + i * 200,
-        y: GROUND_Y - 100 - Math.random() * 100,
-        width: 64,
-        height: 64,
+        y: GROUND_Y - 200 - Math.random() * 100,
+        width: 128, // Increased from 64 to 128 (2x scale)
+        height: 128, // Increased from 64 to 128 (2x scale)
         collected: false,
         // Collision box (smaller than visual sprite)
-        collisionOffsetX: 8,
-        collisionOffsetY: 8,
-        collisionWidth: 48,
-        collisionHeight: 48
+        collisionOffsetX: 16, // Scaled proportionally
+        collisionOffsetY: 16, // Scaled proportionally
+        collisionWidth: 96, // Scaled proportionally
+        collisionHeight: 96 // Scaled proportionally
       });
     }
   }
@@ -232,8 +232,8 @@
       projectiles.push({
         x: player.x + player.width,
         y: player.y,
-        width: 64,
-        height: 128,
+        width: 128, // Increased from 64 to 128 (2x scale)
+        height: 256, // Increased from 128 to 256 (2x scale)
         velocityX: 8,
         animationFrame: 0,
         animationTimer: 0
@@ -244,44 +244,44 @@
   function spawnEnemy() {
     enemies.push({
       x: canvas.width + 50,
-      y: GROUND_Y - 96,
-      width: 96,
-      height: 96,
+      y: GROUND_Y - 192, // Adjusted for new enemy height
+      width: 192, // Increased from 96 to 192 (2x scale)
+      height: 192, // Increased from 96 to 192 (2x scale)
       facingLeft: true,
       // Collision box (smaller than visual sprite)
-      collisionOffsetX: 12,
-      collisionOffsetY: 8,
-      collisionWidth: 72,
-      collisionHeight: 80
+      collisionOffsetX: 24, // Scaled proportionally
+      collisionOffsetY: 16, // Scaled proportionally
+      collisionWidth: 144, // Scaled proportionally
+      collisionHeight: 160 // Scaled proportionally
     });
   }
   
   function spawnCoin() {
     gameCoins.push({
       x: canvas.width + 50 + Math.random() * 200,
-      y: GROUND_Y - 100 - Math.random() * 100,
-      width: 64,
-      height: 64,
+      y: GROUND_Y - 200 - Math.random() * 100,
+      width: 128, // Increased from 64 to 128 (2x scale)
+      height: 128, // Increased from 64 to 128 (2x scale)
       collected: false,
       // Collision box (smaller than visual sprite)
-      collisionOffsetX: 8,
-      collisionOffsetY: 8,
-      collisionWidth: 48,
-      collisionHeight: 48
+      collisionOffsetX: 16, // Scaled proportionally
+      collisionOffsetY: 16, // Scaled proportionally
+      collisionWidth: 96, // Scaled proportionally
+      collisionHeight: 96 // Scaled proportionally
     });
   }
   
   function spawnTrap() {
     traps.push({
       x: canvas.width + 50,
-      y: GROUND_Y - 48,
-      width: 128,
-      height: 48,
+      y: GROUND_Y - 96, // Adjusted for new trap height
+      width: 256, // Increased from 128 to 256 (2x scale)
+      height: 96, // Increased from 48 to 96 (2x scale)
       // Collision box (smaller than visual sprite for better gameplay)
-      collisionOffsetX: 16,
-      collisionOffsetY: 8,
-      collisionWidth: 96,
-      collisionHeight: 32
+      collisionOffsetX: 32, // Scaled proportionally
+      collisionOffsetY: 16, // Scaled proportionally
+      collisionWidth: 192, // Scaled proportionally
+      collisionHeight: 64 // Scaled proportionally
     });
   }
   
@@ -435,7 +435,7 @@
     
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    // Draw scrolling background
+    // Draw scrolling background with enhanced layered effects
     if (loadedImages.background) {
       const bgWidth = canvas.width;
       const bgX1 = backgroundOffset % bgWidth;
@@ -444,6 +444,27 @@
       // Draw two copies of the background for seamless scrolling
       ctx.drawImage(loadedImages.background, bgX1, 0, bgWidth, canvas.height);
       ctx.drawImage(loadedImages.background, bgX2, 0, bgWidth, canvas.height);
+      
+      // Add 0.5 transparent black overlay with blur effect
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Add white diagonal grid pattern
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      
+      // Draw diagonal lines
+      const gridSize = 50;
+      for (let x = -gridSize; x < canvas.width + gridSize; x += gridSize) {
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x + canvas.height, canvas.height);
+      }
+      for (let x = 0; x < canvas.width + gridSize; x += gridSize) {
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x - canvas.height, canvas.height);
+      }
+      ctx.stroke();
     } else {
       // Fallback background
       ctx.fillStyle = '#4a90e2';
@@ -562,25 +583,25 @@
     
     const result = await PopupStore.open({
       title: $t("gameOver"),
-      content: `<div style="background: rgba(0,0,0,0.8); color: white; padding: 20px; border-radius: 10px; text-align: left; line-height: 1.8;">
-        <div style="margin: 10px 0; display: flex; align-items: center; gap: 8px;">
+      content: `<div style="background: rgba(0,0,0,0.8); color: white; padding: 20px; border-radius: 10px; text-align: left; line-height: 1.6;">
+        <div style="margin: 5px 0; display: flex; align-items: center; gap: 8px;">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
           <strong>${$t("survivalTimeLabel")}:</strong> ${formatTime(survivalTime)}
         </div>
-        <div style="margin: 10px 0; display: flex; align-items: center; gap: 8px;">
+        <div style="margin: 5px 0; display: flex; align-items: center; gap: 8px;">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6"/><path d="m13.25 13.25l4.75 4.75"/></svg>
           <strong>${$t("coinsCollectedLabel")}:</strong> ${coins}
         </div>
-        <div style="margin: 10px 0; display: flex; align-items: center; gap: 8px;">
+        <div style="margin: 5px 0; display: flex; align-items: center; gap: 8px;">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M14 9h1.5a2.5 2.5 0 0 0 0-5H14"/><path d="M6 9v6"/><path d="M14 9v6"/><path d="M6 15h1.5a2.5 2.5 0 0 0 0 5H6"/><path d="M14 15h1.5a2.5 2.5 0 0 1 0 5H14"/></svg>
           <strong>${$t("finalScoreLabel")}:</strong> ${score}
         </div>
-        <div style="margin: 10px 0; display: flex; align-items: center; gap: 8px;">
+        <div style="margin: 5px 0; display: flex; align-items: center; gap: 8px;">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13,2 3,14 12,14 11,22 21,10 12,10"/></svg>
           <strong>${$t("finalSpeedLabel")}:</strong> ${getCurrentScrollSpeed().toFixed(1)}x
         </div>
         
-        <div style="margin-top: 20px; font-style: italic; color: #fbbf24;">
+        <div style="margin-top: 15px; font-style: italic; color: #fbbf24;">
           ${$t("encouragementMessage")}
         </div>
       </div>`,
@@ -610,29 +631,29 @@
       
       const result = await PopupStore.open({
         title: $t("gamePaused"),
-        content: `<div style="background: rgba(0,0,0,0.8); color: white; padding: 20px; border-radius: 10px; text-align: left; line-height: 1.8;">
-          <div style="margin: 10px 0; display: flex; align-items: center; gap: 8px;">
+        content: `<div style="background: rgba(0,0,0,0.8); color: white; padding: 20px; border-radius: 10px; text-align: left; line-height: 1.6;">
+          <div style="margin: 5px 0; display: flex; align-items: center; gap: 8px;">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
             <strong>${$t("pauseTimeLabel")}:</strong> ${formatTime(survivalTime)}
           </div>
-          <div style="margin: 10px 0; display: flex; align-items: center; gap: 8px;">
+          <div style="margin: 5px 0; display: flex; align-items: center; gap: 8px;">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M14 9h1.5a2.5 2.5 0 0 0 0-5H14"/><path d="M6 9v6"/><path d="M14 9v6"/><path d="M6 15h1.5a2.5 2.5 0 0 0 0 5H6"/><path d="M14 15h1.5a2.5 2.5 0 0 1 0 5H14"/></svg>
             <strong>${$t("pauseScoreLabel")}:</strong> ${score}
           </div>
-          <div style="margin: 10px 0; display: flex; align-items: center; gap: 8px;">
+          <div style="margin: 5px 0; display: flex; align-items: center; gap: 8px;">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6"/><path d="m13.25 13.25l4.75 4.75"/></svg>
             <strong>${$t("pauseCoinsLabel")}:</strong> ${coins}
           </div>
-          <div style="margin: 10px 0; display: flex; align-items: center; gap: 8px;">
+          <div style="margin: 5px 0; display: flex; align-items: center; gap: 8px;">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.29 1.51 4.04 3 5.5l7 7Z"/></svg>
             <strong>${$t("pauseLivesLabel")}:</strong> ${lives}
           </div>
-          <div style="margin: 10px 0; display: flex; align-items: center; gap: 8px;">
+          <div style="margin: 5px 0; display: flex; align-items: center; gap: 8px;">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13,2 3,14 12,14 11,22 21,10 12,10"/></svg>
             <strong>${$t("currentSpeedLabel")}:</strong> ${getCurrentScrollSpeed().toFixed(1)}x
           </div>
           
-          <div style="margin-top: 20px; font-style: italic; color: #fbbf24;">
+          <div style="margin-top: 15px; font-style: italic; color: #fbbf24;">
             ${$t("pauseMessage")}
           </div>
         </div>`,
@@ -709,8 +730,8 @@
 </script>
 
 <Page mainProgress={main} 
-  wrapperStyle="background-image: url({imageAssets.backgroundWhite}); background-size: cover; background-position: center; background-color: white;"
-  contentStyle="box-sizing: border-box; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative;">
+  wrapperStyle="background-image: url({imageAssets.stage01background}), url({imageAssets.backgroundWhite}); background-size: repeat, cover; background-position: center, center; background-color: white;"
+  contentStyle="box-sizing: border-box; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)); backdrop-filter: blur(10px);">
   
   <div class="gameContainer">
     <!-- Game UI -->
@@ -809,6 +830,13 @@
     align-items: center;
     width: 100%;
     height: 100%;
+    background: 
+      linear-gradient(45deg, rgba(255,255,255,0.05) 25%, transparent 25%), 
+      linear-gradient(-45deg, rgba(255,255,255,0.05) 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, rgba(255,255,255,0.05) 75%), 
+      linear-gradient(-45deg, transparent 75%, rgba(255,255,255,0.05) 75%);
+    background-size: 50px 50px;
+    background-position: 0 0, 0 25px, 25px -25px, -25px 0px;
   }
 
   .gameUI {
@@ -928,6 +956,7 @@
     align-items: center;
     justify-content: center;
     background: rgba(255, 255, 255, 0.02);
+    border: 2px dotted black; /* Added black dotted border for better visibility */
     pointer-events: auto;
     cursor: pointer;
     transition: background 0.3s;
