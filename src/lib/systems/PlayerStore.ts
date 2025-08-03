@@ -6,6 +6,7 @@ export interface PlayerData {
   experience: number;
   selectedTitle: string;
   selectedCharacter: string;
+  selectedStage: string;
   masterVolume: number,
   bgmVolume: number,
   sfxVolume: number,
@@ -18,6 +19,7 @@ const DEFAULT_PLAYER_DATA : PlayerData = {
     experience: 0,
     selectedTitle: "playerTitle1",
     selectedCharacter: "yuuta",
+    selectedStage: "stage1",
     masterVolume: 50,
     bgmVolume: 50,
     sfxVolume: 50,

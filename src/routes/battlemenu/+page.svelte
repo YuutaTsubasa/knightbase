@@ -9,7 +9,6 @@
   import { isPortrait } from "$lib/systems/Orientation";
   import { playerStore } from "$lib/systems/PlayerStore";
   import { StaticDataStore } from "$lib/systems/StaticDataStore";
-  import { BACK_PATH } from "$lib/utils/Constant";
   import { format } from "$lib/utils/StringUtils";
   import { waitUntil } from "$lib/utils/Wait";
   import { get, writable, type Writable } from "svelte/store";

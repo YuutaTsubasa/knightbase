@@ -19,13 +19,21 @@ export function characterAttackEffectImageKey(characterId: string): string {
 }
 
 export function characterWalkAudioKey(characterId: string): string {
-  return `${characterId}Walk`;
+  return `sfx_${characterId}Walk`;
 }
 
 export function characterAttackAudioKey(characterId: string): string {
-  return `${characterId}Attack`;
+  return `sfx_${characterId}Attack`;
 }
 
 export function characterBackgroundVideoKey(characterId: string): string {
   return `${characterId}Background`;
+}
+
+export function stageBackgroundImageKey(stageId: string): string {
+  return `${stageId}Background`;
+}
+
+export function stageBgmAudioKey(stageId: string): string {
+  return `bgm_${stageId}`;
 }
