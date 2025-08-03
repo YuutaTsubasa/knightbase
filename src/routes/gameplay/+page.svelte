@@ -796,8 +796,7 @@
     flex-direction: column;
     align-items: center;
     width: 100%;
-    max-width: 800px;
-    height: 100vh;
+    height: 100%;
   }
 
   .gameUI {
@@ -894,13 +893,10 @@
     border: 2px solid rgba(148, 163, 184, 0.3);
     border-radius: 0.5rem;
     background: #000;
-    margin-top: 4rem;
     cursor: pointer;
     width: 100%;
-    height: calc(100vh - 300px);
+    height: 100%;
     object-fit: contain;
-    max-width: 800px;
-    max-height: 600px;
   }
 
   .touchControls {
@@ -1009,8 +1005,7 @@
     }
     
     .gameCanvas {
-      margin-top: 5rem;
-      height: calc(100vh - 350px);
+      height: 100%;
     }
     
     .touchControls {
@@ -1045,9 +1040,6 @@
       gap: 0.25rem;
     }
 
-    .controlsHeader .inputMethod {
-      display: none;
-    }
 
     .actionIcon, .controlMethod {
       font-size: 0.7rem;
