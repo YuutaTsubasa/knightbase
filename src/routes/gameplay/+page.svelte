@@ -7,7 +7,7 @@
   import { get, writable, type Writable } from "svelte/store";
   import { onMount } from "svelte";
   import { PopupStore, PopupResult } from "$lib/systems/PopupStore";
-  import { Play, Pause, Heart, Keyboard, Mouse, Gamepad2, ArrowUpFromLine, Sword } from "lucide-svelte";
+  import { Play, Pause, Heart, Keyboard, Smartphone, Gamepad2, ArrowUpFromLine, Sword, Clock, Trophy, Coins, Zap } from "lucide-svelte";
 
   let goToNextScene: Writable<string | null>;
   let canvas: HTMLCanvasElement;
@@ -52,11 +52,11 @@
   const GRAVITY = 0.8;
   const JUMP_FORCE = -15;
   const GROUND_Y = 320;
-  const BASE_SCROLL_SPEED = 1.5; // Reduced from 2 to make jumps more manageable
+  const BASE_SCROLL_SPEED = 4.5; // Increased 3x from 1.5 to make gameplay faster
 
-  // Trap spawning control
+  // Trap spawning control - increased interval 3x
   let lastTrapSpawnTime = 0;
-  const MIN_TRAP_INTERVAL = 3000; // Minimum 3 seconds between traps
+  const MIN_TRAP_INTERVAL = 9000; // Minimum 9 seconds between traps (3x from 3 seconds)
   
   // Asset loading
   let assetsLoaded = false;
@@ -311,10 +311,7 @@
     player.velocityY += GRAVITY;
     player.y += player.velocityY;
     
-    // Add horizontal movement during jump to help clear obstacles
-    if (!player.onGround && player.velocityY < 0) {
-      player.x += currentScrollSpeed * 1.2; // Move slightly faster than scroll speed when jumping up
-    }
+    // No horizontal movement during jump - removed to avoid unintended movement
     
     if (player.y >= GROUND_Y - player.height) {
       player.y = GROUND_Y - player.height;
@@ -385,10 +382,8 @@
         enemies.splice(enemyIndex, 1);
         if (lives <= 0) {
           handleGameOver();
-        } else {
-          // Brief invincibility by moving player back
-          player.x = Math.max(50, player.x - 50);
         }
+        // No backward movement on hit - removed as requested
       }
     });
     
@@ -398,15 +393,8 @@
         lives--;
         if (lives <= 0) {
           handleGameOver();
-        } else {
-          // Brief invincibility by moving player back and up (jump away from trap)
-          player.x = Math.max(50, player.x - 50);
-          if (player.onGround) {
-            player.velocityY = JUMP_FORCE * 0.7; // Smaller jump to escape trap
-            player.onGround = false;
-            player.animation = 'jump';
-          }
         }
+        // No backward movement on hit - removed as requested
       }
     });
     
@@ -424,19 +412,19 @@
       });
     });
     
-    // Spawn enemies more frequently (increased spawn rate)
-    if (Math.random() < Math.min(0.008 + survivalTime * 0.0005, 0.025)) {
+    // Spawn enemies more frequently (reduced by 3x to compensate for increased speed)
+    if (Math.random() < Math.min(0.0027 + survivalTime * 0.00017, 0.0083)) {
       spawnEnemy();
     }
     
-    // Spawn coins more frequently
-    if (Math.random() < Math.min(0.006 + survivalTime * 0.0003, 0.018)) {
+    // Spawn coins more frequently (reduced by 3x to compensate for increased speed)
+    if (Math.random() < Math.min(0.002 + survivalTime * 0.0001, 0.006)) {
       spawnCoin();
     }
     
-    // Spawn traps occasionally with minimum interval
+    // Spawn traps occasionally with minimum interval (reduced by 3x to compensate for increased speed)
     const currentTime = Date.now();
-    if (Math.random() < Math.min(0.003 + survivalTime * 0.0002, 0.012) && 
+    if (Math.random() < Math.min(0.001 + survivalTime * 0.00007, 0.004) && 
         currentTime - lastTrapSpawnTime > MIN_TRAP_INTERVAL) {
       spawnTrap();
       lastTrapSpawnTime = currentTime;
@@ -576,11 +564,23 @@
     
     const result = await PopupStore.open({
       title: $t("gameOver"),
-      content: `<div style="background: rgba(0,0,0,0.8); color: white; padding: 20px; border-radius: 10px; text-align: center; line-height: 1.8;">
-        <div style="margin: 10px 0;"><strong>${$t("survivalTimeLabel")}:</strong> ${formatTime(survivalTime)}</div>
-        <div style="margin: 10px 0;"><strong>${$t("coinsCollectedLabel")}:</strong> ${coins}</div>
-        <div style="margin: 10px 0;"><strong>${$t("finalScoreLabel")}:</strong> ${score}</div>
-        <div style="margin: 10px 0;"><strong>${$t("finalSpeedLabel")}:</strong> ${getCurrentScrollSpeed().toFixed(1)}x</div>
+      content: `<div style="background: rgba(0,0,0,0.8); color: white; padding: 20px; border-radius: 10px; text-align: left; line-height: 1.8;">
+        <div style="margin: 10px 0; display: flex; align-items: center; gap: 8px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
+          <strong>${$t("survivalTimeLabel")}:</strong> ${formatTime(survivalTime)}
+        </div>
+        <div style="margin: 10px 0; display: flex; align-items: center; gap: 8px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6"/><path d="m13.25 13.25l4.75 4.75"/></svg>
+          <strong>${$t("coinsCollectedLabel")}:</strong> ${coins}
+        </div>
+        <div style="margin: 10px 0; display: flex; align-items: center; gap: 8px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M14 9h1.5a2.5 2.5 0 0 0 0-5H14"/><path d="M6 9v6"/><path d="M14 9v6"/><path d="M6 15h1.5a2.5 2.5 0 0 0 0 5H6"/><path d="M14 15h1.5a2.5 2.5 0 0 1 0 5H14"/></svg>
+          <strong>${$t("finalScoreLabel")}:</strong> ${score}
+        </div>
+        <div style="margin: 10px 0; display: flex; align-items: center; gap: 8px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13,2 3,14 12,14 11,22 21,10 12,10"/></svg>
+          <strong>${$t("finalSpeedLabel")}:</strong> ${getCurrentScrollSpeed().toFixed(1)}x
+        </div>
         
         <div style="margin-top: 20px; font-style: italic; color: #fbbf24;">
           ${$t("encouragementMessage")}
@@ -612,12 +612,27 @@
       
       const result = await PopupStore.open({
         title: $t("gamePaused"),
-        content: `<div style="background: rgba(0,0,0,0.8); color: white; padding: 20px; border-radius: 10px; text-align: center; line-height: 1.8;">
-          <div style="margin: 10px 0;"><strong>${$t("pauseTimeLabel")}:</strong> ${formatTime(survivalTime)}</div>
-          <div style="margin: 10px 0;"><strong>${$t("pauseScoreLabel")}:</strong> ${score}</div>
-          <div style="margin: 10px 0;"><strong>${$t("pauseCoinsLabel")}:</strong> ${coins}</div>
-          <div style="margin: 10px 0;"><strong>${$t("pauseLivesLabel")}:</strong> ${lives}</div>
-          <div style="margin: 10px 0;"><strong>${$t("currentSpeedLabel")}:</strong> ${getCurrentScrollSpeed().toFixed(1)}x</div>
+        content: `<div style="background: rgba(0,0,0,0.8); color: white; padding: 20px; border-radius: 10px; text-align: left; line-height: 1.8;">
+          <div style="margin: 10px 0; display: flex; align-items: center; gap: 8px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
+            <strong>${$t("pauseTimeLabel")}:</strong> ${formatTime(survivalTime)}
+          </div>
+          <div style="margin: 10px 0; display: flex; align-items: center; gap: 8px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M14 9h1.5a2.5 2.5 0 0 0 0-5H14"/><path d="M6 9v6"/><path d="M14 9v6"/><path d="M6 15h1.5a2.5 2.5 0 0 0 0 5H6"/><path d="M14 15h1.5a2.5 2.5 0 0 1 0 5H14"/></svg>
+            <strong>${$t("pauseScoreLabel")}:</strong> ${score}
+          </div>
+          <div style="margin: 10px 0; display: flex; align-items: center; gap: 8px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6"/><path d="m13.25 13.25l4.75 4.75"/></svg>
+            <strong>${$t("pauseCoinsLabel")}:</strong> ${coins}
+          </div>
+          <div style="margin: 10px 0; display: flex; align-items: center; gap: 8px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.29 1.51 4.04 3 5.5l7 7Z"/></svg>
+            <strong>${$t("pauseLivesLabel")}:</strong> ${lives}
+          </div>
+          <div style="margin: 10px 0; display: flex; align-items: center; gap: 8px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13,2 3,14 12,14 11,22 21,10 12,10"/></svg>
+            <strong>${$t("currentSpeedLabel")}:</strong> ${getCurrentScrollSpeed().toFixed(1)}x
+          </div>
           
           <div style="margin-top: 20px; font-style: italic; color: #fbbf24;">
             ${$t("pauseMessage")}
@@ -759,30 +774,29 @@
            aria-label="Attack"></div>
     </div>
 
-    <!-- Game Instructions with Lucide Icons -->
+    <!-- Game Instructions with Simplified Icon Format -->
     <div class="instructions">
       <div class="objective">
         <strong>{$t("gameObjective")}</strong>
       </div>
-      <div class="controlsTable">
-        <div class="controlsRow">
-          <div class="controlsHeader">
-            <div class="inputMethod"><Keyboard size={16} /> Keyboard</div>
-            <div class="inputMethod"><Mouse size={16} /> Mouse/Touch</div>
-            <div class="inputMethod"><Gamepad2 size={16} /> Controller</div>
-          </div>
+      <div class="controlsCompact">
+        <div class="controlGroup">
+          <ArrowUpFromLine size={16} />
+          <span class="actionLabel">Jump:</span>
+          <span class="controls">
+            <Keyboard size={12} /> [Space/W/↑] / 
+            <Smartphone size={12} /> {$t("touchLeft")} / 
+            <Gamepad2 size={12} /> [A]
+          </span>
         </div>
-        <div class="controlsRow">
-          <div class="actionIcon"><ArrowUpFromLine size={16} /> Jump</div>
-          <div class="controlMethod">Space / W / ↑</div>
-          <div class="controlMethod">Left Side Tap</div>
-          <div class="controlMethod">A Button</div>
-        </div>
-        <div class="controlsRow">
-          <div class="actionIcon"><Sword size={16} /> Attack</div>
-          <div class="controlMethod">Enter / X / Z / D / →</div>
-          <div class="controlMethod">Right Side Tap</div>
-          <div class="controlMethod">B / X Button</div>
+        <div class="controlGroup">
+          <Sword size={16} />
+          <span class="actionLabel">Attack:</span>
+          <span class="controls">
+            <Keyboard size={12} /> [Enter/X/Z/D/→] / 
+            <Smartphone size={12} /> {$t("touchRight")} / 
+            <Gamepad2 size={12} /> [B/X]
+          </span>
         </div>
       </div>
     </div>
@@ -916,7 +930,7 @@
     align-items: center;
     justify-content: center;
     background: rgba(255, 255, 255, 0.02);
-    border: 1px dashed rgba(148, 163, 184, 0.2);
+    border: 1px dashed rgba(0, 0, 0, 0.3);
     pointer-events: auto;
     cursor: pointer;
     transition: background 0.3s;
@@ -927,11 +941,11 @@
   }
 
   .touchZone.left {
-    border-right: 1px dashed rgba(148, 163, 184, 0.2);
+    border-right: 1px dashed rgba(0, 0, 0, 0.3);
   }
 
   .touchZone.right {
-    border-left: 1px dashed rgba(148, 163, 184, 0.2);
+    border-left: 1px dashed rgba(0, 0, 0, 0.3);
   }
 
   .instructions {
@@ -958,44 +972,31 @@
     font-weight: bold;
   }
 
-  .controlsTable {
+  .controlsCompact {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 0.75rem;
   }
 
-  .controlsRow {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr 1fr;
-    gap: 0.5rem;
-    align-items: center;
-  }
-
-  .controlsHeader {
-    display: contents;
-  }
-
-  .inputMethod, .actionIcon, .controlMethod {
+  .controlGroup {
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 0.25rem;
-    padding: 0.25rem 0.5rem;
-    background: rgba(59, 130, 246, 0.1);
-    border-radius: 0.25rem;
-    border: 1px solid rgba(148, 163, 184, 0.2);
-    font-size: 0.8rem;
+    gap: 0.5rem;
+    flex-wrap: wrap;
   }
 
-  .actionIcon {
-    background: rgba(34, 197, 94, 0.1);
-    border-color: rgba(34, 197, 94, 0.3);
-  }
-
-  .inputMethod {
-    background: rgba(168, 85, 247, 0.1);
-    border-color: rgba(168, 85, 247, 0.3);
+  .actionLabel {
     font-weight: bold;
+    color: #34d399;
+    min-width: 60px;
+  }
+
+  .controls {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    flex-wrap: wrap;
+    font-size: 0.85rem;
   }
 
   /* Mobile responsiveness */
@@ -1035,15 +1036,14 @@
       max-width: 95%;
     }
 
-    .controlsRow {
-      grid-template-columns: 1fr;
+    .controlGroup {
+      flex-direction: column;
+      align-items: flex-start;
       gap: 0.25rem;
     }
 
-
-    .actionIcon, .controlMethod {
-      font-size: 0.7rem;
-      padding: 0.2rem 0.4rem;
+    .controls {
+      font-size: 0.75rem;
     }
   }
 </style>
