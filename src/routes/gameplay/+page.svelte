@@ -78,12 +78,12 @@
   let gamepadIndex: number | null = null;
   
   async function loadAssets() {
-    // Show loading popup
-    const loadingPopupPromise = PopupStore.open({
-      title: "Loading Game",
-      content: "Preparing your adventure...",
+    // Show loading popup with condition-based auto-close
+    PopupStore.open({
+      title: $t("loadingGameTitle"),
+      content: $t("loadingGameContent"),
       buttons: [],
-      autoClose: true
+      autoClose: () => assetsLoaded
     });
 
     const imagePromises = Object.entries({
@@ -125,10 +125,7 @@
     
     await Promise.all([...imagePromises, ...audioPreloadPromises]);
     assetsLoaded = true;
-
-    // Close loading popup
-    const loadingPopupId = await loadingPopupPromise;
-    PopupStore.autoClose(loadingPopupId);
+    // Popup will auto-close when assetsLoaded becomes true
   }
   
   // Input handling functions

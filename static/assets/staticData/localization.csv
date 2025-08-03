@@ -150,3 +150,5 @@ touchControlsInstruction,"觸碰左側跳躍 • 觸碰右側攻擊","Touch left
 gameObjective,"收集金幣並盡可能長時間生存！","Collect coins and survive as long as possible!","コインを集めて、できるだけ長く生き残りましょう！"
 touchLeft,"左側點擊","Left Tap","左タップ"
 touchRight,"右側點擊","Right Tap","右タップ"
+loadingGameTitle,"載入遊戲","Loading Game","ゲーム読み込み中"
+loadingGameContent,"正在準備您的冒險...","Preparing your adventure...","あなたの冒険を準備中..."
