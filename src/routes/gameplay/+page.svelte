@@ -59,6 +59,30 @@
   let traps: Array<{x: number, y: number, width: number, height: number, collisionOffsetX: number, collisionOffsetY: number, collisionWidth: number, collisionHeight: number}> = [];
   let explosions: Array<{x: number, y: number, width: number, height: number, animationFrame: number, animationTimer: number}> = [];
 
+  // Object pooling for performance optimization
+  const explosionPool: Array<{x: number, y: number, width: number, height: number, animationFrame: number, animationTimer: number, active: boolean}> = [];
+  const projectilePool: Array<{x: number, y: number, width: number, height: number, velocityX: number, animationFrame: number, animationTimer: number, active: boolean}> = [];
+  const POOL_SIZE = 20; // Pre-allocate 20 of each type
+  
+  // Initialize object pools
+  function initObjectPools() {
+    // Initialize explosion pool
+    for (let i = 0; i < POOL_SIZE; i++) {
+      explosionPool.push({
+        x: 0, y: 0, width: 0, height: 0,
+        animationFrame: 0, animationTimer: 0, active: false
+      });
+    }
+    
+    // Initialize projectile pool
+    for (let i = 0; i < POOL_SIZE; i++) {
+      projectilePool.push({
+        x: 0, y: 0, width: 0, height: 0,
+        velocityX: 0, animationFrame: 0, animationTimer: 0, active: false
+      });
+    }
+  }
+
   // Game settings
   const GRAVITY = 0.8;
   const JUMP_FORCE = -20; // Increased from -15 to account for larger objects
@@ -239,6 +263,10 @@
     projectiles = [];
     traps = [];
     explosions = [];
+    
+    // Reset object pools
+    explosionPool.forEach(explosion => explosion.active = false);
+    projectilePool.forEach(projectile => projectile.active = false);
 
     waitForCountdown = true;
     setTimeout(() => startCountdown(false), 1000);
@@ -283,15 +311,32 @@
       // Play attack audio
       AudioManager.play(characterAttackAudioKey(selectedCharacter));
       
-      projectiles.push({
-        x: player.x + player.width,
-        y: player.y,
-        width: 128, // Increased from 64 to 128 (2x scale)
-        height: 256, // Increased from 128 to 256 (2x scale)
-        velocityX: 8,
-        animationFrame: 0,
-        animationTimer: 0
-      });
+      // Try to use an inactive projectile from the pool first
+      let projectile = projectilePool.find(p => !p.active);
+      
+      if (projectile) {
+        // Reuse pooled projectile
+        projectile.x = player.x + player.width;
+        projectile.y = player.y;
+        projectile.width = 128;
+        projectile.height = 256;
+        projectile.velocityX = 8;
+        projectile.animationFrame = 0;
+        projectile.animationTimer = 0;
+        projectile.active = true;
+        projectiles.push(projectile);
+      } else {
+        // Fallback to creating new projectile if pool is exhausted
+        projectiles.push({
+          x: player.x + player.width,
+          y: player.y,
+          width: 128, // Increased from 64 to 128 (2x scale)
+          height: 256, // Increased from 128 to 256 (2x scale)
+          velocityX: 8,
+          animationFrame: 0,
+          animationTimer: 0
+        });
+      }
     }
   }
   
@@ -311,14 +356,30 @@
   }
 
   function spawnExplosion(enemy: {x: number, y: number, width: number, height: number}) {
-    explosions.push({
-      x: enemy.x - enemy.width / 2,
-      y: enemy.y - enemy.height / 2 - 20,
-      width: enemy.width * 2,
-      height: enemy.height * 2,
-      animationFrame: 0,
-      animationTimer: 0
-    });
+    // Try to use an inactive explosion from the pool first
+    let explosion = explosionPool.find(e => !e.active);
+    
+    if (explosion) {
+      // Reuse pooled explosion
+      explosion.x = enemy.x - enemy.width / 2;
+      explosion.y = enemy.y - enemy.height / 2 - 20;
+      explosion.width = enemy.width * 2;
+      explosion.height = enemy.height * 2;
+      explosion.animationFrame = 0;
+      explosion.animationTimer = 0;
+      explosion.active = true;
+      explosions.push(explosion);
+    } else {
+      // Fallback to creating new explosion if pool is exhausted
+      explosions.push({
+        x: enemy.x - enemy.width / 2,
+        y: enemy.y - enemy.height / 2 - 20,
+        width: enemy.width * 2,
+        height: enemy.height * 2,
+        animationFrame: 0,
+        animationTimer: 0
+      });
+    }
   }
   
   function spawnCoin() {
@@ -398,7 +459,7 @@
         }
       }
 
-      // Update explosions animation (optimized)
+      // Update explosions animation (optimized with object pooling)
       for (let i = explosions.length - 1; i >= 0; i--) {
         const explosion = explosions[i];
         explosion.animationTimer += deltaTime;
@@ -406,21 +467,33 @@
           explosion.animationTimer %= 100;
           explosion.animationFrame = (explosion.animationFrame + 1); 
           if (explosion.animationFrame >= 6) {
+            // Return to pool if it's a pooled object
+            if ('active' in explosion) {
+              explosion.active = false;
+            }
             explosions.splice(i, 1);
             continue;
           }
         }
         explosion.x -= currentScrollSpeed;
         if (explosion.x < -explosion.width) {
+          // Return to pool if it's a pooled object
+          if ('active' in explosion) {
+            explosion.active = false;
+          }
           explosions.splice(i, 1);
         }
       }
 
-      // Update projectiles (optimized)
+      // Update projectiles (optimized with object pooling)
       for (let i = projectiles.length - 1; i >= 0; i--) {
         const projectile = projectiles[i];
         projectile.x += projectile.velocityX;
         if (projectile.x > canvas.width + 50) {
+          // Return to pool if it's a pooled object
+          if ('active' in projectile) {
+            projectile.active = false;
+          }
           projectiles.splice(i, 1);
         }
       }
@@ -558,6 +631,10 @@
               projectile.y < enemy.y + enemy.height &&
               projectile.y + projectile.height > enemy.y) {
             enemies.splice(e, 1);
+            // Return projectile to pool if it's a pooled object
+            if ('active' in projectile) {
+              projectile.active = false;
+            }
             projectiles.splice(p, 1);
             spawnExplosion(enemy);
             score += 10; // Award 10 points for defeating an enemy
@@ -981,6 +1058,9 @@
   onMount(() => {
     // Detect mobile device for performance optimizations
     detectMobile();
+    
+    // Initialize object pools for performance
+    initObjectPools();
     
     if (canvas) {
       ctx = canvas.getContext('2d')!;
