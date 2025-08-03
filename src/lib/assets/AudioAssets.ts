@@ -8,4 +8,11 @@ export const audioAssets: Record<string, {
   bgm_battlemenu: { url: '/assets/audios/bgm_battlemenu.mp3', group: 'bgm'},
   sfx_confirm: { url: '/assets/audios/sfx_confirm.mp3', group: 'sfx' },
   sfx_cancel: { url: '/assets/audios/sfx_cancel.mp3', group: 'sfx' },
+  sfx_explosion: { url: '/assets/audios/sfx_explosion.mp3', group: 'sfx' },
+  sfx_hurt: { url: '/assets/audios/sfx_hurt.mp3', group: 'sfx' },
+  sfx_coin: { url: '/assets/audios/sfx_coin.mp3', group: 'sfx' },
+  sfx_aliceAttack: { url: '/assets/audios/sfx_aliceAttack.mp3', group: 'sfx' },
+  sfx_yuutaAttack: { url: '/assets/audios/sfx_yuutaAttack.mp3', group: 'sfx' },
+  sfx_aliceWalk: { url: '/assets/audios/sfx_aliceWalk.mp3', group: 'sfx' },
+  sfx_yuutaWalk: { url: '/assets/audios/sfx_yuutaWalk.mp3', group: 'sfx' },
 };

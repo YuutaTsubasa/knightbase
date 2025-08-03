@@ -18,6 +18,18 @@ export function characterAttackEffectImageKey(characterId: string): string {
   return `${characterId}AttackEffect`;
 }
 
+export function characterWalkAudioKey(characterId: string): string {
+  return `${characterId}Walk`;
+}
+
+export function characterAttackAudioKey(characterId: string): string {
+  return `${characterId}Attack`;
+}
+
+export function characterHurtAudioKey(characterId: string): string {
+  return `${characterId}Hurt`;
+}
+
 export function characterBackgroundVideoKey(characterId: string): string {
   return `${characterId}Background`;
 }
