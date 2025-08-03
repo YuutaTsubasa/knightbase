@@ -67,7 +67,7 @@
   async function main() {
     goToNextScene = writable(null);
     await waitUntil(goToNextScene, value => value !== null);
-    return get(goToNextScene) ?? "/mainmenu";
+    return get(goToNextScene) ?? "/battlemenu";
   }
 
   function toggleStageDetails(stageId: number) {
@@ -110,7 +110,7 @@
       primaryTitle={$t('stage')} 
       secondaryTitle={$t('stagePageSubtitle')}
       onHeightChange={(height) => topbarHeight = height}
-      onBack={() => goToNextScene.set(BACK_PATH)} />
+      onBack={() => goToNextScene.set("/battlemenu")} />
   </slot>
   
   <div class="stagePage" style={`--topbarHeight: ${topbarHeight}px;`}>
@@ -189,6 +189,7 @@
   .stageList {
     flex: 1;
     padding: 1rem;
+    max-height: calc(100vh - var(--topbarHeight, 0px) - 2rem);
     overflow-y: auto;
     display: flex;
     flex-direction: column;
@@ -277,6 +278,8 @@
     padding: 0 1rem 1rem 1rem;
     border-top: 1px solid #e2e8f0;
     animation: fadeIn 0.3s ease;
+    max-height: 60vh;
+    overflow-y: auto;
   }
 
   @keyframes fadeIn {

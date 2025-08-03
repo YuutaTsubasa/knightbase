@@ -1,17 +1,19 @@
 <script lang="ts">
-  import { FontAssets } from "$lib/assets/FontAssets";
   import { imageAssets } from "$lib/assets/ImageAssets";
   import { t } from "$lib/assets/LocalizationAssets";
   import Page from "$lib/components/Page.svelte";
-  import { waitUntil } from "$lib/utils/Wait";
+  import { wait, waitUntil } from "$lib/utils/Wait";
   import { get, writable, type Writable } from "svelte/store";
   import { onMount } from "svelte";
   import { PopupStore, PopupResult } from "$lib/systems/PopupStore";
+  import { Play, Pause, Heart, Keyboard, Smartphone, Gamepad2, ArrowUpFromLine, Sword, Clock, Trophy, DollarSign, Zap, CircleDollarSign, Target } from "lucide-svelte";
+  import { isPortrait } from "$lib/systems/Orientation";
+    import { FontAssets } from "$lib/assets/FontAssets";
 
   let goToNextScene: Writable<string | null>;
   let canvas: HTMLCanvasElement;
   let ctx: CanvasRenderingContext2D;
-  
+
   // Game state
   let gameState: 'playing' | 'paused' | 'gameOver' = 'playing';
   let survivalTime = 0;
@@ -20,13 +22,21 @@
   let lives = 3;
   let score = 0;
   let isPaused = false;
+  let isInvincible = false;
+  let invincibleTimer = 0;
+  const INVINCIBLE_DURATION = 1500;
   
-  // Game entities
+  // Game entities (4x size for player, 2x size for others) with separate collision boxes
   let player = {
-    x: 100,
+    x: 50, // Moved further left as requested
     y: 300,
-    width: 64,
-    height: 64,
+    width: 256, // Increased from 128 to 256 as requested
+    height: 256, // Increased from 128 to 256 as requested
+    // Collision box (smaller than visual sprite)
+    collisionOffsetX: 40, // Scaled proportionally
+    collisionOffsetY: 20, // Scaled proportionally
+    collisionWidth: 176, // Scaled proportionally
+    collisionHeight: 216, // Scaled proportionally
     velocityY: 0,
     onGround: false,
     animation: 'run',
@@ -37,20 +47,28 @@
   // Background scrolling
   let backgroundOffset = 0;
   
-  let enemies: Array<{x: number, y: number, width: number, height: number}> = [];
-  let gameCoins: Array<{x: number, y: number, width: number, height: number, collected: boolean}> = [];
+  let enemies: Array<{x: number, y: number, width: number, height: number, facingLeft: boolean, collisionOffsetX: number, collisionOffsetY: number, collisionWidth: number, collisionHeight: number}> = [];
+  let gameCoins: Array<{x: number, y: number, width: number, height: number, collected: boolean, collisionOffsetX: number, collisionOffsetY: number, collisionWidth: number, collisionHeight: number}> = [];
   let projectiles: Array<{x: number, y: number, width: number, height: number, velocityX: number, animationFrame: number, animationTimer: number}> = [];
-  let traps: Array<{x: number, y: number, width: number, height: number}> = [];
+  let traps: Array<{x: number, y: number, width: number, height: number, collisionOffsetX: number, collisionOffsetY: number, collisionWidth: number, collisionHeight: number}> = [];
   
   // Game settings
   const GRAVITY = 0.8;
-  const JUMP_FORCE = -15;
-  const GROUND_Y = 320;
-  const BASE_SCROLL_SPEED = 2;
+  const JUMP_FORCE = -20; // Increased from -15 to account for larger objects
+  const GROUND_Y = 480; // Moved down 160px as requested (was 320)
+  const BASE_SCROLL_SPEED = 8; 
+
+  // Trap spawning control - increased interval 3x
+  let lastTrapSpawnTime = 0;
+  const MIN_TRAP_INTERVAL = 3000; // Minimum 5 seconds between traps (3x from 3 seconds)
   
   // Asset loading
   let assetsLoaded = false;
   let loadedImages: Record<string, HTMLImageElement> = {};
+  
+  // Input handling
+  let keysPressed: Record<string, boolean> = {};
+  let gamepadIndex: number | null = null;
   
   async function loadAssets() {
     const imagePromises = Object.entries({
@@ -77,9 +95,76 @@
     assetsLoaded = true;
   }
   
+  // Input handling functions
+  function handleKeyDown(event: KeyboardEvent) {
+    keysPressed[event.code] = true;
+    
+    switch(event.code) {
+      case 'Space':
+      case 'ArrowUp':
+      case 'KeyW':
+        event.preventDefault();
+        jump();
+        break;
+      case 'ArrowRight':
+      case 'KeyD':
+      case 'Enter':
+      case 'KeyX':
+      case 'KeyZ':
+        event.preventDefault();
+        attack();
+        break;
+      case 'Escape':
+      case 'KeyP':
+        event.preventDefault();
+        togglePause();
+        break;
+    }
+  }
+  
+  function handleKeyUp(event: KeyboardEvent) {
+    keysPressed[event.code] = false;
+  }
+  
+  function setupGamepadSupport() {
+    // Check for gamepad connection
+    window.addEventListener('gamepadconnected', (e) => {
+      console.log('Gamepad connected:', e.gamepad);
+      gamepadIndex = e.gamepad.index;
+    });
+    
+    window.addEventListener('gamepaddisconnected', (e) => {
+      console.log('Gamepad disconnected:', e.gamepad);
+      if (gamepadIndex === e.gamepad.index) {
+        gamepadIndex = null;
+      }
+    });
+  }
+  
+  function handleGamepadInput() {
+    if (gamepadIndex === null) return;
+    
+    const gamepads = navigator.getGamepads();
+    const gamepad = gamepads[gamepadIndex];
+    
+    if (!gamepad) return;
+    
+    // Button mapping: A button (0) = jump, B button (1) = attack, Start button (9) = pause
+    if (gamepad.buttons[0]?.pressed) {
+      jump();
+    }
+    if (gamepad.buttons[1]?.pressed || gamepad.buttons[2]?.pressed) {
+      attack();
+    }
+    if (gamepad.buttons[9]?.pressed) {
+      togglePause();
+    }
+  }
+  
   function initGame() {
     if (!canvas || !ctx) return;
     
+    // Set canvas internal resolution
     canvas.width = 800;
     canvas.height = 600;
     
@@ -87,18 +172,26 @@
     gameState = 'playing';
     survivalTime = 0;
     lastSurvivalSecond = 0;
+    lastTrapSpawnTime = 0;
     coins = 0;
     lives = 3;
     score = 0;
     isPaused = false;
     backgroundOffset = 0;
+    isInvincible = false;
+    invincibleTimer = 0;
     
-    // Reset player
+    // Reset player (4x original size for better visibility)
     player = {
-      x: 100,
-      y: GROUND_Y - 64,
-      width: 64,
-      height: 64,
+      x: 50, // Moved further left as requested
+      y: GROUND_Y - 256, // Adjusted for new player height
+      width: 256, // Increased from 128 to 256
+      height: 256, // Increased from 128 to 256
+      // Collision box (smaller than visual sprite)
+      collisionOffsetX: 40, // Scaled proportionally
+      collisionOffsetY: 20, // Scaled proportionally
+      collisionWidth: 176, // Scaled proportionally
+      collisionHeight: 216, // Scaled proportionally
       velocityY: 0,
       onGround: true,
       animation: 'run',
@@ -111,19 +204,27 @@
     gameCoins = [];
     projectiles = [];
     traps = [];
-    
-    // Spawn initial coins
-    for (let i = 0; i < 5; i++) {
-      gameCoins.push({
-        x: 300 + i * 200,
-        y: GROUND_Y - 100 - Math.random() * 100,
-        width: 32,
-        height: 32,
-        collected: false
-      });
-    }
+
+    waitForCountdown = true;
+    setTimeout(() => startCountdown(false), 1000);
   }
   
+  let countdown = 3; // 秒數
+  let waitForCountdown = true;
+  let showCountdown = true;
+  let countdownText = "3";
+  let countdownTimer = 0;
+  let isStop = false;
+
+  function startCountdown(shouldStop: boolean = false) {
+    isStop = shouldStop;
+    countdown = 3;
+    countdownText = "3";
+    showCountdown = true;
+    countdownTimer = 0;
+    waitForCountdown = false;
+  }
+
   function jump() {
     if (player.onGround && gameState === 'playing') {
       player.velocityY = JUMP_FORCE;
@@ -133,16 +234,15 @@
   }
   
   function attack() {
-    if (gameState === 'playing') {
+    if (player.animation !== 'attack' && gameState === 'playing') {
       player.animation = 'attack';
       player.animationTimer = 0;
       
-      // Create projectile
       projectiles.push({
         x: player.x + player.width,
-        y: player.y + player.height / 2,
-        width: 32,
-        height: 16,
+        y: player.y,
+        width: 128, // Increased from 64 to 128 (2x scale)
+        height: 256, // Increased from 128 to 256 (2x scale)
         velocityX: 8,
         animationFrame: 0,
         animationTimer: 0
@@ -153,41 +253,119 @@
   function spawnEnemy() {
     enemies.push({
       x: canvas.width + 50,
-      y: GROUND_Y - 48,
-      width: 48,
-      height: 48
+      y: GROUND_Y - 192, // Adjusted for new enemy height
+      width: 192, // Increased from 96 to 192 (2x scale)
+      height: 192, // Increased from 96 to 192 (2x scale)
+      facingLeft: true,
+      // Collision box (smaller than visual sprite)
+      collisionOffsetX: 24, // Scaled proportionally
+      collisionOffsetY: 16, // Scaled proportionally
+      collisionWidth: 144, // Scaled proportionally
+      collisionHeight: 160 // Scaled proportionally
     });
   }
   
   function spawnCoin() {
     gameCoins.push({
       x: canvas.width + 50 + Math.random() * 200,
-      y: GROUND_Y - 100 - Math.random() * 100,
-      width: 32,
-      height: 32,
-      collected: false
+      y: GROUND_Y - 200 - Math.random() * 300,
+      width: 128, // Increased from 64 to 128 (2x scale)
+      height: 128, // Increased from 64 to 128 (2x scale)
+      collected: false,
+      // Collision box (smaller than visual sprite)
+      collisionOffsetX: 16, // Scaled proportionally
+      collisionOffsetY: 16, // Scaled proportionally
+      collisionWidth: 96, // Scaled proportionally
+      collisionHeight: 96 // Scaled proportionally
     });
   }
   
   function spawnTrap() {
     traps.push({
       x: canvas.width + 50,
-      y: GROUND_Y - 32,
-      width: 64,
-      height: 32
+      y: GROUND_Y - 48, // Adjusted for new trap height (halved back)
+      width: 128, // Reduced from 256 to 128 (halved back)
+      height: 48, // Reduced from 96 to 48 (halved back)
+      // Collision box (smaller than visual sprite for better gameplay)
+      collisionOffsetX: 16, // Scaled proportionally
+      collisionOffsetY: 8, // Scaled proportionally
+      collisionWidth: 96, // Scaled proportionally
+      collisionHeight: 32 // Scaled proportionally
     });
   }
   
+  let spawnChance = 0.0001; // 0.01%
+  const spawnChanceIncreasePerFrame = (1 - 0.0001) / (60 * 25); // 25秒內從0.01%到100%，假設60FPS
+
   function getCurrentScrollSpeed(): number {
-    // Speed increases over time, starting at BASE_SCROLL_SPEED and increasing by 0.1 every 10 seconds
-    return BASE_SCROLL_SPEED + Math.floor(survivalTime / 10) * 0.1;
+    // Speed increases over time, starting at BASE_SCROLL_SPEED and increasing by 0.05 every 10 seconds (reduced from 0.1)
+    return BASE_SCROLL_SPEED + Math.floor(survivalTime / 10) * 0.05;
   }
   
   function updateGame(deltaTime: number) {
     if (gameState !== 'playing' || !assetsLoaded) return;
+
+    const currentScrollSpeed = getCurrentScrollSpeed();
+    if (!isStop) {
+      backgroundOffset -= currentScrollSpeed;
+    
+      // Update player physics
+      player.velocityY += GRAVITY;
+      player.y += player.velocityY;
+
+      if (player.y >= GROUND_Y - player.height) {
+        player.y = GROUND_Y - player.height;
+        player.velocityY = 0;
+        player.onGround = true;
+        if (player.animation === 'jump') {
+          player.animation = 'run';
+        }
+      }
+      
+      // Update animation (6 frames per sprite sheet)
+      player.animationTimer += deltaTime;
+      const animationSpeed = player.animation === 'attack' ? 150 : 100; // Slower for attack animation
+      if (player.animationTimer > animationSpeed) {
+        player.animationFrame = (player.animationFrame + 1) % 6;
+        player.animationTimer = 0;
+        
+        if (player.animation === 'attack' && player.animationFrame === 0) {
+          player.animation = player.onGround ? 'run' : 'jump';
+        }
+      }
+
+      // Update projectiles
+      projectiles = projectiles.filter(projectile => {
+        projectile.x += projectile.velocityX;
+        return projectile.x < canvas.width + 50;
+      });
+    }
+
+    if (waitForCountdown) {
+      return;
+    }
+
+    if (showCountdown) {
+      countdownTimer += deltaTime;
+      if (countdownTimer >= 1000) {
+        countdownTimer -= 1000;
+        countdown--;
+        if (countdown > 0) {
+          countdownText = countdown.toString();
+        } else if (countdown === 0) {
+          countdownText = "GO!";
+        } else {
+          showCountdown = false;
+          isStop = false;
+          countdownText = "";
+        }
+      }
+      
+      return;
+    }
+
     
     survivalTime += deltaTime / 1000;
-    const currentScrollSpeed = getCurrentScrollSpeed();
     
     // Award 1 point per second for survival
     const currentSecond = Math.floor(survivalTime);
@@ -196,32 +374,6 @@
       lastSurvivalSecond = currentSecond;
     }
     
-    // Update background scrolling with progressive speed
-    backgroundOffset -= currentScrollSpeed;
-    
-    // Update player physics
-    player.velocityY += GRAVITY;
-    player.y += player.velocityY;
-    
-    if (player.y >= GROUND_Y - player.height) {
-      player.y = GROUND_Y - player.height;
-      player.velocityY = 0;
-      player.onGround = true;
-      if (player.animation === 'jump') {
-        player.animation = 'run';
-      }
-    }
-    
-    // Update animation (6 frames per sprite sheet)
-    player.animationTimer += deltaTime;
-    if (player.animationTimer > 100) { // Faster animation for 6 frames
-      player.animationFrame = (player.animationFrame + 1) % 6;
-      player.animationTimer = 0;
-      
-      if (player.animation === 'attack' && player.animationFrame === 0) {
-        player.animation = player.onGround ? 'run' : 'jump';
-      }
-    }
     
     // Update enemies with progressive speed
     enemies = enemies.filter(enemy => {
@@ -240,27 +392,9 @@
       return trap.x > -trap.width;
     });
     
-    // Update projectiles
-    projectiles = projectiles.filter(projectile => {
-      projectile.x += projectile.velocityX;
-      
-      // Update projectile animation
-      projectile.animationTimer += deltaTime;
-      if (projectile.animationTimer > 100) {
-        projectile.animationFrame = (projectile.animationFrame + 1) % 6; // Assume 6 frames for attack effect
-        projectile.animationTimer = 0;
-      }
-      
-      return projectile.x < canvas.width + 50;
-    });
-    
     // Collision detection - coins
     gameCoins.forEach(coin => {
-      if (!coin.collected && 
-          player.x < coin.x + coin.width &&
-          player.x + player.width > coin.x &&
-          player.y < coin.y + coin.height &&
-          player.y + player.height > coin.y) {
+      if (!coin.collected && checkCollision(player, coin)) {
         coin.collected = true;
         coins++;
         score += 10; // Award 10 points for collecting a coin
@@ -269,40 +403,33 @@
     
     // Collision detection - enemies (only if player is vulnerable)
     enemies.forEach((enemy, enemyIndex) => {
-      if (player.x < enemy.x + enemy.width &&
-          player.x + player.width > enemy.x &&
-          player.y < enemy.y + enemy.height &&
-          player.y + player.height > enemy.y) {
-        lives--;
+      if (checkCollision(player, enemy)) {
+        if (!isInvincible) {
+          lives--;
+          isInvincible = true;
+          invincibleTimer = INVINCIBLE_DURATION;
+        }
         // Remove the enemy that hit the player
         enemies.splice(enemyIndex, 1);
         if (lives <= 0) {
           handleGameOver();
-        } else {
-          // Brief invincibility by moving player back
-          player.x = Math.max(50, player.x - 50);
         }
+        // No backward movement on hit - removed as requested
       }
     });
     
     // Collision detection - traps
     traps.forEach(trap => {
-      if (player.x < trap.x + trap.width &&
-          player.x + player.width > trap.x &&
-          player.y < trap.y + trap.height &&
-          player.y + player.height > trap.y) {
-        lives--;
+      if (checkCollision(player, trap)) {
+        if (!isInvincible) {
+          lives--;
+          isInvincible = true;
+          invincibleTimer = INVINCIBLE_DURATION;
+        }
         if (lives <= 0) {
           handleGameOver();
-        } else {
-          // Brief invincibility by moving player back and up (jump away from trap)
-          player.x = Math.max(50, player.x - 50);
-          if (player.onGround) {
-            player.velocityY = JUMP_FORCE * 0.7; // Smaller jump to escape trap
-            player.onGround = false;
-            player.animation = 'jump';
-          }
         }
+        // No backward movement on hit - removed as requested
       }
     });
     
@@ -320,19 +447,37 @@
       });
     });
     
-    // Spawn enemies more frequently (increased spawn rate)
-    if (Math.random() < Math.min(0.008 + survivalTime * 0.0005, 0.025)) {
-      spawnEnemy();
+    // 每 frame 增加機率
+    spawnChance += spawnChanceIncreasePerFrame;
+    if (spawnChance > 1) spawnChance = 1;
+
+    // 1~10000的隨機值
+    const rand = Math.random();
+
+    if (rand < spawnChance) {
+      // 決定生什麼
+      const typeRand = Math.random();
+      const now = performance.now();
+      if (typeRand < 0.4) {
+        spawnEnemy();
+      } else if (typeRand < 0.75) {
+        if (now - lastTrapSpawnTime > MIN_TRAP_INTERVAL) {
+          spawnTrap();
+          lastTrapSpawnTime = now;
+        }
+      } else {
+        spawnCoin();
+      }
+      // 歸回初始機率
+      spawnChance = 0.0001;
     }
-    
-    // Spawn coins more frequently
-    if (Math.random() < Math.min(0.006 + survivalTime * 0.0003, 0.018)) {
-      spawnCoin();
-    }
-    
-    // Spawn traps occasionally 
-    if (Math.random() < Math.min(0.003 + survivalTime * 0.0002, 0.012)) {
-      spawnTrap();
+
+    if (isInvincible) {
+      invincibleTimer -= deltaTime;
+      if (invincibleTimer <= 0) {
+        isInvincible = false;
+        invincibleTimer = 0;
+      }
     }
   }
   
@@ -341,15 +486,23 @@
     
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    // Draw scrolling background
+    // Draw scrolling background with enhanced layered effects
     if (loadedImages.background) {
       const bgWidth = canvas.width;
+      const bgHeight = canvas.height;
+      
+      // Background moved down 160px, need to fill the top and draw extended background
+      const backgroundYOffset = bgHeight - 160;
+      const extendedHeight = bgHeight + backgroundYOffset; // Extend background height by 160px
+
       const bgX1 = backgroundOffset % bgWidth;
       const bgX2 = bgX1 + bgWidth;
       
-      // Draw two copies of the background for seamless scrolling
-      ctx.drawImage(loadedImages.background, bgX1, 0, bgWidth, canvas.height);
-      ctx.drawImage(loadedImages.background, bgX2, 0, bgWidth, canvas.height);
+      // Draw background pattern to fill entire extended area including top 160px
+      for (let y = -backgroundYOffset; y < extendedHeight; y += bgHeight) {
+        ctx.drawImage(loadedImages.background, bgX1, y, bgWidth, bgHeight);
+        ctx.drawImage(loadedImages.background, bgX2, y, bgWidth, bgHeight);
+      }
     } else {
       // Fallback background
       ctx.fillStyle = '#4a90e2';
@@ -363,26 +516,41 @@
     if (player.animation === 'jump') playerImage = loadedImages.yuutaJump;
     if (player.animation === 'attack') playerImage = loadedImages.yuutaAttack;
     
-    if (playerImage) {
-      const frameWidth = playerImage.width / 6; // 6 frames per sprite sheet
-      const frameHeight = playerImage.height;
-      const frameX = player.animationFrame * frameWidth;
-      
-      ctx.drawImage(
-        playerImage,
-        frameX, 0, frameWidth, frameHeight, // Source rectangle (sprite frame)
-        player.x, player.y, player.width, player.height // Destination rectangle
-      );
-    } else {
-      // Fallback player rectangle
-      ctx.fillStyle = '#ff6b6b';
-      ctx.fillRect(player.x, player.y, player.width, player.height);
+    let shouldDrawPlayer = true;
+    if (isInvincible) {
+      // 每 100ms 閃爍一次
+      shouldDrawPlayer = Math.floor(invincibleTimer / 100) % 2 === 0;
+    }
+
+    if (shouldDrawPlayer) {
+      if (playerImage) {
+        const frameWidth = playerImage.width / 6; // 6 frames per sprite sheet
+        const frameHeight = playerImage.height;
+        const frameX = player.animationFrame * frameWidth;
+        
+        ctx.drawImage(
+          playerImage,
+          frameX, 0, frameWidth, frameHeight, // Source rectangle (sprite frame)
+          player.x, player.y, player.width, player.height // Destination rectangle
+        );
+      } else {
+        // Fallback player rectangle
+        ctx.fillStyle = '#ff6b6b';
+        ctx.fillRect(player.x, player.y, player.width, player.height);
+      }
     }
     
-    // Draw enemies
+    // Draw enemies with horizontal flipping
     enemies.forEach(enemy => {
       if (loadedImages.enemy) {
-        ctx.drawImage(loadedImages.enemy, enemy.x, enemy.y, enemy.width, enemy.height);
+        ctx.save();
+        if (enemy.facingLeft) {
+          ctx.scale(-1, 1);
+          ctx.drawImage(loadedImages.enemy, -enemy.x - enemy.width, enemy.y, enemy.width, enemy.height);
+        } else {
+          ctx.drawImage(loadedImages.enemy, enemy.x, enemy.y, enemy.width, enemy.height);
+        }
+        ctx.restore();
       } else {
         // Fallback enemy rectangle
         ctx.fillStyle = '#e74c3c';
@@ -431,13 +599,12 @@
     // Draw projectiles
     projectiles.forEach(projectile => {
       if (loadedImages.attackEffect) {
-        const frameWidth = loadedImages.attackEffect.width / 6; // Assume 6 frames
+        const frameWidth = loadedImages.attackEffect.width; // Assume 6 frames
         const frameHeight = loadedImages.attackEffect.height;
-        const frameX = projectile.animationFrame * frameWidth;
         
         ctx.drawImage(
           loadedImages.attackEffect,
-          frameX, 0, frameWidth, frameHeight, // Source rectangle (sprite frame)
+          0, 0, frameWidth, frameHeight, // Source rectangle (sprite frame)
           projectile.x, projectile.y, projectile.width, projectile.height // Destination rectangle
         );
       } else {
@@ -446,11 +613,44 @@
         ctx.fillRect(projectile.x, projectile.y, projectile.width, projectile.height);
       }
     });
+    
+    if (!waitForCountdown && showCountdown) {
+      ctx.save();
+
+      // 純藍底框
+      const boxWidth = 480; // 左右較長
+      const boxHeight = 80; // 沒有上下間隔
+      const boxX = canvas.width / 2 - boxWidth / 2;
+      const boxY = canvas.height / 2 - boxHeight / 2;
+      const radius = 0; // 無圓角
+
+      // 畫純色藍底矩形
+      ctx.beginPath();
+      ctx.rect(boxX, boxY, boxWidth, boxHeight);
+      ctx.closePath();
+      ctx.fillStyle = "#0021ff"; // 或 "#0000ff"
+      ctx.fill();
+
+      // 白色大字
+      ctx.font = `bold 80px ${FontAssets.getFamily("englishNumberBold")}, 'Orbitron', Arial, sans-serif`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillStyle = "#fff";
+      ctx.fillText(countdownText, canvas.width / 2, canvas.height / 2);
+
+      ctx.restore();
+    }
+    
   }
   
+  let lastFrameTime = 0;
   function gameLoop() {
+    const now = performance.now();
+    const deltaTime = now - lastFrameTime;
+    lastFrameTime = now;
     if (!isPaused) {
-      updateGame(16.67); // Approximately 60 FPS
+      handleGamepadInput();
+      updateGame(deltaTime);
     }
     render();
     requestAnimationFrame(gameLoop);
@@ -461,15 +661,25 @@
     
     const result = await PopupStore.open({
       title: $t("gameOver"),
-      content: `<div style="background: rgba(0,0,0,0.8); color: white; padding: 20px; border-radius: 10px; text-align: center; line-height: 1.8;">
-        <div style="font-size: 1.2em; margin-bottom: 15px;">${$t("gameOverTitle")}</div>
-        
-        <div style="margin: 10px 0;"><strong>${$t("survivalTimeLabel")}:</strong> ${formatTime(survivalTime)}</div>
-        <div style="margin: 10px 0;"><strong>${$t("coinsCollectedLabel")}:</strong> ${coins}</div>
-        <div style="margin: 10px 0;"><strong>${$t("finalScoreLabel")}:</strong> ${score}</div>
-        <div style="margin: 10px 0;"><strong>${$t("finalSpeedLabel")}:</strong> ${getCurrentScrollSpeed().toFixed(1)}x</div>
-        
-        <div style="margin-top: 20px; font-style: italic; color: #fbbf24;">
+      content: `<div style="background: rgba(0,0,0,0.8); color: white; padding: 20px; border-radius: 10px; text-align: left; line-height: 1.2; font-size: 1rem;">
+        <div style="margin: 3px 0; display: flex; align-items: center; gap: 8px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
+          <strong>${$t("survivalTimeLabel")}:</strong> ${formatTime(survivalTime)}
+        </div>
+        <div style="margin: 3px 0; display: flex; align-items: center; gap: 8px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 18V6"/></svg>
+          <strong>${$t("coinsCollectedLabel")}:</strong> ${coins}
+        </div>
+        <div style="margin: 3px 0; display: flex; align-items: center; gap: 8px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="2"/></svg>
+          <strong>${$t("finalScoreLabel")}:</strong> ${score}
+        </div>
+        <div style="margin: 3px 0; display: flex; align-items: center; gap: 8px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13,2 3,14 12,14 11,22 21,10 12,10"/></svg>
+          <strong>${$t("finalSpeedLabel")}:</strong> ${getCurrentScrollSpeed().toFixed(1)}x
+        </div>
+
+        <div style="margin-top: 5px; font-style: italic; color: #fbbf24;">
           ${$t("encouragementMessage")}
         </div>
       </div>`,
@@ -499,16 +709,29 @@
       
       const result = await PopupStore.open({
         title: $t("gamePaused"),
-        content: `<div style="background: rgba(0,0,0,0.8); color: white; padding: 20px; border-radius: 10px; text-align: center; line-height: 1.8;">
-          <div style="font-size: 1.2em; margin-bottom: 15px;">${$t("gamePausedTitle")}</div>
+        content: `<div style="background: rgba(0,0,0,0.8); color: white; padding: 20px; border-radius: 10px; text-align: left; line-height: 1.2; font-size: 1rem;">
+          <div style="margin: 3px 0; display: flex; align-items: center; gap: 8px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
+            <strong>${$t("pauseTimeLabel")}:</strong> ${formatTime(survivalTime)}
+          </div>
+          <div style="margin: 3px 0; display: flex; align-items: center; gap: 8px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="2"/></svg>
+            <strong>${$t("pauseScoreLabel")}:</strong> ${score}
+          </div>
+          <div style="margin: 3px 0; display: flex; align-items: center; gap: 8px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 18V6"/></svg>
+            <strong>${$t("pauseCoinsLabel")}:</strong> ${coins}
+          </div>
+          <div style="margin: 3px 0; display: flex; align-items: center; gap: 8px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.29 1.51 4.04 3 5.5l7 7Z"/></svg>
+            <strong>${$t("pauseLivesLabel")}:</strong> ${lives}
+          </div>
+          <div style="margin: 3px 0; display: flex; align-items: center; gap: 8px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13,2 3,14 12,14 11,22 21,10 12,10"/></svg>
+            <strong>${$t("currentSpeedLabel")}:</strong> ${getCurrentScrollSpeed().toFixed(1)}x
+          </div>
           
-          <div style="margin: 10px 0;"><strong>${$t("pauseTimeLabel")}:</strong> ${formatTime(survivalTime)}</div>
-          <div style="margin: 10px 0;"><strong>${$t("pauseScoreLabel")}:</strong> ${score}</div>
-          <div style="margin: 10px 0;"><strong>${$t("pauseCoinsLabel")}:</strong> ${coins}</div>
-          <div style="margin: 10px 0;"><strong>${$t("pauseLivesLabel")}:</strong> ${lives}</div>
-          <div style="margin: 10px 0;"><strong>${$t("currentSpeedLabel")}:</strong> ${getCurrentScrollSpeed().toFixed(1)}x</div>
-          
-          <div style="margin-top: 20px; font-style: italic; color: #fbbf24;">
+          <div style="margin-top: 5px; font-style: italic; color: #fbbf24;">
             ${$t("pauseMessage")}
           </div>
         </div>`,
@@ -531,6 +754,7 @@
       if (gameState === 'paused') {
         isPaused = false;
         gameState = 'playing';
+        startCountdown(true);
       }
     }
   }
@@ -540,6 +764,21 @@
     const remainingSeconds = Math.floor(seconds % 60);
     return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
   }
+
+  // Helper function for collision detection using collision boxes
+  function checkCollision(a: any, b: any): boolean {
+    const aLeft = a.x + (a.collisionOffsetX || 0);
+    const aRight = aLeft + (a.collisionWidth || a.width);
+    const aTop = a.y + (a.collisionOffsetY || 0);
+    const aBottom = aTop + (a.collisionHeight || a.height);
+
+    const bLeft = b.x + (b.collisionOffsetX || 0);
+    const bRight = bLeft + (b.collisionWidth || b.width);
+    const bTop = b.y + (b.collisionOffsetY || 0);
+    const bBottom = bTop + (b.collisionHeight || b.height);
+
+    return aLeft < bRight && aRight > bLeft && aTop < bBottom && aBottom > bTop;
+  }
   
   async function main() {
     goToNextScene = writable(null);
@@ -547,19 +786,36 @@
     return get(goToNextScene) ?? "/stage";
   }
 
-  onMount(async () => {
+  onMount(() => {
     if (canvas) {
       ctx = canvas.getContext('2d')!;
-      await loadAssets();
-      initGame();
-      gameLoop();
+      loadAssets().then(() => {
+        // Setup input event listeners
+        window.addEventListener('keydown', handleKeyDown);
+        window.addEventListener('keyup', handleKeyUp);
+        setupGamepadSupport();
+        
+        initGame();      // 這時才會 startCountdown()
+        gameLoop(); 
+      });
     }
+    
+    // Cleanup event listeners on unmount
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
   });
 </script>
 
 <Page mainProgress={main} 
-  wrapperStyle="background: #000; color: white; overflow: hidden;"
   contentStyle="box-sizing: border-box; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative;">
+  
+  <!-- Layered background effects for page wrapper -->
+  <div slot="outside" class="pageBackground" style="background-image: url({imageAssets.stage01background});">
+
+
+  </div>
   
   <div class="gameContainer">
     <!-- Game UI -->
@@ -580,11 +836,19 @@
           </div>
           <div class="statItem">
             <span class="statLabel">{$t("livesLabel")}:</span>
-            <span class="statValue">{'❤️'.repeat(lives)}</span>
+            <span class="statValue">
+              {#each Array(lives) as _, i}
+                <Heart size={16} fill="currentColor" class="heartIcon" />
+              {/each}
+            </span>
           </div>
         </div>
         <button class="pauseBtn" on:click={togglePause}>
-          {isPaused ? '▶️' : '⏸️'}
+          {#if isPaused}
+            <Play size={20} />
+          {:else}
+            <Pause size={20} />
+          {/if}
         </button>
       </div>
     </div>
@@ -595,20 +859,49 @@
       class="gameCanvas"
     ></canvas>
 
-    <!-- Touch Controls Overlay -->
+    <!-- Hidden Touch Controls (without text overlay) -->
     <div class="touchControls">
-      <div class="touchZone left" on:touchstart={() => jump()} on:click={() => jump()}>
-        <span>JUMP</span>
-      </div>
-      <div class="touchZone right" on:touchstart={() => attack()} on:click={() => attack()}>
-        <span>ATTACK</span>
-      </div>
+      <div class="touchZone left" 
+           role="button" 
+           tabindex="0" 
+           on:touchstart={() => jump()} 
+           on:click={() => jump()}
+           on:keydown={(e) => e.key === 'Enter' && jump()}
+           aria-label="Jump"></div>
+      <div class="touchZone right" 
+           role="button" 
+           tabindex="0" 
+           on:touchstart={() => attack()} 
+           on:click={() => attack()}
+           on:keydown={(e) => e.key === 'Enter' && attack()}
+           aria-label="Attack"></div>
     </div>
 
-    <!-- Game Instructions -->
-    <div class="instructions">
-      <p>{$t("touchControlsInstruction")}</p>
-      <p>{$t("gameObjective")}</p>
+    <!-- Game Instructions with Simplified Icon Format -->
+    <div class="instructions" class:portrait={$isPortrait}>
+      <div class="objective">
+        <strong>{$t("gameObjective")}</strong>
+      </div>
+      <div class="controlsCompact">
+        <div class="controlGroup">
+          <ArrowUpFromLine size={16} />
+          <span class="actionLabel">Jump:</span>
+          <span class="controls">
+            <Keyboard size={12} />: Space/W/↑ | 
+            <Smartphone size={12} />: {$t("touchLeft")} | 
+            <Gamepad2 size={12} />: A
+          </span>
+        </div>
+        <div class="controlGroup">
+          <Sword size={16} />
+          <span class="actionLabel">Attack:</span>
+          <span class="controls">
+            <Keyboard size={12} />: [Enter/X/Z/D/→] | 
+            <Smartphone size={12} />: {$t("touchRight")} | 
+            <Gamepad2 size={12} />: [B/X]
+          </span>
+        </div>
+      </div>
     </div>
   </div>
 </Page>
@@ -620,8 +913,7 @@
     flex-direction: column;
     align-items: center;
     width: 100%;
-    max-width: 800px;
-    height: 100vh;
+    height: 100%;
   }
 
   .gameUI {
@@ -633,14 +925,40 @@
     padding: 1rem;
   }
 
-  .topUI {
+.topUI {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: rgba(0, 0, 0, 0.8);
-    padding: 0.5rem 1rem;
-    border-radius: 0.5rem;
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9));
     backdrop-filter: blur(10px);
+    border: 1px solid rgba(148, 163, 184, 0.3);
+    box-shadow: 
+      0 0 20px rgba(59, 130, 246, 0.3),
+      inset 0 1px 0 rgba(148, 163, 184, 0.1);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 0.75rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .topUI::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.1), transparent);
+    animation: techScan 3s ease-in-out infinite;
+    z-index: 1;
+  }
+
+  @keyframes techScan {
+    0%, 100% { transform: translateX(-100%); }
+    50% { transform: translateX(100%); }
+  }
+
+  .topUI > * {
+    position: relative;
+    z-index: 2;
   }
 
   .gameStats {
@@ -657,13 +975,20 @@
 
   .statLabel {
     font-size: 0.8rem;
-    color: rgba(255, 255, 255, 0.7);
+    color: rgba(255, 255, 255, 0.9);
   }
 
   .statValue {
     font-size: 1.1rem;
     font-weight: bold;
     color: #fbbf24;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  .statValue :global(.heartIcon) {
+    color: #ef4444;
   }
 
   .pauseBtn {
@@ -682,13 +1007,13 @@
   }
 
   .gameCanvas {
-    border: 2px solid #374151;
+    border: 2px solid rgba(148, 163, 184, 0.3);
     border-radius: 0.5rem;
-    background: #000;
-    margin-top: 4rem;
+    background: transparent;
     cursor: pointer;
-    max-width: 100%;
-    max-height: calc(100vh - 200px);
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
   }
 
   .touchControls {
@@ -696,7 +1021,7 @@
     top: 4rem;
     left: 0;
     right: 0;
-    bottom: 100px;
+    bottom: 0;
     display: flex;
     pointer-events: none;
     z-index: 5;
@@ -707,37 +1032,67 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(255, 255, 255, 0.05);
-    border: 2px dashed rgba(255, 255, 255, 0.2);
-    color: rgba(255, 255, 255, 0.6);
-    font-size: 1.2rem;
-    font-weight: bold;
     pointer-events: auto;
     cursor: pointer;
     transition: background 0.3s;
   }
 
-  .touchZone:hover {
-    background: rgba(255, 255, 255, 0.1);
-  }
-
-  .touchZone.left {
-    border-right: 1px dashed rgba(255, 255, 255, 0.2);
-  }
-
-  .touchZone.right {
-    border-left: 1px dashed rgba(255, 255, 255, 0.2);
-  }
-
   .instructions {
     position: absolute;
     bottom: 1rem;
+    right: 1rem;
+    transform: none;
+    width: 30%;
+    max-width: 30%;
+    text-align: center;
+    color: white;
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9));
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(148, 163, 184, 0.3);
+    padding: 1rem;
+    border-radius: 0.75rem;
+    font-size: max(2vh, 0.5rem);
+    line-height: 1.4;
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.2);
+  }
+
+  .instructions.portrait {
+    bottom: 0.5rem;
     left: 50%;
     transform: translateX(-50%);
-    text-align: center;
-    color: rgba(255, 255, 255, 0.8);
-    font-size: 0.9rem;
-    line-height: 1.4;
+    width: 90%;
+    max-width: 95%;
+  }
+
+  .objective {
+    margin-bottom: 0.2em;
+    color: #fbbf24;
+    font-weight: bold;
+  }
+
+  .controlsCompact {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2em;
+  }
+
+  .controlGroup {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+  }
+
+  .actionLabel {
+    font-weight: bold;
+    color: #34d399;
+  }
+
+  .controls {
+    display: flex;
+    align-items: center;
+    gap: 0.25em;
+    flex-wrap: wrap;
+    font-size: 0.85em;
   }
 
   /* Mobile responsiveness */
@@ -747,13 +1102,12 @@
     }
     
     .gameCanvas {
-      margin-top: 5rem;
-      max-height: calc(100vh - 250px);
+      height: 100%;
     }
     
     .touchControls {
       top: 5rem;
-      bottom: 80px;
+      bottom: 250px;
     }
     
     .gameStats {
@@ -761,24 +1115,66 @@
     }
     
     .statItem {
-      font-size: 0.85rem;
+      font-size: 0.85em;
     }
     
     .statLabel {
-      font-size: 0.7rem;
+      font-size: 0.7em;
     }
     
     .statValue {
-      font-size: 1rem;
-    }
-    
-    .touchZone {
-      font-size: 1rem;
+      font-size: 1em;
     }
     
     .instructions {
-      font-size: 0.8rem;
-      padding: 0 1rem;
+      padding: 0.75em;
+      max-width: 95%;
     }
+
+    .controlGroup {
+      align-items: flex-start;
+      gap: 0.25em;
+    }
+
+    .controls {
+      font-size: 0.75em;
+    }
+  }
+
+  .pageBackground {
+    position: absolute;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    background-size: repeat;
+    background-position: center;
+    z-index: 0;
+  }
+
+  .pageBackground::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(5px);
+  }
+
+  .pageBackground::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+      repeating-linear-gradient(
+        45deg,
+        rgba(255,255,255,0.2) 0 1px,
+        transparent 1px 40px
+      ),
+      repeating-linear-gradient(
+        -45deg,
+        rgba(255,255,255,0.2) 0 1px,
+        transparent 1px 40px
+      );
+    /* 40px 是格線間距，可依需求調整 */
   }
 </style>
