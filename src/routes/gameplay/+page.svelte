@@ -55,7 +55,8 @@
   let gameCoins: Array<{x: number, y: number, width: number, height: number, collected: boolean, collisionOffsetX: number, collisionOffsetY: number, collisionWidth: number, collisionHeight: number}> = [];
   let projectiles: Array<{x: number, y: number, width: number, height: number, velocityX: number, animationFrame: number, animationTimer: number}> = [];
   let traps: Array<{x: number, y: number, width: number, height: number, collisionOffsetX: number, collisionOffsetY: number, collisionWidth: number, collisionHeight: number}> = [];
-  
+  let explosions: Array<{x: number, y: number, width: number, height: number, animationFrame: number, animationTimer: number}> = [];
+
   // Game settings
   const GRAVITY = 0.8;
   const JUMP_FORCE = -20; // Increased from -15 to account for larger objects
@@ -83,7 +84,8 @@
       attackEffect: imageAssets[characterAttackEffectImageKey(selectedCharacter)],
       enemy: imageAssets.enemy,
       coin: imageAssets.coin,
-      trap: imageAssets.trap
+      trap: imageAssets.trap,
+      explosion: imageAssets.explosion,
     }).map(([key, src]) => {
       return new Promise<void>((resolve) => {
         const img = new Image();
@@ -208,6 +210,7 @@
     gameCoins = [];
     projectiles = [];
     traps = [];
+    explosions = [];
 
     waitForCountdown = true;
     setTimeout(() => startCountdown(false), 1000);
@@ -266,6 +269,17 @@
       collisionOffsetY: 16, // Scaled proportionally
       collisionWidth: 144, // Scaled proportionally
       collisionHeight: 160 // Scaled proportionally
+    });
+  }
+
+  function spawnExplosion(enemy: {x: number, y: number, width: number, height: number}) {
+    explosions.push({
+      x: enemy.x - enemy.width / 2,
+      y: enemy.y - enemy.height / 2 - 20,
+      width: enemy.width * 2,
+      height: enemy.height * 2,
+      animationFrame: 0,
+      animationTimer: 0
     });
   }
   
@@ -338,6 +352,23 @@
         }
       }
 
+      // Update explosions animation
+      explosions = explosions.filter(explosion => {
+        explosion.animationTimer += deltaTime;
+        if (explosion.animationTimer > 100) {
+          explosion.animationTimer %= 100;
+          explosion.animationFrame = (explosion.animationFrame + 1); 
+          if (explosion.animationFrame >= 6) {
+            return false;
+          }
+        }
+        explosion.x -= currentScrollSpeed;
+        if (explosion.x < -explosion.width) {
+          return false;
+        }
+        return true;
+      });
+
       // Update projectiles
       projectiles = projectiles.filter(projectile => {
         projectile.x += projectile.velocityX;
@@ -378,13 +409,12 @@
       lastSurvivalSecond = currentSecond;
     }
     
-    
     // Update enemies with progressive speed
     enemies = enemies.filter(enemy => {
       enemy.x -= currentScrollSpeed;
       return enemy.x > -enemy.width;
     });
-    
+
     // Update coins with progressive speed
     gameCoins.forEach(coin => {
       coin.x -= currentScrollSpeed;
@@ -446,6 +476,7 @@
             projectile.y + projectile.height > enemy.y) {
           enemies.splice(enemyIndex, 1);
           projectiles.splice(projIndex, 1);
+          spawnExplosion(enemy);
           score += 10; // Award 10 points for defeating an enemy
         }
       });
@@ -515,6 +546,16 @@
       ctx.fillRect(0, GROUND_Y, canvas.width, canvas.height - GROUND_Y);
     }
     
+    // Draw explosions
+    explosions.forEach(explosion => {
+      if (loadedImages.explosion) {
+        const frameWidth = loadedImages.explosion.width / 6; // 6 frames per sprite sheet
+        const frameHeight = loadedImages.explosion.height;
+        const frameX = explosion.animationFrame * frameWidth;
+        ctx.drawImage(loadedImages.explosion, frameX, 0, frameWidth, frameHeight, explosion.x, explosion.y, explosion.width, explosion.height);
+      }
+    });
+
     // Draw player with sprite sheet animation (6 frames horizontally)
     let playerImage = loadedImages.run;
     if (player.animation === 'jump') playerImage = loadedImages.jump;

@@ -23,4 +23,5 @@ export const imageAssets: Record<string, string> = {
   enemy: '/assets/images/enemy.webp',
   coin: '/assets/images/coin.webp',
   trap: '/assets/images/trap.webp',
+  explosion: '/assets/images/explosion.webp',
 };
