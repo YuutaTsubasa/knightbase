@@ -221,11 +221,11 @@
 
   .stageLogoOverlay {
     position: absolute;
-    top: -10px;
+    top: -15px;
     left: -20%;
     width: 140%;
     height: 140%;
-    background: rgba(0, 33, 255, 0.3);
+    background: rgba(0, 33, 255, 0.4);
     display: flex;
     align-items: center;
     justify-content: flex-start;
@@ -235,9 +235,9 @@
   }
 
   .stageIcon {
-    width: 80px;
-    height: 80px;
-    background: rgba(0, 33, 255, 0.6);
+    width: 85px;
+    height: 85px;
+    background: rgba(0, 33, 255, 0.8);
     border-radius: 0.75rem;
     display: flex;
     align-items: center;
@@ -245,7 +245,8 @@
     flex-shrink: 0;
     padding: 10px;
     backdrop-filter: blur(5px);
-    border: 2px solid rgba(255, 255, 255, 0.2);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 4px 12px rgba(0, 33, 255, 0.3);
   }
 
   .stageIcon :global(svg) {
