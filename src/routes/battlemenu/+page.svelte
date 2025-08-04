@@ -14,12 +14,53 @@
   import { get, writable, type Writable } from "svelte/store";
   import { characterPortraitImageKey } from "$lib/utils/KeyHelper";
   import { AudioManager } from "$lib/systems/AudioManager";
- 
+  import { GamepadManager, type FocusableElement } from "$lib/systems/GamepadManager";
+  import { onMount, onDestroy } from "svelte";
+
   $: topbarHeight = 0;
   $: selectedCharacter = StaticDataStore.getCharacterById($playerStore.selectedCharacter);
   $: progressText = $t("none");
 
   let goToNextScene: Writable<string | null>;
+  let characterButton: HTMLButtonElement;
+  let stageButton: HTMLButtonElement;
+
+  function setupGamepadNavigation() {
+    if (!characterButton || !stageButton) {
+      setTimeout(setupGamepadNavigation, 100);
+      return;
+    }
+
+    const focusableElements: FocusableElement[] = [
+      {
+        element: characterButton,
+        type: 'button',
+        onActivate: () => {
+          AudioManager.play("sfx_confirm");
+          goToNextScene?.set("/character");
+        }
+      },
+      {
+        element: stageButton,
+        type: 'button',
+        onActivate: () => {
+          AudioManager.play("sfx_confirm");
+          goToNextScene?.set("/stage");
+        }
+      }
+    ];
+
+    GamepadManager.registerFocusableElements(focusableElements);
+  }
+
+  onMount(() => {
+    setupGamepadNavigation();
+  });
+
+  onDestroy(() => {
+    GamepadManager.clearFocusableElements();
+  });
+
   async function main() {
     goToNextScene = writable(null);
     await waitUntil(goToNextScene, value => value !== null);
@@ -39,7 +80,7 @@
   </slot>
   <div class="battlemenu" class:landscape={!$isPortrait}  style={`--topbarHeight: ${topbarHeight}px;`}>
     <div class="menuButtonContainer">
-      <button class="menuButton leftButton" style="background-image: url({imageAssets["characterBackground"]}); background-size: cover; background-position: center center; "
+      <button bind:this={characterButton} class="menuButton leftButton" style="background-image: url({imageAssets["characterBackground"]}); background-size: cover; background-position: center center; "
           on:click={() => {
             AudioManager.play("sfx_confirm");
             goToNextScene.set("/character");
@@ -54,7 +95,7 @@
       </button>
     </div>
     <div class="menuButtonContainer">
-      <button class="menuButton rightButton" style="background-image: url({imageAssets["stageBackground"]}); background-size: cover; background-position: center center; "
+      <button bind:this={stageButton} class="menuButton rightButton" style="background-image: url({imageAssets["stageBackground"]}); background-size: cover; background-position: center center; "
           on:click={() => {
             AudioManager.play("sfx_confirm");
             goToNextScene.set("/stage");
@@ -185,5 +226,28 @@
   .menuButtonContainer:hover .menuButton {
     box-shadow: 4px 4px 5px rgba(0,0,0,0.5);
     transition: box-shadow 0.2s ease;
+  }
+
+  /* Only apply hover effects on devices that can actually hover */
+  @media (hover: hover) {
+    .menuButtonContainer:hover {
+      transform: scale(1.02) translateX(-10px) translateY(-10px);
+      filter: brightness(0.5);
+      transition: transform 0.2s ease, filter 0.2s ease;
+    }
+    .menuButtonContainer:hover .menuButton {
+      box-shadow: 4px 4px 5px rgba(0,0,0,0.5);
+      transition: box-shadow 0.2s ease;
+    }
+  }
+
+  /* Gamepad selection styles */
+  :global(.menuButton.gamepad-selected) {
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.8), 4px 4px 5px rgba(0,0,0,0.5) !important;
+  }
+
+  :global(.menuButtonContainer:has(.menuButton.gamepad-selected)) {
+    transform: scale(1.02) translateX(-10px) translateY(-10px);
+    filter: brightness(0.5);
   }
 </style>

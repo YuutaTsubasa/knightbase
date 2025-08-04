@@ -36,6 +36,7 @@
   let restoreTextInput: HTMLInputElement;
   let backupButton: Button;
   let restoreButton: Button;
+  let topbar: Topbar;
 
   function updateVolume() {
     playerStore.update(value => ({
@@ -88,13 +89,24 @@
   }
 
   function registerGamepadElements() {
-    if (!masterVolumeSlider || !bgmVolumeSlider || !sfxVolumeSlider || !languageSelect || !restoreTextInput || !backupButton || !restoreButton) {
+    if (!masterVolumeSlider || !bgmVolumeSlider || !sfxVolumeSlider || !languageSelect || !restoreTextInput || !backupButton || !restoreButton || !topbar) {
       // Wait for elements to be ready
       setTimeout(registerGamepadElements, 100);
       return;
     }
 
+    const backButton = topbar.getBackButton();
+    if (!backButton) {
+      setTimeout(registerGamepadElements, 100);
+      return;
+    }
+
     const focusableElements: FocusableElement[] = [
+      {
+        element: backButton,
+        type: 'button',
+        onActivate: () => shouldExit?.set(true)
+      },
       {
         element: masterVolumeSlider,
         type: 'slider',
@@ -150,7 +162,7 @@
 
 <Page mainProgress={main} wrapperStyle={`background-image: url(${imageAssets["backgroundWhite"]}); background-color: white; background-repeat: no-repeat; background-attachment: fixed; background-size: cover;`}>
   <slot name="outside">
-    <Topbar 
+    <Topbar bind:this={topbar}
       primaryTitle={$t("settingsPageTitle")}
       secondaryTitle={$t("settingsPageSubtitle")}
       onHeightChange={(height) => topBarHeight = height}
