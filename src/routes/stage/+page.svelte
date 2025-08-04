@@ -11,6 +11,7 @@
   import { AudioManager } from "$lib/systems/AudioManager";
   import { playerStore } from "$lib/systems/PlayerStore";
   import { StaticDataStore } from "$lib/systems/StaticDataStore";
+  import { format } from "$lib/utils/StringUtils";
 
   $: topbarHeight = 0;
 
@@ -95,9 +96,13 @@
   }
 
   async function enterStage(stageId: string) {
+    // Find the stage data to get the stage name
+    const stage = stages.find(s => s.id === stageId);
+    const stageName = stage ? $t(stage.nameKey) : stageId;
+    
     const result = await PopupStore.open({
       title: $t("confirmEnterStage"),
-      content: $t("confirmEnterStageContent"),
+      content: format($t("confirmEnterStageContent"), stageName),
       buttons: [
         {
           text: $t("cancel"),
@@ -203,12 +208,32 @@
   .stageBar {
     position: relative;
     height: 20rem;
-    background-size: cover;
     background-position: center;
+    animation: backgroundScroll 20s linear infinite;
     cursor: pointer;
     border-radius: 1rem;
     overflow: hidden;
     transition: all 0.2s ease;
+  }
+
+  .stageBar::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    background: linear-gradient(to right, black, transparent 30%, transparent);
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+  }
+
+  @keyframes backgroundScroll {
+    0% {
+      background-position-x: 0%;
+    }
+    100% {
+      background-position-x: 100%;
+    }
   }
 
   .stageBar:hover {
@@ -227,6 +252,7 @@
     backdrop-filter: blur(3px);
     border: 2px solid rgba(255, 255, 255, 0.3);
     box-shadow: 0 4px 12px rgba(0, 33, 255, 0.3);
+    margin-bottom: -10px;
   }
 
   .stageIcon :global(svg) {
@@ -236,9 +262,9 @@
 
   .stageBottomOverlay {
     position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
+    left: 15px;
+    right: 15px;
+    bottom: 10px;
     display: flex;
     justify-content: space-between;
     align-items: flex-end;
@@ -248,7 +274,6 @@
   .stageInfo {
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
   }
 
   .stageName {
