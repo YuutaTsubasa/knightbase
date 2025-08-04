@@ -7,16 +7,16 @@ body.route-root,
 body.route-title,
 body.route-mainmenu,
 body.route-battlemenu,
-body.route-stage,
 body.route-mission,
 body.route-shop {
   overflow: hidden !important;
 }
 
 body.route-settings,
-body.route-character {
+body.route-character,
+body.route-stage {
   overflow-x: hidden !important;
-  overflow-y: scroll !important;
+  overflow-y: auto !important;
 }
 
 .gridLineBackground::before {
