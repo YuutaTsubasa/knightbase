@@ -11,6 +11,8 @@
   import { get, writable, type Writable } from 'svelte/store';
   import StatusBox from '$lib/components/StatusBox.svelte';
   import { StatusBoxType } from '$lib/types/StatusBoxType';
+  import { GamepadManager, type FocusableElement } from '$lib/systems/GamepadManager';
+  import { onMount, onDestroy } from 'svelte';
 
   let playerData = $playerStore;
   $: masterVolume = playerData.masterVolume;
@@ -25,6 +27,15 @@
   let restoreStatusType = StatusBoxType.Default;
   let restoreStatus = 'backupSaveHint';
   let shouldExit: Writable<boolean>;
+
+  // Element references for gamepad navigation
+  let masterVolumeSlider: HTMLInputElement;
+  let bgmVolumeSlider: HTMLInputElement;
+  let sfxVolumeSlider: HTMLInputElement;
+  let languageSelect: HTMLSelectElement;
+  let restoreTextInput: HTMLInputElement;
+  let backupButton: Button;
+  let restoreButton: Button;
 
   function updateVolume() {
     playerStore.update(value => ({
@@ -63,6 +74,73 @@
     }
   }
 
+  function adjustSlider(element: HTMLInputElement, direction: 'left' | 'right') {
+    const currentValue = parseInt(element.value);
+    const step = 5; // Adjust by 5 per input
+    const min = parseInt(element.min);
+    const max = parseInt(element.max);
+    
+    let newValue = direction === 'left' ? currentValue - step : currentValue + step;
+    newValue = Math.max(min, Math.min(max, newValue));
+    
+    element.value = newValue.toString();
+    element.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+
+  function registerGamepadElements() {
+    if (!masterVolumeSlider || !bgmVolumeSlider || !sfxVolumeSlider || !languageSelect || !restoreTextInput || !backupButton || !restoreButton) {
+      // Wait for elements to be ready
+      setTimeout(registerGamepadElements, 100);
+      return;
+    }
+
+    const focusableElements: FocusableElement[] = [
+      {
+        element: masterVolumeSlider,
+        type: 'slider',
+        onAdjust: (direction) => adjustSlider(masterVolumeSlider, direction)
+      },
+      {
+        element: bgmVolumeSlider,
+        type: 'slider',
+        onAdjust: (direction) => adjustSlider(bgmVolumeSlider, direction)
+      },
+      {
+        element: sfxVolumeSlider,
+        type: 'slider',
+        onAdjust: (direction) => adjustSlider(sfxVolumeSlider, direction)
+      },
+      {
+        element: languageSelect,
+        type: 'select'
+      },
+      {
+        element: backupButton.getButtonElement(),
+        type: 'button',
+        onActivate: handleBackup
+      },
+      {
+        element: restoreTextInput,
+        type: 'input'
+      },
+      {
+        element: restoreButton.getButtonElement(),
+        type: 'button',
+        onActivate: handleRestore
+      }
+    ];
+
+    GamepadManager.registerFocusableElements(focusableElements);
+  }
+
+  onMount(() => {
+    registerGamepadElements();
+  });
+
+  onDestroy(() => {
+    GamepadManager.clearFocusableElements();
+  });
+
   async function main(){
     shouldExit = writable(false);
     await waitUntil(shouldExit, value => value);
@@ -82,21 +160,21 @@
   <div class="settingsPanel" style={`padding-top: ${topBarHeight}px;`}>
     <label>
       <div class="labelTitle"><Volume2Icon class="icon" size="20" /> {$t("masterVolume")}</div>
-      <input type="range" min="0" max="100" bind:value={masterVolume} on:input={updateVolume} 
+      <input bind:this={masterVolumeSlider} type="range" min="0" max="100" bind:value={masterVolume} on:input={updateVolume} 
         style="--ratio: {masterVolume}%"/>
       <span>{masterVolume}</span>
     </label>
 
     <label>
       <div class="labelTitle"><Music4Icon class="icon" size="20" /> {$t("musicVolume")}</div>
-      <input type="range" min="0" max="100" bind:value={bgmVolume} on:input={updateVolume} 
+      <input bind:this={bgmVolumeSlider} type="range" min="0" max="100" bind:value={bgmVolume} on:input={updateVolume} 
         style="--ratio: {bgmVolume}%"/>
       <span>{bgmVolume}</span>
     </label>
 
     <label>
       <div class="labelTitle"><DrumIcon class="icon" size="20" /> {$t("soundVolume")}</div>
-      <input type="range" min="0" max="100" bind:value={sfxVolume} on:input={updateVolume} 
+      <input bind:this={sfxVolumeSlider} type="range" min="0" max="100" bind:value={sfxVolume} on:input={updateVolume} 
         style="--ratio: {sfxVolume}%"/>
       <span>{sfxVolume}</span>
     </label>
@@ -105,7 +183,7 @@
       <div class="labelTitle">
         <MessageSquareTextIcon class="icon" size="20"/> {$t("language")}
       </div>
-      <select bind:value={$locale} on:change={() => {LocalizationStore.setLocale(LocalizationStore.getLocale());}}>
+      <select bind:this={languageSelect} bind:value={$locale} on:change={() => {LocalizationStore.setLocale(LocalizationStore.getLocale());}}>
         {#each $availableLocales as availableLocale }
           <option value={availableLocale}>{$t(availableLocale)}</option>
         {/each}
@@ -114,10 +192,10 @@
 
     <div class="backupRestore">
       <StatusBox type={restoreStatusType}>{$t(restoreStatus)}</StatusBox>
-      <Button onClick={handleBackup}><BoxIcon class="icon" size="20"/> {$t("backupSaveData")}</Button>
+      <Button bind:this={backupButton} onClick={handleBackup}><BoxIcon class="icon" size="20"/> {$t("backupSaveData")}</Button>
       <div class="restoreSection">
-        <input type="text" bind:value={restoreText} placeholder="{$t("pasteSaveDataHint")}" />
-        <Button onClick={handleRestore}><FormInputIcon class="icon" size="20"/> {$t("restoreSaveData")}</Button>
+        <input bind:this={restoreTextInput} type="text" bind:value={restoreText} placeholder="{$t("pasteSaveDataHint")}" />
+        <Button bind:this={restoreButton} onClick={handleRestore}><FormInputIcon class="icon" size="20"/> {$t("restoreSaveData")}</Button>
       </div>
     </div>
   </div>

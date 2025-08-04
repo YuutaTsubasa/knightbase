@@ -9,9 +9,17 @@
   export let disabled: boolean = false;
   export let className: string = '';
   export let onClick: () => void;
+
+  let buttonElement: HTMLButtonElement;
+
+  // Expose the button element for gamepad registration
+  export function getButtonElement() {
+    return buttonElement;
+  }
 </script>
 
 <button
+  bind:this={buttonElement}
   class={`baseButton ${ButtonVariant[variant].toLowerCase()} ${className}`}
   style="background-image: url({imageAssets["backgroundWhiteButton"]})"
   on:click={() => {
@@ -88,8 +96,20 @@
     cursor: not-allowed;
   }
 
-  .baseButton:hover:not(:disabled),
+  /* Only apply hover effects on devices that can actually hover */
+  @media (hover: hover) {
+    .baseButton:hover:not(:disabled) {
+      filter: invert(1) brightness(1.5);
+    }
+  }
+
   .baseButton:active:not(:disabled) {
     filter: invert(1) brightness(1.5);
+  }
+
+  /* Gamepad selection styling */
+  .baseButton.gamepad-selected:not(:disabled) {
+    filter: invert(1) brightness(1.5);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.6);
   }
 </style>
