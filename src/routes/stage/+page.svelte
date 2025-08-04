@@ -11,31 +11,34 @@
   import { Star, ChevronDown, ChevronUp } from "lucide-svelte";
   import { AudioManager } from "$lib/systems/AudioManager";
   import { playerStore } from "$lib/systems/PlayerStore";
+  import { StaticDataStore } from "$lib/systems/StaticDataStore";
 
   $: topbarHeight = 0;
-  let expandedStage: number | null = null;
+  let expandedStage: string | null = null;
 
-  // Mock stage data
-  $: stages = [
-    {
-      id: 1,
-      nameKey: "stage1Name",
-      iconSvg: `<svg style="color: #fff;" width="100" height="100" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <!-- 盾牌（只有描邊） -->
-  <path d="M50 5 C30 10, 15 30, 20 55 C25 80, 50 95, 50 95 C50 95, 75 80, 80 55 C85 30, 70 10, 50 5 Z" 
-        stroke="currentColor" stroke-width="3" fill="none"/>
+  const stageData = StaticDataStore.stageData;
+  $: stages = $stageData;
 
-  <!-- 劍（實心） -->
-  <rect x="47" y="25" width="6" height="35" fill="currentColor"/>
-  <polygon points="44,25 50,10 56,25" fill="currentColor"/>
-  <rect x="42" y="58" width="16" height="4" fill="currentColor"/>
+//   [
+//     {
+//       id: 1,
+//       nameKey: "stage1Name",
+//       iconSvg: `<svg style="color: #fff;" width="100" height="100" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+//   <!-- 盾牌（只有描邊） -->
+//   <path d="M50 5 C30 10, 15 30, 20 55 C25 80, 50 95, 50 95 C50 95, 75 80, 80 55 C85 30, 70 10, 50 5 Z" 
+//         stroke="currentColor" stroke-width="3" fill="none"/>
 
-  <!-- 星星（實心） -->
-  <polygon points="50,35 52,40 57,40 53,43 55,48 50,45 45,48 47,43 43,40 48,40" fill="currentColor"/>
-</svg>
-`,
-      description: $t("stage1Description"),
-    },
+//   <!-- 劍（實心） -->
+//   <rect x="47" y="25" width="6" height="35" fill="currentColor"/>
+//   <polygon points="44,25 50,10 56,25" fill="currentColor"/>
+//   <rect x="42" y="58" width="16" height="4" fill="currentColor"/>
+
+//   <!-- 星星（實心） -->
+//   <polygon points="50,35 52,40 57,40 53,43 55,48 50,45 45,48 47,43 43,40 48,40" fill="currentColor"/>
+// </svg>
+// `,
+//       description: $t("stage1Description"),
+//     },
     // {
     //   id: 2,
     //   nameKey: "stage2Name", 
@@ -69,7 +72,7 @@
     //     { nameKey: "legendaryMaterialDrop", amount: "0-1" }
     //   ]
     // }
-  ];
+  // ];
 
   let goToNextScene: Writable<string | null>;
   async function main() {
@@ -78,12 +81,12 @@
     return get(goToNextScene) ?? "/battlemenu";
   }
 
-  function toggleStageDetails(stageId: number) {
+  function toggleStageDetails(stageId: string) {
     AudioManager.play("sfx_confirm");
     expandedStage = expandedStage === stageId ? null : stageId;
   }
 
-  async function enterStage(stageId: number) {
+  async function enterStage(stageId: string) {
     const result = await PopupStore.open({
       title: $t("confirmEnterStage"),
       content: $t("confirmEnterStageContent"),
@@ -96,7 +99,7 @@
           text: $t("enter"),
           onClick: () => {
             // Save selected stage to PlayerStore
-            playerStore.update(data => ({ ...data, selectedStage: `stage${stageId}` }));
+            playerStore.update(data => ({ ...data, selectedStage: stageId }));
             // Navigate to gameplay
             goToNextScene.set("/gameplay");
             return PopupResult.Close;
@@ -128,7 +131,7 @@
     <div class="stageList">
       {#each stages as stage (stage.id)}
         <div class="stageItem">
-          <div class="stageHeader" on:click={() => toggleStageDetails(stage.id)}>
+          <button class="stageHeader" on:click={() => toggleStageDetails(stage.id)}>
             <div class="stageMainInfo">
               <div class="stageIcon">
                 {@html stage.iconSvg}
@@ -154,12 +157,12 @@
                 <ChevronDown size={24} />
               {/if}
             </div>
-          </div>
+          </button>
           
           {#if expandedStage === stage.id}
             <div class="stageDetails">
               <div class="stageDescription">
-                <p>{stage.description}</p>
+                <p>{$t(stage.descriptionKey)}</p>
               </div>
               
               <!-- <div class="stageDrops">
@@ -218,6 +221,9 @@
   }
 
   .stageHeader {
+    all: unset;
+    box-sizing: border-box;
+    width: 100%;
     display: flex;
     align-items: center;
     justify-content: space-between;

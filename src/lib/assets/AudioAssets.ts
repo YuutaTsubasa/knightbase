@@ -11,6 +11,7 @@ export const audioAssets: Record<string, {
   bgm_mission: {url: '/assets/audios/bgm_mission.mp3', group: 'bgm'},
   bgm_shop: {url: '/assets/audios/bgm_shop.mp3', group: 'bgm'},
   bgm_stage1: { url: '/assets/audios/bgm_stage1.mp3', group: 'bgm'},
+  bgm_stage2: { url: '/assets/audios/bgm_stage2.mp3', group: 'bgm'},
   sfx_confirm: { url: '/assets/audios/sfx_confirm.mp3', group: 'sfx' },
   sfx_cancel: { url: '/assets/audios/sfx_cancel.mp3', group: 'sfx' },
   sfx_explosion: { url: '/assets/audios/sfx_explosion.mp3', group: 'sfx' },

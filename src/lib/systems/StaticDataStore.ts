@@ -72,6 +72,14 @@ export interface MissionData {
   missionConditions: string;
 }
 
+export type StageData = {
+  id: string;
+  nameKey: string;
+  iconSvg: string;
+  descriptionKey: string;
+  groundOffsetY: number;
+};
+
 // Main StaticDataStore class
 export class StaticDataStore {
   private static basePath = "/assets/staticData/";
@@ -85,6 +93,7 @@ export class StaticDataStore {
   static poisonData: Writable<PoisonData[]> = writable([]);
   static shopData: Writable<ShopData[]> = writable([]);
   static missionData: Writable<MissionData[]> = writable([]);
+  static stageData: Writable<StageData[]> = writable([]);
 
   private static loadedFiles: Set<string> = new Set();
 
@@ -97,7 +106,8 @@ export class StaticDataStore {
       this.loadEquipmentData(),
       this.loadPoisonData(),
       this.loadShopData(),
-      this.loadMissionData()
+      this.loadMissionData(),
+      this.loadStageData(),
     ];
 
     try {
@@ -169,6 +179,11 @@ export class StaticDataStore {
     this.missionData.set(data);
   }
 
+  static async loadStageData() {
+    const data = await this.loadCsvFile<StageData>('stage.csv');
+    this.stageData.set(data);
+  }
+
   // Utility methods to get data by ID
   static getCharacterById = (id: string) =>
     derived(this.characterData, (characterData) =>
@@ -203,5 +218,10 @@ export class StaticDataStore {
   static getPoisonById = (itemId: number) =>
     derived(this.poisonData, (poisons) =>
       poisons.find((poison) => poison.ItemId === itemId)
+    );
+
+  static getStageById = (id: string) =>
+    derived(this.stageData, (stageData) =>
+      stageData.find((stage) => stage.id === id)
     );
 }

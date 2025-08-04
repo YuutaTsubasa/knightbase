@@ -8,6 +8,7 @@ export const imageAssets: Record<string, string> = {
   characterBackground: '/assets/images/characterBackground.webp',
   stageBackground: '/assets/images/stageBackground.webp',
   stage1Background: '/assets/images/stage1Background.webp',
+  stage2Background: '/assets/images/stage2Background.webp',
   yuutaPortrait: '/assets/images/characters/yuuta/yuutaPortrait.webp',
   alicePortrait: '/assets/images/characters/alice/alicePortrait.webp',
   // Game character sprites

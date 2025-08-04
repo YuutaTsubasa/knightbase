@@ -12,6 +12,7 @@
   import { playerStore } from "../../lib/systems/PlayerStore";
   import { characterAttackImageKey, characterJumpImageKey, characterRunImageKey, characterAttackEffectImageKey, stageBackgroundImageKey, stageBgmAudioKey, characterWalkAudioKey, characterAttackAudioKey } from "$lib/utils/KeyHelper";
   import { AudioManager } from "$lib/systems/AudioManager";
+    import { StaticDataStore } from "$lib/systems/StaticDataStore";
 
   let goToNextScene: Writable<string | null>;
   let canvas: HTMLCanvasElement;
@@ -19,6 +20,9 @@
 
   $: selectedCharacter = $playerStore.selectedCharacter;
   $: selectedStage = $playerStore.selectedStage;
+
+  $: stageData = StaticDataStore.getStageById(selectedStage);
+  $: stageGroundOffsetY = $stageData?.groundOffsetY ?? 0;
 
   // Game state
   let gameState: 'playing' | 'paused' | 'gameOver' = 'playing';
@@ -581,7 +585,7 @@
       const bgHeight = canvas.height;
       
       // Background moved down 160px, need to fill the top and draw extended background
-      const backgroundYOffset = bgHeight - 160;
+      const backgroundYOffset = bgHeight + stageGroundOffsetY;
       const extendedHeight = bgHeight + backgroundYOffset; // Extend background height by 160px
 
       const bgX1 = backgroundOffset % bgWidth;
