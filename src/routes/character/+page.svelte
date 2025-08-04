@@ -34,6 +34,19 @@
   function useCharacter(characterId: string) {
     playerStore.update(playerData => ({ ...playerData, selectedCharacter: characterId }));
   }
+
+  function handleBack() {
+    // Check if we came from stage page
+    const playerData = get(playerStore);
+    if (playerData.returnToStage) {
+      // Clear the flag and return to stage
+      playerStore.update(data => ({ ...data, returnToStage: false }));
+      goToNextScene.set("/stage");
+    } else {
+      // Default back to battle menu
+      goToNextScene.set("/battlemenu");
+    }
+  }
 </script>
 
 <Page mainProgress={main} 
@@ -43,7 +56,7 @@
       primaryTitle={$t('character')} 
       secondaryTitle={$t('characterPageSubtitle')}
       onHeightChange={(height) => topbarHeight = height}
-      onBack={() => goToNextScene.set("/battlemenu")} />
+      onBack={() => handleBack()} />
   </slot>
   
   <div class="characterPage" style={`--topbarHeight: ${topbarHeight}px;`}>

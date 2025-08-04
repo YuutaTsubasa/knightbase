@@ -8,16 +8,23 @@
   import { PopupStore, PopupResult } from "$lib/systems/PopupStore";
   import { waitUntil } from "$lib/utils/Wait";
   import { get, writable, type Writable } from "svelte/store";
-  import { Star, ChevronDown, ChevronUp } from "lucide-svelte";
   import { AudioManager } from "$lib/systems/AudioManager";
   import { playerStore } from "$lib/systems/PlayerStore";
   import { StaticDataStore } from "$lib/systems/StaticDataStore";
 
   $: topbarHeight = 0;
-  let expandedStage: string | null = null;
 
   const stageData = StaticDataStore.stageData;
   $: stages = $stageData;
+
+  function getStageBackgroundImage(stageId: string): string {
+    // Map stage IDs to their background images
+    const backgroundMap: Record<string, string> = {
+      stage1: imageAssets.stage1Background,
+      stage2: imageAssets.stage2Background,
+    };
+    return backgroundMap[stageId] || imageAssets.stageBackground;
+  }
 
 //   [
 //     {
@@ -81,9 +88,10 @@
     return get(goToNextScene) ?? "/battlemenu";
   }
 
-  function toggleStageDetails(stageId: string) {
-    AudioManager.play("sfx_confirm");
-    expandedStage = expandedStage === stageId ? null : stageId;
+  function goToCharacterPage() {
+    // Store that we came from stage page for navigation
+    playerStore.update(data => ({ ...data, returnToStage: true }));
+    goToNextScene.set("/character");
   }
 
   async function enterStage(stageId: string) {
@@ -108,12 +116,6 @@
       ]
     });
   }
-
-  function renderStars(count: number, total: number = 3) {
-    return Array.from({ length: total }, (_, i) => ({
-      filled: i < count
-    }));
-  }
 </script>
 
 <Page mainProgress={main} 
@@ -131,60 +133,42 @@
     <div class="stageList">
       {#each stages as stage (stage.id)}
         <div class="stageItem">
-          <button class="stageHeader" on:click={() => toggleStageDetails(stage.id)}>
-            <div class="stageMainInfo">
+          <!-- Long bar button with background image -->
+          <div class="stageBar" 
+               style="background-image: url({getStageBackgroundImage(stage.id)});"
+               on:click={() => enterStage(stage.id)}
+               on:keydown={(e) => e.key === 'Enter' && enterStage(stage.id)}
+               role="button"
+               tabindex="0">
+            
+            <!-- Semi-transparent blue SVG logo overlay extending beyond left edge -->
+            <div class="stageLogoOverlay">
               <div class="stageIcon">
                 {@html stage.iconSvg}
               </div>
-              <div class="stageBasicInfo">
+            </div>
+            
+            <!-- Bottom overlay with blur effect -->
+            <div class="stageBottomOverlay">
+              <!-- Left section: Title and description -->
+              <div class="stageInfo">
                 <h3 class="stageName" style={FontAssets.getCssStyle("titleBold")}>
                   {$t(stage.nameKey)}
                 </h3>
-                <!-- <div class="stageStars">
-                  {#each renderStars(stage.stars) as star}
-                    <Star 
-                      size={16} 
-                      class={star.filled ? "starFilled" : "starEmpty"} 
-                      fill={star.filled ? "currentColor" : "none"} />
-                  {/each}
-                </div> -->
-              </div>
-            </div>
-            <div class="expandIcon">
-              {#if expandedStage === stage.id}
-                <ChevronUp size={24} />
-              {:else}
-                <ChevronDown size={24} />
-              {/if}
-            </div>
-          </button>
-          
-          {#if expandedStage === stage.id}
-            <div class="stageDetails">
-              <div class="stageDescription">
-                <p>{$t(stage.descriptionKey)}</p>
+                <p class="stageDescription">
+                  {$t(stage.descriptionKey)}
+                </p>
               </div>
               
-              <!-- <div class="stageDrops">
-                <h4>{$t('estimatedDrops')}:</h4>
-                <div class="dropList">
-                  {#each stage.drops as drop}
-                    <div class="dropItem">
-                      <span class="dropName">{$t(drop.nameKey)}</span>
-                      <span class="dropAmount">{drop.amount}</span>
-                    </div>
-                  {/each}
-                </div>
-              </div> -->
-              
-              <div class="stageActions">
+              <!-- Right section: Change character button -->
+              <div class="stageActions" on:click|stopPropagation>
                 <Button 
-                  label={$t('enterStage')} 
-                  onClick={() => enterStage(stage.id)}
-                  className="enterStageButton" />
+                  label={$t('changeCharacter')} 
+                  onClick={() => goToCharacterPage()}
+                  className="changeCharacterButton" />
               </div>
             </div>
-          {/if}
+          </div>
         </div>
       {/each}
     </div>
@@ -205,155 +189,124 @@
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
-  }
-
-  .stageItem {
-    background: rgba(255, 255, 255, 0.9);
-    border-radius: 0.75rem;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    overflow: hidden;
-    transition: box-shadow 0.2s ease;
-  }
-
-  .stageItem:hover {
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-  }
-
-  .stageHeader {
-    all: unset;
-    box-sizing: border-box;
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 1rem;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-  }
-
-  .stageHeader:hover {
-    background: rgba(0, 0, 0, 0.05);
-  }
-
-  .stageMainInfo {
-    display: flex;
-    align-items: center;
     gap: 1rem;
   }
 
+  .stageItem {
+    position: relative;
+    border-radius: 1rem;
+    overflow: hidden;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .stageItem:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  }
+
+  .stageBar {
+    position: relative;
+    height: 120px;
+    background-size: cover;
+    background-position: center;
+    cursor: pointer;
+    border-radius: 1rem;
+    overflow: hidden;
+    transition: all 0.2s ease;
+  }
+
+  .stageBar:hover {
+    box-shadow: 0 4px 16px rgba(0, 33, 255, 0.3);
+  }
+
+  .stageLogoOverlay {
+    position: absolute;
+    top: -10px;
+    left: -20%;
+    width: 140%;
+    height: 140%;
+    background: rgba(0, 33, 255, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding-left: 25%;
+    pointer-events: none;
+    z-index: 1;
+  }
+
   .stageIcon {
-    width: 60px;
-    height: 60px;
-    background: #0021ff;
-    border-radius: 0.5rem;
+    width: 80px;
+    height: 80px;
+    background: rgba(0, 33, 255, 0.6);
+    border-radius: 0.75rem;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    padding: 5px;
+    padding: 10px;
+    backdrop-filter: blur(5px);
+    border: 2px solid rgba(255, 255, 255, 0.2);
   }
 
-  .stageIcon :global(.stageIconImage) {
-    width: 40px;
-    height: 40px;
-    object-fit: contain;
+  .stageIcon :global(svg) {
+    width: 60px;
+    height: 60px;
   }
 
-  .stageBasicInfo {
+  .stageBottomOverlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(10px);
+    padding: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    z-index: 2;
+  }
+
+  .stageInfo {
+    flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 0.25rem;
   }
 
   .stageName {
     margin: 0;
-    font-size: 1.25rem;
-    color: #1e293b;
-  }
-
-  .stageStars {
-    display: flex;
-    gap: 0.25rem;
-  }
-
-  .stageStars :global(.starFilled) {
-    color: #fbbf24;
-  }
-
-  .stageStars :global(.starEmpty) {
-    color: #d1d5db;
-  }
-
-  .expandIcon {
-    color: #64748b;
-    transition: transform 0.2s ease;
-  }
-
-  .stageDetails {
-    padding: 1rem 1rem 1rem 1rem;
-    border-top: 1px solid #e2e8f0;
-    animation: fadeIn 0.3s ease;
-    max-height: 60vh;
-    overflow-y: auto;
-  }
-
-  @keyframes fadeIn {
-    from {
-      opacity: 0;
-      transform: translateY(-10px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
+    font-size: 1.5rem;
+    color: white;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
   }
 
   .stageDescription {
-    margin-bottom: 1rem;
-  }
-
-  .stageDescription p {
     margin: 0;
-    color: #64748b;
-    line-height: 1.5;
-  }
-
-  .stageDrops h4 {
-    margin: 0 0 0.5rem 0;
-    color: #374151;
-    font-size: 1rem;
-  }
-
-  .dropList {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-    margin-bottom: 1rem;
-  }
-
-  .dropItem {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.25rem 0;
-  }
-
-  .dropName {
-    color: #4b5563;
-  }
-
-  .dropAmount {
-    color: #059669;
-    font-weight: bold;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.9rem;
+    line-height: 1.3;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
   }
 
   .stageActions {
     display: flex;
-    justify-content: flex-end;
+    align-items: center;
+    flex-shrink: 0;
+    margin-left: 1rem;
   }
 
-  .stageActions :global(.enterStageButton) {
-    padding: 0.5rem 1.5rem;
+  .stageActions :global(.changeCharacterButton) {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    backdrop-filter: blur(5px);
+  }
+
+  .stageActions :global(.changeCharacterButton:hover) {
+    background: rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.5);
   }
 </style>
