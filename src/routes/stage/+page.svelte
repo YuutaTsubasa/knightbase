@@ -141,18 +141,14 @@
                role="button"
                tabindex="0">
             
-            <!-- Semi-transparent blue SVG logo overlay extending beyond left edge -->
-            <div class="stageLogoOverlay">
-              <div class="stageIcon">
-                {@html stage.iconSvg}
-              </div>
-            </div>
-            
             <!-- Bottom overlay with blur effect -->
             <div class="stageBottomOverlay">
               <!-- Left section: Title and description -->
               <div class="stageInfo">
                 <h3 class="stageName" style={FontAssets.getCssStyle("titleBold")}>
+                  <div class="stageIcon">
+                    {@html stage.iconSvg}
+                  </div>
                   {$t(stage.nameKey)}
                 </h3>
                 <p class="stageDescription">
@@ -206,7 +202,7 @@
 
   .stageBar {
     position: relative;
-    height: 120px;
+    height: 20rem;
     background-size: cover;
     background-position: center;
     cursor: pointer;
@@ -219,21 +215,6 @@
     box-shadow: 0 4px 16px rgba(0, 33, 255, 0.3);
   }
 
-  .stageLogoOverlay {
-    position: absolute;
-    top: -15px;
-    left: -20%;
-    width: 140%;
-    height: 140%;
-    background: rgba(0, 33, 255, 0.4);
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    padding-left: 25%;
-    pointer-events: none;
-    z-index: 1;
-  }
-
   .stageIcon {
     width: 85px;
     height: 85px;
@@ -243,8 +224,7 @@
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    padding: 10px;
-    backdrop-filter: blur(5px);
+    backdrop-filter: blur(3px);
     border: 2px solid rgba(255, 255, 255, 0.3);
     box-shadow: 0 4px 12px rgba(0, 33, 255, 0.3);
   }
@@ -259,9 +239,6 @@
     bottom: 0;
     left: 0;
     right: 0;
-    background: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(10px);
-    padding: 1rem;
     display: flex;
     justify-content: space-between;
     align-items: flex-end;
@@ -269,7 +246,6 @@
   }
 
   .stageInfo {
-    flex: 1;
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
@@ -277,9 +253,17 @@
 
   .stageName {
     margin: 0;
-    font-size: 1.5rem;
+    font-size: 5rem;
     color: white;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+    text-shadow: 
+      -2px -2px 0 #000,
+      2px -2px 0 #000,
+      -2px 2px 0 #000,
+      2px 2px 0 #000,
+      2px 2px 4px rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
   }
 
   .stageDescription {
@@ -288,6 +272,8 @@
     font-size: 0.9rem;
     line-height: 1.3;
     text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+    background: black;
+    box-shadow: 2px 2px 4px grey;
   }
 
   .stageActions {
