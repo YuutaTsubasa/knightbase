@@ -137,12 +137,12 @@
   </slot>
   
   <div class="stagePage" style={`--topbarHeight: ${topbarHeight}px;`}>
-    <button class="stageActions" on:click|stopPropagation>
+    <div class="stageActions">
       <Button 
         label={$t('changeCharacter')} 
         onClick={() => goToCharacterPage()}
         className="changeCharacterButton" />
-    </button>
+    </div>
     <div class="stageList">
       {#each stages as stage, index (stage.id)}
         <div class="stageItem">
@@ -200,7 +200,8 @@
     transition: transform 0.2s ease, box-shadow 0.2s ease;
   }
 
-  .stageItem:hover {
+  .stageItem:global(.navFocused),
+  .stageItem:hover, .stageItem:active {
     transform: translateY(-2px);
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
   }
@@ -239,7 +240,8 @@
     z-index: 1;
   }
 
-  .stageBar:hover {
+  .stageBar:global(.navFocused),
+  .stageBar:hover, .stageBar:active {
     border: 5px solid #0021ff;
     box-shadow: 0 4px 16px rgba(0, 33, 255, 0.3);
   }
@@ -327,7 +329,9 @@
     text-wrap: nowrap;
   }
 
-  .stageActions :global(.changeCharacterButton:hover) {
+  .stageActions :global(.changeCharacterButton.navFocused),
+  .stageActions :global(.changeCharacterButton:hover),
+  .stageActions :global(.changeCharacterButton:active) {
     background: rgba(255, 255, 255, 0.3);
     border-color: rgba(255, 255, 255, 0.5);
   }

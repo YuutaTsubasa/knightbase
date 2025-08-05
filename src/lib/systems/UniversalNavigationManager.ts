@@ -42,15 +42,14 @@ export class UniversalNavigationManager {
 
     public setGameplayMode(isGameplay: boolean): void {
         this.isGameplayPage = isGameplay;
-        if (isGameplay) {
-            this.clearNavigation();
-        } else {
-            this.refreshFocusableElements();
-        }
     }
 
-    public refreshFocusableElements(): void {
-        if (this.isGameplayPage) return;
+    public refreshFocusableElements(isInitial: boolean = true): void {
+         // Check if popup is open by looking at the DOM
+        const popupBackdrop = document.querySelector('.popupBackdrop');
+        const hasActivePopup = this.popups.length > 0 || popupBackdrop !== null;
+
+        if (!hasActivePopup && this.isGameplayPage) return;
 
         this.focusableElements = [];
         
@@ -70,10 +69,6 @@ export class UniversalNavigationManager {
             'a[href]'
         ];
 
-        // Check if popup is open by looking at the DOM
-        const popupBackdrop = document.querySelector('.popupBackdrop');
-        const hasActivePopup = this.popups.length > 0 || popupBackdrop !== null;
-        
         if (hasActivePopup) {
             // If popup is open, only focus on popup elements
             const popupElements = document.querySelectorAll('.popupBackdrop button, .popupBackdrop input, .popupBackdrop select, .popupBackdrop textarea, .popupBackdrop a[href]') as NodeListOf<HTMLElement>;
@@ -108,9 +103,11 @@ export class UniversalNavigationManager {
             return rectA.left - rectB.left;
         });
 
-        // Reset navigation when elements change
-        this.currentIndex = -1;
-        this.isNavigating = false;
+        if (isInitial) {
+            // Reset navigation when elements change
+            this.currentIndex = -1;
+            this.isNavigating = false;
+        }
     }
 
     private isElementVisible(element: HTMLElement): boolean {
@@ -132,7 +129,6 @@ export class UniversalNavigationManager {
                     // Let the gameplay page handle this
                     return;
                 }
-                return;
             }
             this.handleKeyboardInput(e);
         };
@@ -151,10 +147,7 @@ export class UniversalNavigationManager {
     }
 
     private handleKeyboardInput(e: KeyboardEvent): void {
-        if (this.focusableElements.length === 0) {
-            this.refreshFocusableElements();
-        }
-
+        this.refreshFocusableElements(this.focusableElements.length === 0);
         if (this.focusableElements.length === 0) return;
 
         let handled = false;
@@ -232,10 +225,7 @@ export class UniversalNavigationManager {
         const currentTime = performance.now();
         if (currentTime - this.lastGamepadTimestamp < 150) return;
 
-        if (this.focusableElements.length === 0) {
-            this.refreshFocusableElements();
-        }
-
+        this.refreshFocusableElements(this.focusableElements.length === 0);
         if (this.focusableElements.length === 0) return;
 
         let handled = false;
@@ -324,12 +314,12 @@ export class UniversalNavigationManager {
     private focusCurrentElement(): void {
         // Remove previous navigation styles
         this.focusableElements.forEach(el => {
-            el.classList.remove('nav-focused');
+            el.classList.remove('navFocused');
         });
 
         if (this.currentIndex >= 0 && this.currentIndex < this.focusableElements.length) {
             const element = this.focusableElements[this.currentIndex];
-            element.classList.add('nav-focused');
+            element.classList.add('navFocused');
             
             // Scroll element into view if needed
             element.scrollIntoView({ 
@@ -355,7 +345,7 @@ export class UniversalNavigationManager {
             this.isNavigating = false;
             // Remove all navigation styles
             this.focusableElements.forEach(el => {
-                el.classList.remove('nav-focused');
+                el.classList.remove('navFocused');
             });
         }
     }

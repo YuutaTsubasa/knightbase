@@ -48,15 +48,8 @@ body.route-stage {
 }
 
 /* Navigation focus styles */
-.nav-focused {
+.navFocused {
   outline: 3px solid #007acc !important;
   outline-offset: 2px !important;
   box-shadow: 0 0 0 2px rgba(0, 122, 204, 0.3) !important;
-}
-
-button:hover,
-input[type="button"]:hover,
-input[type="submit"]:hover,
-.nav-focused {
-  background-color: rgba(0, 122, 204, 0.1) !important;
 }

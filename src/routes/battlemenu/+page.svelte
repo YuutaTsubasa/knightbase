@@ -177,12 +177,15 @@
     color: #bbb;
     text-align: center;
   }
-  .menuButtonContainer:hover {
+  .menuButtonContainer:global(.navFocused),
+  .menuButtonContainer:hover, .menuButtonContainer:active {
     transform: scale(1.02) translateX(-10px) translateY(-10px);
     filter: brightness(0.5);
     transition: transform 0.2s ease, filter 0.2s ease;
   }
-  .menuButtonContainer:hover .menuButton {
+  .menuButtonContainer:global(.navFocused) .menuButton,
+  .menuButtonContainer:hover .menuButton,
+  .menuButtonContainer:active .menuButton {
     box-shadow: 4px 4px 5px rgba(0,0,0,0.5);
     transition: box-shadow 0.2s ease;
   }

@@ -42,6 +42,7 @@
     cursor: pointer;
   }
 
+  .backButton:global(.navFocused),
   .backButton:hover, .backButton:active {
     background-color: white;
     color: black;
