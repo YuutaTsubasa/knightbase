@@ -62,7 +62,7 @@
         isPortrait={$isPortrait}
         onBattle={() => { 
           AudioManager.play("sfx_confirm");
-          goToNextScene?.set("/battlemenu"); 
+          goToNextScene?.set("/stage"); 
         }}
         onMission={() => {
           AudioManager.play("sfx_confirm");

@@ -7,14 +7,42 @@ body.route-root,
 body.route-title,
 body.route-mainmenu,
 body.route-battlemenu,
-body.route-stage,
 body.route-mission,
 body.route-shop {
   overflow: hidden !important;
 }
 
 body.route-settings,
-body.route-character {
+body.route-character,
+body.route-stage {
   overflow-x: hidden !important;
-  overflow-y: scroll !important;
+  overflow-y: auto !important;
+}
+
+.gridLineBackground::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(
+      45deg,
+      rgba(0, 0, 0, 0.1) 0 1px,
+      transparent 1px 80px
+    ),
+    repeating-linear-gradient(
+      -45deg,
+      rgba(0, 0, 0, 0.1) 0 1px,
+      transparent 1px 80px
+    );
+}
+
+.dotBackground::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle, rgba(0, 0, 0, 0.1) 2px, transparent 2px);
+  background-size: 20px 20px;
 }
