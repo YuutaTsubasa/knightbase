@@ -320,7 +320,7 @@
 
   .stageActions :global(.changeCharacterButton) {
     padding: 0.5rem 1rem;
-    font-size: min(2vw, 0.9rem);
+    font-size: 0.9rem;
     background: rgba(255, 255, 255, 0.2);
     border: 1px solid rgba(255, 255, 255, 0.3);
     color: white;
