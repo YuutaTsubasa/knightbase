@@ -3,18 +3,29 @@
   import { FontAssets } from '$lib/assets/FontAssets';
   import { LocalizationStore } from '$lib/systems/LocalizationStore';
   import { StaticDataStore } from '$lib/systems/StaticDataStore';
+  import { UniversalNavigationManager } from '$lib/systems/UniversalNavigationManager';
   import { page } from '$app/state';
-  import { onMount } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
   let { children } = $props();
 
   FontAssets.preload();
   
-  // Initialize static data systems
+  let navigationManager: UniversalNavigationManager | null = null;
+  
+  // Initialize static data systems and navigation
   onMount(() => {
     LocalizationStore.initialize();
     StaticDataStore.initialize();
+    
+    // Initialize universal navigation
+    navigationManager = UniversalNavigationManager.getInstance();
   });
 
+  onDestroy(() => {
+    if (navigationManager) {
+      navigationManager.destroy();
+    }
+  });
 
   // Function to update body class
   function updateBodyClass(pathname: string) {
@@ -33,9 +44,23 @@
     }
   }
 
+  // Function to handle navigation based on page
+  function updateNavigationMode(pathname: string) {
+    if (navigationManager) {
+      const isGameplayPage = pathname === '/gameplay';
+      navigationManager.setGameplayMode(isGameplayPage);
+      
+      // Refresh focusable elements when page changes (after a short delay for DOM updates)
+      setTimeout(() => {
+        navigationManager?.refreshFocusableElements();
+      }, 100);
+    }
+  }
+
   // Use $effect to watch for page changes in Svelte 5
   $effect(() => {
     updateBodyClass(page.url.pathname);
+    updateNavigationMode(page.url.pathname);
   });
 </script>
 
