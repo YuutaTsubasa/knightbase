@@ -5,6 +5,9 @@
   import { StaticDataStore } from "$lib/systems/StaticDataStore";
   import { characterAttackImageKey, characterJumpImageKey, characterRunImageKey, characterAttackEffectImageKey, stageBackgroundImageKey, stageBgmAudioKey, characterWalkAudioKey, characterAttackAudioKey } from "$lib/utils/KeyHelper";
   import { imageAssets } from "$lib/assets/ImageAssets";
+  import { FontAssets } from "$lib/assets/FontAssets";
+  import { PopupStore } from "$lib/systems/PopupStore";
+  import { t } from "$lib/systems/LocalizationStore";
   
   // Layer imports
   import { BackgroundLayer } from "./layers/BackgroundLayer";
@@ -85,6 +88,14 @@
   $: stageGroundOffsetY = $stageData?.groundOffsetY ?? 0;
 
   async function loadAssets() {
+    // Show loading popup with condition-based auto-close
+    PopupStore.open({
+      title: $t("loadingGameTitle"),
+      content: $t("loadingGameContent"),
+      buttons: [],
+      autoClose: () => assetsLoaded
+    });
+
     const imagePromises = Object.entries({
       [`stage_background_${selectedStage}`]: imageAssets[stageBackgroundImageKey(selectedStage)],
       [`character_run_${selectedCharacter}`]: imageAssets[characterRunImageKey(selectedCharacter)],
@@ -217,6 +228,17 @@
           countdownText = "";
         }
       }
+      
+      // During countdown, update animations based on isStop flag
+      // This allows player and background to move during game start countdown
+      // but stop during resume countdown
+      if (!isStop) {
+        backgroundLayer.update(deltaTime, currentScrollSpeed);
+        characterLayer.update(deltaTime, currentScrollSpeed);
+        trapEnemyLayer.update(deltaTime, currentScrollSpeed);
+        effectLayer.update(deltaTime, currentScrollSpeed);
+      }
+      
       return;
     }
 
@@ -345,7 +367,7 @@
     ctx.fillStyle = "#0021ff";
     ctx.fill();
 
-    ctx.font = "bold 80px Arial, sans-serif";
+    ctx.font = `bold 80px ${FontAssets.getFamily("englishNumberBold")}, 'Orbitron', Arial, sans-serif`;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillStyle = "#fff";
