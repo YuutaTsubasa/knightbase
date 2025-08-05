@@ -337,8 +337,8 @@
   .characterPortrait {
     position: absolute;
     top: 0;
-    left: 35%;
-    width: 100%;
+    right: -150px;
+    width: 500px;
     height: 100%;
     background-position: 50% 0%;
     background-size: cover;
