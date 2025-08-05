@@ -28,7 +28,7 @@
   async function main() {
     goToNextScene = writable(null);
     await waitUntil(goToNextScene, value => value !== null);
-    return get(goToNextScene) ?? "/mainmenu";
+    return get(goToNextScene) ?? "/stage";
   }
 
   function useCharacter(characterId: string) {
@@ -36,21 +36,14 @@
   }
 
   function handleBack() {
-    // Check if we came from stage page
-    const playerData = get(playerStore);
-    if (playerData.returnToStage) {
-      // Clear the flag and return to stage
-      playerStore.update(data => ({ ...data, returnToStage: false }));
-      goToNextScene.set("/stage");
-    } else {
-      // Default back to battle menu
-      goToNextScene.set("/battlemenu");
-    }
+    goToNextScene.set("/stage");
   }
 </script>
 
 <Page mainProgress={main} 
-  wrapperStyle="background-image: url({imageAssets["backgroundWhite"]}); background-size: cover; background-position: center; background-color: white;">
+  wrapperStyle="background-image: url({imageAssets["characterBackground"]}); background-size: cover; background-position: center; background-color: white;"
+  contentClass="dotBackground"
+  contentStyle="background-color: rgba(255, 255, 255, 0.5); backdrop-filter: blur(4px); min-height: 100vh;">
   <slot name="outside">
     <Topbar 
       primaryTitle={$t('character')} 
@@ -127,16 +120,16 @@
 
   .characterCard {
     display: flex;
-    background: rgba(255, 255, 255, 0.8);
+    background: rgba(0, 0, 0, 0.8);
     border-radius: 1rem;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 12px rgba(255, 255, 255, 0.1);
     overflow: hidden;
     min-height: 200px;
     transition: transform 0.2s ease;
   }
 
   .characterCard.selected {
-    border: 2px solid #4f46e5; /* Indigo-600 */
+    border: 5px solid #ddff1b;
     box-shadow: 0 6px 20px rgba(79, 70, 229, 0.2);
   }
 
@@ -172,12 +165,12 @@
   .characterHeader .characterName {
     margin: 0 0 0.5rem 0;
     font-size: 1.5rem;
-    color: #1e293b;
+    color: #ffffff;
   }
 
   .characterHeader .characterDescription {
     margin: 0 0 1rem 0;
-    color: #64748b;
+    color: #d7d7d7;
     line-height: 1.4;
   }
 
@@ -191,7 +184,7 @@
   }
 
   .alreadyUseCharacter {
-    color: #4f46e5; /* Indigo-600 */
+    color: #ddff1b;
     font-weight: bold;
     margin-top: 0.5rem;
   }

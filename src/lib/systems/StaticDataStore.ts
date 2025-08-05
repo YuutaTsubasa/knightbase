@@ -112,7 +112,6 @@ export class StaticDataStore {
 
     try {
       await Promise.all(promises);
-      console.info('Static data loaded successfully');
     } catch (error) {
       console.warn('Failed to load some static data:', error);
     }

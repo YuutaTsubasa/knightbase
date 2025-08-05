@@ -88,12 +88,10 @@
   async function main() {
     goToNextScene = writable(null);
     await waitUntil(goToNextScene, value => value !== null);
-    return get(goToNextScene) ?? "/battlemenu";
+    return get(goToNextScene) ?? "/mainmenu";
   }
 
   function goToCharacterPage() {
-    // Store that we came from stage page for navigation
-    playerStore.update(data => ({ ...data, returnToStage: true }));
     goToNextScene.set("/character");
   }
 
@@ -127,23 +125,30 @@
 </script>
 
 <Page mainProgress={main} 
-  wrapperStyle="background-image: url({imageAssets["backgroundWhite"]}); background-size: cover; background-position: center; background-color: white;"
-  contentStyle="box-sizing: border-box; height: 100vh;">
+  wrapperStyle="background-image: url({imageAssets["stageBackground"]}); background-size: cover; background-position: center; background-color: white;"
+  contentClass="dotBackground"
+  contentStyle="box-sizing: border-box; height: 100vh; background-color: rgba(255, 255, 255, 0.5); backdrop-filter: blur(4px);">
   <slot name="outside">
     <Topbar 
       primaryTitle={$t('stage')} 
       secondaryTitle={$t('stagePageSubtitle')}
       onHeightChange={(height) => topbarHeight = height}
-      onBack={() => goToNextScene.set("/battlemenu")} />
+      onBack={() => goToNextScene.set("/mainmenu")} />
   </slot>
   
   <div class="stagePage" style={`--topbarHeight: ${topbarHeight}px;`}>
+    <button class="stageActions" on:click|stopPropagation>
+      <Button 
+        label={$t('changeCharacter')} 
+        onClick={() => goToCharacterPage()}
+        className="changeCharacterButton" />
+    </button>
     <div class="stageList">
-      {#each stages as stage (stage.id)}
+      {#each stages as stage, index (stage.id)}
         <div class="stageItem">
           <!-- Long bar button with background image -->
           <div class="stageBar" 
-               style="background-image: url({getStageBackgroundImage(stage.id)}); --scroll-end: -1536px;"
+               style="background-image: url({getStageBackgroundImage(stage.id)}); --scrollEnd: -1536px; --listIndex: {index};"
                on:click={() => enterStage(stage.id)}
                on:keydown={(e) => e.key === 'Enter' && enterStage(stage.id)}
                role="button"
@@ -166,14 +171,6 @@
                   {$t(stage.descriptionKey)}
                 </p>
               </div>
-              
-              <!-- Right section: Change character button -->
-              <button class="stageActions" on:click|stopPropagation>
-                <Button 
-                  label={$t('changeCharacter')} 
-                  onClick={() => goToCharacterPage()}
-                  className="changeCharacterButton" />
-              </button>
             </div>
           </div>
         </div>
@@ -215,11 +212,21 @@
     position: relative;
     height: 20rem;
     background-position: center;
-    animation: backgroundScrollX 5s linear infinite;
     cursor: pointer;
     border-radius: 1rem;
     overflow: hidden;
     transition: all 0.2s ease;
+    opacity: 0;
+    transform: translateX(40px);
+    animation: fadeInBar 0.6s cubic-bezier(.5,1.5,.5,1) calc(0.2s + var(--listIndex) * 0.1s) forwards,
+      backgroundScrollX 5s linear infinite;
+  }
+
+  @keyframes fadeInBar {
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
   }
 
   .stageBar::before {
@@ -305,9 +312,10 @@
 
   .stageActions {
     all: unset;
+    width: calc(100% - 16px);
     display: flex;
     align-items: center;
-    margin-left: 1rem;
+    justify-content: flex-end;
   }
 
   .stageActions :global(.changeCharacterButton) {
