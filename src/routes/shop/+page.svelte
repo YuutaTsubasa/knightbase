@@ -212,6 +212,7 @@
     border-bottom: 3px solid transparent;
   }
 
+  .shopTab:global(.navFocused),
   .shopTab:hover {
     color: #1e293b;
     background: rgba(0, 0, 0, 0.05);
@@ -243,7 +244,8 @@
     transition: transform 0.2s ease;
   }
 
-  .shopItem:hover {
+  .shopItem:global(.navFocused),
+  .shopItem:hover, .shopItem:active {
     transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
   }

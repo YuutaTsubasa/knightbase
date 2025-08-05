@@ -137,22 +137,19 @@
   </slot>
   
   <div class="stagePage" style={`--topbarHeight: ${topbarHeight}px;`}>
-    <button class="stageActions" on:click|stopPropagation>
+    <div class="stageActions">
       <Button 
         label={$t('changeCharacter')} 
         onClick={() => goToCharacterPage()}
         className="changeCharacterButton" />
-    </button>
+    </div>
     <div class="stageList">
       {#each stages as stage, index (stage.id)}
         <div class="stageItem">
           <!-- Long bar button with background image -->
-          <div class="stageBar" 
+          <button class="stageBar" 
                style="background-image: url({getStageBackgroundImage(stage.id)}); --scrollEnd: -1536px; --listIndex: {index};"
-               on:click={() => enterStage(stage.id)}
-               on:keydown={(e) => e.key === 'Enter' && enterStage(stage.id)}
-               role="button"
-               tabindex="0">
+               on:click={() => enterStage(stage.id)}>
             
             <div class="characterAvatar">
               <div class="characterPortrait" style="background-image: url({imageAssets[characterPortraitImageKey($playerStore.selectedCharacter)]});"></div>
@@ -172,7 +169,7 @@
                 </p>
               </div>
             </div>
-          </div>
+          </button>
         </div>
       {/each}
     </div>
@@ -203,12 +200,15 @@
     transition: transform 0.2s ease, box-shadow 0.2s ease;
   }
 
-  .stageItem:hover {
+  .stageItem:global(.navFocused),
+  .stageItem:hover, .stageItem:active {
     transform: translateY(-2px);
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
   }
 
   .stageBar {
+    all: unset;
+    width: 100%;
     position: relative;
     height: 20rem;
     background-position: center;
@@ -240,7 +240,8 @@
     z-index: 1;
   }
 
-  .stageBar:hover {
+  .stageBar:global(.navFocused),
+  .stageBar:hover, .stageBar:active {
     border: 5px solid #0021ff;
     box-shadow: 0 4px 16px rgba(0, 33, 255, 0.3);
   }
@@ -328,7 +329,9 @@
     text-wrap: nowrap;
   }
 
-  .stageActions :global(.changeCharacterButton:hover) {
+  .stageActions :global(.changeCharacterButton.navFocused),
+  .stageActions :global(.changeCharacterButton:hover),
+  .stageActions :global(.changeCharacterButton:active) {
     background: rgba(255, 255, 255, 0.3);
     border-color: rgba(255, 255, 255, 0.5);
   }

@@ -65,7 +65,8 @@
     height: 23vh;
   }
 
-  .battleButton:hover {
+  .battleButton:global(.navFocused),
+  .battleButton:hover, .battleButton:active {
     transform: translateY(-2px);
     background-color: yellow;
     color: black;
@@ -124,7 +125,8 @@
     padding-left: 0.8rem;
   }
 
-  .smallButton:hover {
+  .smallButton:global(.navFocused),
+  .smallButton:hover, .smallButton:active {
     transform: translateY(-2px);
     background: yellow;
     color: black;

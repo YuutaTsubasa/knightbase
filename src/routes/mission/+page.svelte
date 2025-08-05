@@ -286,6 +286,7 @@
     border-left: 3px solid transparent;
   }
 
+  .missionTypeTab:global(.navFocused),
   .missionTypeTab:hover {
     color: #1e293b;
     background: rgba(0, 0, 0, 0.05);
@@ -345,7 +346,8 @@
     align-items: center;
   }
 
-  .missionItem:hover {
+  .missionItem:global(.navFocused),
+  .missionItem:hover, .missionItem:active {
     transform: translateY(-1px);
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
   }

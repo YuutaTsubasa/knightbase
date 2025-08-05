@@ -1107,7 +1107,8 @@
     transition: background 0.3s;
   }
 
-  .pauseBtn:hover {
+  .pauseBtn:global(.navFocused),
+  .pauseBtn:hover, .pauseBtn:active {
     background: rgba(255, 255, 255, 0.3);
   }
 

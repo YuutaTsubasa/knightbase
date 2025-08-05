@@ -88,6 +88,7 @@
     cursor: not-allowed;
   }
 
+  .baseButton:global(.navFocused),
   .baseButton:hover:not(:disabled),
   .baseButton:active:not(:disabled) {
     filter: invert(1) brightness(1.5);

@@ -133,7 +133,8 @@
     box-shadow: 0 6px 20px rgba(79, 70, 229, 0.2);
   }
 
-  .characterCard:hover {
+  .characterCard:global(.navFocused),
+  .characterCard:hover, .characterCard:active {
     transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
   }

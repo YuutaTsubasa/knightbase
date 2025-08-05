@@ -85,7 +85,8 @@
     height: 100%;
   }
 
-  .add:hover {
+  .add:global(.navFocused),
+  .add:hover, .add:active {
     color: #aaf;
   }
 </style>

@@ -46,3 +46,10 @@ body.route-stage {
     radial-gradient(circle, rgba(0, 0, 0, 0.1) 2px, transparent 2px);
   background-size: 20px 20px;
 }
+
+/* Navigation focus styles */
+.navFocused {
+  outline: 3px solid #007acc !important;
+  outline-offset: 2px !important;
+  box-shadow: 0 0 0 2px rgba(0, 122, 204, 0.3) !important;
+}
