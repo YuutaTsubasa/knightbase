@@ -127,7 +127,7 @@
 <Page mainProgress={main} 
   wrapperStyle="background-image: url({imageAssets["stageBackground"]}); background-size: cover; background-position: center; background-color: white;"
   contentClass="dotBackground"
-  contentStyle="box-sizing: border-box; height: 100vh; background-color: rgba(255, 255, 255, 0.5); backdrop-filter: blur(4px);">
+  contentStyle="min-height: 100vh; background-color: rgba(255, 255, 255, 0.5); backdrop-filter: blur(4px);">
   <slot name="outside">
     <Topbar 
       primaryTitle={$t('stage')} 
