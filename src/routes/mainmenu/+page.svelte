@@ -16,8 +16,6 @@
   import { isPortrait } from "$lib/systems/Orientation";
   import { CoinsIcon, DiamondIcon, GemIcon } from "lucide-svelte";
   import { characterBackgroundVideoKey } from "$lib/utils/KeyHelper";
-  import { GamepadManager, type FocusableElement } from "$lib/systems/GamepadManager";
-  import { onMount, onDestroy } from "svelte";
 
   let playerData = $playerStore;
 
@@ -28,66 +26,6 @@
   $: selectedCharacter = playerData.selectedCharacter;
 
   let goToNextScene: Writable<string | null>;
-  let mainMenuButtonGroup: MainMenuButtonGroup;
-
-  function setupGamepadNavigation() {
-    if (!mainMenuButtonGroup) {
-      setTimeout(setupGamepadNavigation, 100);
-      return;
-    }
-
-    const buttons = mainMenuButtonGroup.getButtonElements();
-    if (!buttons.battleButton || !buttons.missionButton || !buttons.shopButton || !buttons.settingsButton) {
-      setTimeout(setupGamepadNavigation, 100);
-      return;
-    }
-
-    const focusableElements: FocusableElement[] = [
-      {
-        element: buttons.battleButton,
-        type: 'button',
-        onActivate: () => {
-          AudioManager.play("sfx_confirm");
-          goToNextScene?.set("/battlemenu");
-        }
-      },
-      {
-        element: buttons.missionButton,
-        type: 'button',
-        onActivate: () => {
-          AudioManager.play("sfx_confirm");
-          goToNextScene?.set("/mission");
-        }
-      },
-      {
-        element: buttons.shopButton,
-        type: 'button',
-        onActivate: () => {
-          AudioManager.play("sfx_confirm");
-          goToNextScene?.set("/shop");
-        }
-      },
-      {
-        element: buttons.settingsButton,
-        type: 'button',
-        onActivate: () => {
-          AudioManager.play("sfx_confirm");
-          goToNextScene?.set("/settings");
-        }
-      }
-    ];
-
-    GamepadManager.registerFocusableElements(focusableElements);
-  }
-
-  onMount(() => {
-    setupGamepadNavigation();
-  });
-
-  onDestroy(() => {
-    GamepadManager.clearFocusableElements();
-  });
-
   async function main() {
     goToNextScene = writable(null);
     await waitUntil(goToNextScene, value => value !== null);
@@ -120,7 +58,7 @@
       ]} />
     </div>
      <div class="buttonContainer">
-      <MainMenuButtonGroup bind:this={mainMenuButtonGroup} progressText={format($t("stageProgress"), $t("none"))}
+      <MainMenuButtonGroup progressText={format($t("stageProgress"), $t("none"))}
         isPortrait={$isPortrait}
         onBattle={() => { 
           AudioManager.play("sfx_confirm");

@@ -7,17 +7,11 @@
   export let onBack: () => void;
   
   let height: number;
-  let backButton: HTMLButtonElement;
-  
   $: onHeightChange?.(height);
-
-  export function getBackButton() {
-    return backButton;
-  }
 </script>
 
 <div class="topbar" bind:clientHeight={height}>
-  <button bind:this={backButton} class="backButton" on:click={() => {
+  <button class="backButton" on:click={() => {
     AudioManager.play("sfx_confirm");
     onBack?.();
   }}>←</button>
@@ -52,28 +46,6 @@
     background-color: white;
     color: black;
     transition: background-color 0.2s ease, color 0.2s ease;
-  }
-
-  /* Only apply hover effects on devices that can actually hover */
-  @media (hover: hover) {
-    .backButton:hover {
-      background-color: white;
-      color: black;
-      transition: background-color 0.2s ease, color 0.2s ease;
-    }
-  }
-
-  .backButton:active {
-    background-color: white;
-    color: black;
-    transition: background-color 0.2s ease, color 0.2s ease;
-  }
-
-  /* Gamepad selection styles */
-  :global(.backButton.gamepad-selected) {
-    background-color: white;
-    color: black;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.6), 2px 2px 4px rgba(0, 0, 0, 0.3);
   }
 
   .topbarTitle {

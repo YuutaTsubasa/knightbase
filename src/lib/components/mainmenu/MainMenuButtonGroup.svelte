@@ -9,26 +9,11 @@
   export let onShop = () => {};
   export let onSettings = () => {};
 
-  // Export button elements for gamepad registration
-  let battleButton: HTMLButtonElement;
-  let missionButton: HTMLButtonElement;
-  let shopButton: HTMLButtonElement;
-  let settingsButton: HTMLButtonElement;
-
-  export function getButtonElements() {
-    return {
-      battleButton,
-      missionButton,
-      shopButton,
-      settingsButton
-    };
-  }
-
   $: marqueeText = Array(16).fill(progressText).join("　") + "　";
 </script>
 
 <div class="mainMenuButtonArea" class:portrait={isPortrait}>
-  <button bind:this={battleButton} class="battleButton" on:click={onBattle}>
+  <button class="battleButton" on:click={onBattle}>
     <div class="label"><SwordIcon size="6vh" class="icon" /> {$t("battle")}</div>
     <div class="marquee">
         <div class="marqueeInner">
@@ -38,12 +23,12 @@
   </button>
 
   <div class="bottomButtons">
-    <button bind:this={missionButton} class="smallButton" on:click={onMission}><ListIcon size="2.8vh" class="icon"/> {$t("mission")}</button>
-    <button bind:this={shopButton} class="smallButton" on:click={onShop}><ShoppingCartIcon size="2.8vh" class="icon" /> {$t("shop")}</button>
+    <button class="smallButton" on:click={onMission}><ListIcon size="2.8vh" class="icon"/> {$t("mission")}</button>
+    <button class="smallButton" on:click={onShop}><ShoppingCartIcon size="2.8vh" class="icon" /> {$t("shop")}</button>
   </div>
 
   <div class="bottomButtons">
-    <button bind:this={settingsButton} class="smallButton" on:click={onSettings}><SettingsIcon size="2.8vh" class="icon"/> {$t("settings")}</button>
+    <button class="smallButton" on:click={onSettings}><SettingsIcon size="2.8vh" class="icon"/> {$t("settings")}</button>
   </div>
 </div>
 
@@ -80,35 +65,11 @@
     height: 23vh;
   }
 
-  /* Only apply hover effects on devices that can actually hover */
-  @media (hover: hover) {
-    .battleButton:hover {
-      transform: translateY(-2px);
-      background-color: yellow;
-      color: black;
-      box-shadow: 0 0.6rem 1.5rem rgba(0, 0, 0, 1);
-    }
-
-    .smallButton:hover {
-      transform: translateY(-2px);
-      background: yellow;
-      color: black;
-    }
-  }
-
-  /* Gamepad selection styles */
-  :global(.battleButton.gamepad-selected) {
+  .battleButton:hover {
     transform: translateY(-2px);
     background-color: yellow;
     color: black;
-    box-shadow: 0 0.6rem 1.5rem rgba(0, 0, 0, 1), 0 0 0 3px rgba(59, 130, 246, 0.6);
-  }
-
-  :global(.smallButton.gamepad-selected) {
-    transform: translateY(-2px);
-    background: yellow;
-    color: black;
-    box-shadow: 0 0.2rem 0.5rem rgba(0, 0, 0, 0.7), 0 0 0 3px rgba(59, 130, 246, 0.6);
+    box-shadow: 0 0.6rem 1.5rem rgba(0, 0, 0, 1);
   }
   
   .label {
@@ -163,5 +124,9 @@
     padding-left: 0.8rem;
   }
 
-
+  .smallButton:hover {
+    transform: translateY(-2px);
+    background: yellow;
+    color: black;
+  }
 </style>

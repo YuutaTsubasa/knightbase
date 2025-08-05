@@ -18,21 +18,3 @@ body.route-character {
   overflow-x: hidden !important;
   overflow-y: scroll !important;
 }
-
-/* Gamepad selection styles for all interactive elements */
-.gamepad-selected:not(:disabled) {
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.6) !important;
-  outline: none !important;
-}
-
-input[type="range"].gamepad-selected:not(:disabled) {
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.6) !important;
-}
-
-select.gamepad-selected:not(:disabled) {
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.6) !important;
-}
-
-input[type="text"].gamepad-selected:not(:disabled) {
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.6) !important;
-}
