@@ -8,16 +8,26 @@
   import { PopupStore, PopupResult } from "$lib/systems/PopupStore";
   import { waitUntil } from "$lib/utils/Wait";
   import { get, writable, type Writable } from "svelte/store";
-  import { Star, ChevronDown, ChevronUp } from "lucide-svelte";
   import { AudioManager } from "$lib/systems/AudioManager";
   import { playerStore } from "$lib/systems/PlayerStore";
   import { StaticDataStore } from "$lib/systems/StaticDataStore";
+  import { format } from "$lib/utils/StringUtils";
+  import { characterPortraitImageKey } from "$lib/utils/KeyHelper";
+  import Image from "$lib/components/Image.svelte";
 
   $: topbarHeight = 0;
-  let expandedStage: string | null = null;
 
   const stageData = StaticDataStore.stageData;
   $: stages = $stageData;
+
+  function getStageBackgroundImage(stageId: string): string {
+    // Map stage IDs to their background images
+    const backgroundMap: Record<string, string> = {
+      stage1: imageAssets.stage1Background,
+      stage2: imageAssets.stage2Background,
+    };
+    return backgroundMap[stageId] || imageAssets.stageBackground;
+  }
 
 //   [
 //     {
@@ -78,18 +88,22 @@
   async function main() {
     goToNextScene = writable(null);
     await waitUntil(goToNextScene, value => value !== null);
-    return get(goToNextScene) ?? "/battlemenu";
+    return get(goToNextScene) ?? "/mainmenu";
   }
 
-  function toggleStageDetails(stageId: string) {
-    AudioManager.play("sfx_confirm");
-    expandedStage = expandedStage === stageId ? null : stageId;
+  function goToCharacterPage() {
+    goToNextScene.set("/character");
   }
 
   async function enterStage(stageId: string) {
+    AudioManager.play("sfx_confirm");
+    // Find the stage data to get the stage name
+    const stage = stages.find(s => s.id === stageId);
+    const stageName = stage ? $t(stage.nameKey) : stageId;
+
     const result = await PopupStore.open({
       title: $t("confirmEnterStage"),
-      content: $t("confirmEnterStageContent"),
+      content: format($t("confirmEnterStageContent"), stageName),
       buttons: [
         {
           text: $t("cancel"),
@@ -108,83 +122,57 @@
       ]
     });
   }
-
-  function renderStars(count: number, total: number = 3) {
-    return Array.from({ length: total }, (_, i) => ({
-      filled: i < count
-    }));
-  }
 </script>
 
 <Page mainProgress={main} 
-  wrapperStyle="background-image: url({imageAssets["backgroundWhite"]}); background-size: cover; background-position: center; background-color: white;"
-  contentStyle="box-sizing: border-box; height: 100vh;">
+  wrapperStyle="background-image: url({imageAssets["stageBackground"]}); background-size: cover; background-position: center; background-color: white;"
+  contentClass="dotBackground"
+  contentStyle="box-sizing: border-box; height: 100vh; background-color: rgba(255, 255, 255, 0.5); backdrop-filter: blur(4px);">
   <slot name="outside">
     <Topbar 
       primaryTitle={$t('stage')} 
       secondaryTitle={$t('stagePageSubtitle')}
       onHeightChange={(height) => topbarHeight = height}
-      onBack={() => goToNextScene.set("/battlemenu")} />
+      onBack={() => goToNextScene.set("/mainmenu")} />
   </slot>
   
   <div class="stagePage" style={`--topbarHeight: ${topbarHeight}px;`}>
+    <button class="stageActions" on:click|stopPropagation>
+      <Button 
+        label={$t('changeCharacter')} 
+        onClick={() => goToCharacterPage()}
+        className="changeCharacterButton" />
+    </button>
     <div class="stageList">
-      {#each stages as stage (stage.id)}
+      {#each stages as stage, index (stage.id)}
         <div class="stageItem">
-          <button class="stageHeader" on:click={() => toggleStageDetails(stage.id)}>
-            <div class="stageMainInfo">
-              <div class="stageIcon">
-                {@html stage.iconSvg}
-              </div>
-              <div class="stageBasicInfo">
+          <!-- Long bar button with background image -->
+          <div class="stageBar" 
+               style="background-image: url({getStageBackgroundImage(stage.id)}); --scrollEnd: -1536px; --listIndex: {index};"
+               on:click={() => enterStage(stage.id)}
+               on:keydown={(e) => e.key === 'Enter' && enterStage(stage.id)}
+               role="button"
+               tabindex="0">
+            
+            <div class="characterAvatar">
+              <div class="characterPortrait" style="background-image: url({imageAssets[characterPortraitImageKey($playerStore.selectedCharacter)]});"></div>
+            </div>
+            <!-- Bottom overlay with blur effect -->
+            <div class="stageBottomOverlay">
+              <!-- Left section: Title and description -->
+              <div class="stageInfo">
                 <h3 class="stageName" style={FontAssets.getCssStyle("titleBold")}>
+                  <div class="stageIcon">
+                    {@html stage.iconSvg}
+                  </div>
                   {$t(stage.nameKey)}
                 </h3>
-                <!-- <div class="stageStars">
-                  {#each renderStars(stage.stars) as star}
-                    <Star 
-                      size={16} 
-                      class={star.filled ? "starFilled" : "starEmpty"} 
-                      fill={star.filled ? "currentColor" : "none"} />
-                  {/each}
-                </div> -->
+                <p class="stageDescription">
+                  {$t(stage.descriptionKey)}
+                </p>
               </div>
             </div>
-            <div class="expandIcon">
-              {#if expandedStage === stage.id}
-                <ChevronUp size={24} />
-              {:else}
-                <ChevronDown size={24} />
-              {/if}
-            </div>
-          </button>
-          
-          {#if expandedStage === stage.id}
-            <div class="stageDetails">
-              <div class="stageDescription">
-                <p>{$t(stage.descriptionKey)}</p>
-              </div>
-              
-              <!-- <div class="stageDrops">
-                <h4>{$t('estimatedDrops')}:</h4>
-                <div class="dropList">
-                  {#each stage.drops as drop}
-                    <div class="dropItem">
-                      <span class="dropName">{$t(drop.nameKey)}</span>
-                      <span class="dropAmount">{drop.amount}</span>
-                    </div>
-                  {/each}
-                </div>
-              </div> -->
-              
-              <div class="stageActions">
-                <Button 
-                  label={$t('enterStage')} 
-                  onClick={() => enterStage(stage.id)}
-                  className="enterStageButton" />
-              </div>
-            </div>
-          {/if}
+          </div>
         </div>
       {/each}
     </div>
@@ -205,155 +193,163 @@
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
-  }
-
-  .stageItem {
-    background: rgba(255, 255, 255, 0.9);
-    border-radius: 0.75rem;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    overflow: hidden;
-    transition: box-shadow 0.2s ease;
-  }
-
-  .stageItem:hover {
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-  }
-
-  .stageHeader {
-    all: unset;
-    box-sizing: border-box;
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 1rem;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-  }
-
-  .stageHeader:hover {
-    background: rgba(0, 0, 0, 0.05);
-  }
-
-  .stageMainInfo {
-    display: flex;
-    align-items: center;
     gap: 1rem;
   }
 
+  .stageItem {
+    position: relative;
+    border-radius: 1rem;
+    overflow: hidden;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .stageItem:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  }
+
+  .stageBar {
+    position: relative;
+    height: 20rem;
+    background-position: center;
+    cursor: pointer;
+    border-radius: 1rem;
+    overflow: hidden;
+    transition: all 0.2s ease;
+    opacity: 0;
+    transform: translateX(40px);
+    animation: fadeInBar 0.6s cubic-bezier(.5,1.5,.5,1) calc(0.2s + var(--listIndex) * 0.1s) forwards,
+      backgroundScrollX 5s linear infinite;
+  }
+
+  @keyframes fadeInBar {
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  .stageBar::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    background: linear-gradient(to right, black, transparent 30%, transparent);
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+  }
+
+  .stageBar:hover {
+    border: 5px solid #0021ff;
+    box-shadow: 0 4px 16px rgba(0, 33, 255, 0.3);
+  }
+
   .stageIcon {
-    width: 60px;
-    height: 60px;
-    background: #0021ff;
-    border-radius: 0.5rem;
+    width: 6vw;
+    height: 6vw;
+    max-width: 85px;
+    max-height: 85px;
+    background: rgba(0, 33, 255, 0.14);
+    border-radius: 0.75rem;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    padding: 5px;
+    backdrop-filter: blur(3px);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 4px 12px rgba(0, 33, 255, 0.3);
+    margin-bottom: -5px;
   }
 
-  .stageIcon :global(.stageIconImage) {
-    width: 40px;
-    height: 40px;
-    object-fit: contain;
+  .stageIcon :global(svg) {
+    width: 60px;
+    height: 60px;
   }
 
-  .stageBasicInfo {
+  .stageBottomOverlay {
+    position: absolute;
+    left: 15px;
+    right: 15px;
+    bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    z-index: 2;
+  }
+
+  .stageInfo {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
   }
 
   .stageName {
     margin: 0;
-    font-size: 1.25rem;
-    color: #1e293b;
-  }
-
-  .stageStars {
+    font-size: min(5vw, 5rem);
+    color: white;
+    text-shadow: 
+      -2px -2px 0 #000,
+      2px -2px 0 #000,
+      -2px 2px 0 #000,
+      2px 2px 0 #000,
+      2px 2px 4px rgba(0, 0, 0, 0.8);
     display: flex;
-    gap: 0.25rem;
-  }
-
-  .stageStars :global(.starFilled) {
-    color: #fbbf24;
-  }
-
-  .stageStars :global(.starEmpty) {
-    color: #d1d5db;
-  }
-
-  .expandIcon {
-    color: #64748b;
-    transition: transform 0.2s ease;
-  }
-
-  .stageDetails {
-    padding: 1rem 1rem 1rem 1rem;
-    border-top: 1px solid #e2e8f0;
-    animation: fadeIn 0.3s ease;
-    max-height: 60vh;
-    overflow-y: auto;
-  }
-
-  @keyframes fadeIn {
-    from {
-      opacity: 0;
-      transform: translateY(-10px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
+    align-items: center;
+    gap: 0.4rem;
+    text-wrap: nowrap;
   }
 
   .stageDescription {
-    margin-bottom: 1rem;
-  }
-
-  .stageDescription p {
     margin: 0;
-    color: #64748b;
-    line-height: 1.5;
-  }
-
-  .stageDrops h4 {
-    margin: 0 0 0.5rem 0;
-    color: #374151;
-    font-size: 1rem;
-  }
-
-  .dropList {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-    margin-bottom: 1rem;
-  }
-
-  .dropItem {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.25rem 0;
-  }
-
-  .dropName {
-    color: #4b5563;
-  }
-
-  .dropAmount {
-    color: #059669;
-    font-weight: bold;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: min(2.5vw, 1.2rem);
+    line-height: 1.3;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+    background: black;
+    box-shadow: 2px 2px 4px grey;
+    padding-left: 10px;
   }
 
   .stageActions {
+    all: unset;
+    width: calc(100% - 16px);
     display: flex;
+    align-items: center;
     justify-content: flex-end;
   }
 
-  .stageActions :global(.enterStageButton) {
-    padding: 0.5rem 1.5rem;
+  .stageActions :global(.changeCharacterButton) {
+    padding: 0.5rem 1rem;
+    font-size: min(2vw, 0.9rem);
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    backdrop-filter: blur(5px);
+    text-wrap: nowrap;
+  }
+
+  .stageActions :global(.changeCharacterButton:hover) {
+    background: rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.5);
+  }
+
+  .characterAvatar {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  .characterPortrait {
+    position: absolute;
+    top: 0;
+    right: -150px;
+    width: 500px;
+    height: 100%;
+    background-position: 50% 0%;
+    background-size: cover;
+    background-repeat: no-repeat;
   }
 </style>

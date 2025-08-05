@@ -18,3 +18,31 @@ body.route-character {
   overflow-x: hidden !important;
   overflow-y: scroll !important;
 }
+
+.gridLineBackground::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(
+      45deg,
+      rgba(0, 0, 0, 0.1) 0 1px,
+      transparent 1px 80px
+    ),
+    repeating-linear-gradient(
+      -45deg,
+      rgba(0, 0, 0, 0.1) 0 1px,
+      transparent 1px 80px
+    );
+}
+
+.dotBackground::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle, rgba(0, 0, 0, 0.1) 2px, transparent 2px);
+  background-size: 20px 20px;
+}

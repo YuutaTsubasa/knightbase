@@ -55,7 +55,6 @@ export class LocalizationStore {
         return localizationObject;
       }, {});
     this.data.set(newData);
-    console.info(get(this.data));
   }
 
   static preprocess(value: string): string {
