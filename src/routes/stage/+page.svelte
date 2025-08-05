@@ -207,6 +207,7 @@
 
   .stageBar {
     all: unset;
+    width: 100%;
     position: relative;
     height: 20rem;
     background-position: center;

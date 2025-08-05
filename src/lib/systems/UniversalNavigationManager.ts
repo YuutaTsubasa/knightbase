@@ -16,14 +16,12 @@ export class UniversalNavigationManager {
     private animationFrameId: number | null = null;
     private popups: PopupData[] = [];
     private popupUnsubscribe: (() => void) | null = null;
-    private mutationObserver: MutationObserver | null = null;
 
     private constructor() {
         if (browser) {
             this.setupEventListeners();
             this.startGamepadPolling();
             this.setupPopupMonitoring();
-            this.setupMutationObserver();
         }
     }
 
@@ -40,75 +38,6 @@ export class UniversalNavigationManager {
             // Refresh focusable elements when popup state changes
             this.refreshFocusableElements();
         });
-    }
-
-    private setupMutationObserver(): void {
-        // Create a MutationObserver to watch for DOM changes
-        this.mutationObserver = new MutationObserver((mutations) => {
-            let shouldRefresh = false;
-            
-            for (const mutation of mutations) {
-                // Check if any added or removed nodes contain interactive elements
-                if (mutation.type === 'childList') {
-                    const checkNodes = (nodes: NodeList) => {
-                        for (const node of nodes) {
-                            if (node.nodeType === Node.ELEMENT_NODE) {
-                                const element = node as Element;
-                                // Check if the node itself is interactive or contains interactive elements
-                                if (this.isInteractiveElement(element) || 
-                                    element.querySelector('button, input, select, textarea, a[href], [tabindex]')) {
-                                    return true;
-                                }
-                            }
-                        }
-                        return false;
-                    };
-                    
-                    if (checkNodes(mutation.addedNodes) || checkNodes(mutation.removedNodes)) {
-                        shouldRefresh = true;
-                        break;
-                    }
-                }
-                // Also check for attribute changes that might affect interactivity
-                else if (mutation.type === 'attributes') {
-                    const target = mutation.target as Element;
-                    if (mutation.attributeName === 'disabled' || 
-                        mutation.attributeName === 'tabindex' ||
-                        mutation.attributeName === 'style' ||
-                        mutation.attributeName === 'class') {
-                        if (this.isInteractiveElement(target)) {
-                            shouldRefresh = true;
-                            break;
-                        }
-                    }
-                }
-            }
-            
-            if (shouldRefresh) {
-                // Debounce the refresh to avoid excessive calls
-                setTimeout(() => {
-                    this.refreshFocusableElements();
-                }, 50);
-            }
-        });
-        
-        // Start observing the document with the configured parameters
-        this.mutationObserver.observe(document.body, {
-            childList: true,
-            subtree: true,
-            attributes: true,
-            attributeFilter: ['disabled', 'tabindex', 'style', 'class']
-        });
-    }
-
-    private isInteractiveElement(element: Element): boolean {
-        const tagName = element.tagName.toLowerCase();
-        return tagName === 'button' || 
-               tagName === 'input' || 
-               tagName === 'select' || 
-               tagName === 'textarea' || 
-               (tagName === 'a' && element.hasAttribute('href')) ||
-               element.hasAttribute('tabindex');
     }
 
     public setGameplayMode(isGameplay: boolean): void {
@@ -452,9 +381,6 @@ export class UniversalNavigationManager {
         }
         if (this.popupUnsubscribe) {
             this.popupUnsubscribe();
-        }
-        if (this.mutationObserver) {
-            this.mutationObserver.disconnect();
         }
         this.clearNavigation();
     }
