@@ -1057,13 +1057,8 @@
     position: absolute;
     inset: 0;
     background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.1), transparent);
-    animation: techScan 3s ease-in-out infinite;
+    animation: scan 3s ease-in-out infinite;
     z-index: 1;
-  }
-
-  @keyframes techScan {
-    0%, 100% { transform: translateX(-100%); }
-    50% { transform: translateX(100%); }
   }
 
   .topUI > * {

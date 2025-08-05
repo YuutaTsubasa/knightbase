@@ -100,3 +100,17 @@
     overflow: hidden;
   }
 }
+
+@keyframes backgroundScrollX {
+  0% {
+    background-position-x: 0%;
+  }
+  100% {
+    background-position-x: var(--scroll-end, 100%);
+  }
+}
+
+@keyframes scan {
+  0%, 100% { transform: translateX(-100%); }
+  50% { transform: translateX(100%); }
+}

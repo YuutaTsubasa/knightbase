@@ -12,6 +12,8 @@
   import { playerStore } from "$lib/systems/PlayerStore";
   import { StaticDataStore } from "$lib/systems/StaticDataStore";
   import { format } from "$lib/utils/StringUtils";
+  import { characterPortraitImageKey } from "$lib/utils/KeyHelper";
+  import Image from "$lib/components/Image.svelte";
 
   $: topbarHeight = 0;
 
@@ -96,10 +98,11 @@
   }
 
   async function enterStage(stageId: string) {
+    AudioManager.play("sfx_confirm");
     // Find the stage data to get the stage name
     const stage = stages.find(s => s.id === stageId);
     const stageName = stage ? $t(stage.nameKey) : stageId;
-    
+
     const result = await PopupStore.open({
       title: $t("confirmEnterStage"),
       content: format($t("confirmEnterStageContent"), stageName),
@@ -140,12 +143,15 @@
         <div class="stageItem">
           <!-- Long bar button with background image -->
           <div class="stageBar" 
-               style="background-image: url({getStageBackgroundImage(stage.id)});"
+               style="background-image: url({getStageBackgroundImage(stage.id)}); --scroll-end: -1536px;"
                on:click={() => enterStage(stage.id)}
                on:keydown={(e) => e.key === 'Enter' && enterStage(stage.id)}
                role="button"
                tabindex="0">
             
+            <div class="characterAvatar">
+              <div class="characterPortrait" style="background-image: url({imageAssets[characterPortraitImageKey($playerStore.selectedCharacter)]});"></div>
+            </div>
             <!-- Bottom overlay with blur effect -->
             <div class="stageBottomOverlay">
               <!-- Left section: Title and description -->
@@ -162,12 +168,12 @@
               </div>
               
               <!-- Right section: Change character button -->
-              <div class="stageActions" on:click|stopPropagation>
+              <button class="stageActions" on:click|stopPropagation>
                 <Button 
                   label={$t('changeCharacter')} 
                   onClick={() => goToCharacterPage()}
                   className="changeCharacterButton" />
-              </div>
+              </button>
             </div>
           </div>
         </div>
@@ -209,7 +215,7 @@
     position: relative;
     height: 20rem;
     background-position: center;
-    animation: backgroundScroll 20s linear infinite;
+    animation: backgroundScrollX 5s linear infinite;
     cursor: pointer;
     border-radius: 1rem;
     overflow: hidden;
@@ -227,23 +233,17 @@
     z-index: 1;
   }
 
-  @keyframes backgroundScroll {
-    0% {
-      background-position-x: 0%;
-    }
-    100% {
-      background-position-x: 100%;
-    }
-  }
-
   .stageBar:hover {
+    border: 5px solid #0021ff;
     box-shadow: 0 4px 16px rgba(0, 33, 255, 0.3);
   }
 
   .stageIcon {
-    width: 85px;
-    height: 85px;
-    background: rgba(0, 33, 255, 0.8);
+    width: 6vw;
+    height: 6vw;
+    max-width: 85px;
+    max-height: 85px;
+    background: rgba(0, 33, 255, 0.14);
     border-radius: 0.75rem;
     display: flex;
     align-items: center;
@@ -252,7 +252,7 @@
     backdrop-filter: blur(3px);
     border: 2px solid rgba(255, 255, 255, 0.3);
     box-shadow: 0 4px 12px rgba(0, 33, 255, 0.3);
-    margin-bottom: -10px;
+    margin-bottom: -5px;
   }
 
   .stageIcon :global(svg) {
@@ -278,7 +278,7 @@
 
   .stageName {
     margin: 0;
-    font-size: 5rem;
+    font-size: min(5vw, 5rem);
     color: white;
     text-shadow: 
       -2px -2px 0 #000,
@@ -288,37 +288,60 @@
       2px 2px 4px rgba(0, 0, 0, 0.8);
     display: flex;
     align-items: center;
-    gap: 1rem;
+    gap: 0.4rem;
+    text-wrap: nowrap;
   }
 
   .stageDescription {
     margin: 0;
     color: rgba(255, 255, 255, 0.8);
-    font-size: 0.9rem;
+    font-size: min(2.5vw, 1.2rem);
     line-height: 1.3;
     text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
     background: black;
     box-shadow: 2px 2px 4px grey;
+    padding-left: 10px;
   }
 
   .stageActions {
+    all: unset;
     display: flex;
     align-items: center;
-    flex-shrink: 0;
     margin-left: 1rem;
   }
 
   .stageActions :global(.changeCharacterButton) {
     padding: 0.5rem 1rem;
-    font-size: 0.9rem;
+    font-size: min(2vw, 0.9rem);
     background: rgba(255, 255, 255, 0.2);
     border: 1px solid rgba(255, 255, 255, 0.3);
     color: white;
     backdrop-filter: blur(5px);
+    text-wrap: nowrap;
   }
 
   .stageActions :global(.changeCharacterButton:hover) {
     background: rgba(255, 255, 255, 0.3);
     border-color: rgba(255, 255, 255, 0.5);
+  }
+
+  .characterAvatar {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  .characterPortrait {
+    position: absolute;
+    top: 0;
+    left: 35%;
+    width: 100%;
+    height: 100%;
+    background-position: 50% 0%;
+    background-size: cover;
+    background-repeat: no-repeat;
   }
 </style>
