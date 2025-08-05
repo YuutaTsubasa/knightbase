@@ -147,12 +147,9 @@
       {#each stages as stage, index (stage.id)}
         <div class="stageItem">
           <!-- Long bar button with background image -->
-          <div class="stageBar" 
+          <button class="stageBar" 
                style="background-image: url({getStageBackgroundImage(stage.id)}); --scrollEnd: -1536px; --listIndex: {index};"
-               on:click={() => enterStage(stage.id)}
-               on:keydown={(e) => e.key === 'Enter' && enterStage(stage.id)}
-               role="button"
-               tabindex="0">
+               on:click={() => enterStage(stage.id)}>
             
             <div class="characterAvatar">
               <div class="characterPortrait" style="background-image: url({imageAssets[characterPortraitImageKey($playerStore.selectedCharacter)]});"></div>
@@ -172,7 +169,7 @@
                 </p>
               </div>
             </div>
-          </div>
+          </button>
         </div>
       {/each}
     </div>
@@ -209,6 +206,7 @@
   }
 
   .stageBar {
+    all: unset;
     position: relative;
     height: 20rem;
     background-position: center;
