@@ -186,7 +186,7 @@
 
   .stageList {
     flex: 1;
-    padding: 1rem;
+    padding: 1rem 2rem 1rem 1rem;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
@@ -196,7 +196,6 @@
   .stageItem {
     position: relative;
     border-radius: 1rem;
-    overflow: hidden;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
   }
 
