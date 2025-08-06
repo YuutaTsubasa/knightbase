@@ -77,7 +77,7 @@ export class UniversalNavigationManager {
             const popupElements = document.querySelectorAll('.popupBackdrop button, .popupBackdrop input, .popupBackdrop select, .popupBackdrop textarea, .popupBackdrop a[href]') as NodeListOf<HTMLElement>;
             
             popupElements.forEach(element => {
-                if (this.isElementVisible(element) && !element.disabled) {
+                if (this.isElementVisible(element) && !(element as HTMLInputElement | HTMLButtonElement | HTMLSelectElement | HTMLTextAreaElement).disabled) {
                     this.focusableElements.push(element);
                 }
             });
@@ -89,7 +89,7 @@ export class UniversalNavigationManager {
                 // Skip elements that are inside popups
                 if (!element.closest('.popupBackdrop') && 
                     this.isElementVisible(element) && 
-                    !element.disabled) {
+                    !(element as HTMLInputElement | HTMLButtonElement | HTMLSelectElement | HTMLTextAreaElement).disabled) {
                     this.focusableElements.push(element);
                 }
             });
@@ -166,13 +166,15 @@ export class UniversalNavigationManager {
             case 'ArrowLeft':
             case 'ArrowRight':
                 // For sliders, adjust value
-                if (this.isNavigating && this.currentIndex >= 0) {
-                    const currentElement = this.focusableElements[this.currentIndex];
-                    if (currentElement && currentElement.type === 'range') {
-                        e.preventDefault();
-                        this.adjustSlider(currentElement as HTMLInputElement, e.code === 'ArrowRight' ? 1 : -1);
-                        handled = true;
-                    }
+                if (this.isSliderFocused()) {
+                    e.preventDefault();
+                    this.adjustSlider(this.focusableElements[this.currentIndex] as HTMLInputElement, e.code === 'ArrowRight' ? 1 : -1);
+                    handled = true;
+                } else {
+                    // Allow horizontal navigation to start navigation mode
+                    e.preventDefault();
+                    this.navigateHorizontal(e.code === 'ArrowRight' ? 1 : -1);
+                    handled = true;
                 }
                 break;
             
@@ -244,12 +246,13 @@ export class UniversalNavigationManager {
             handled = true;
         } else if (leftPressed || rightPressed) {
             // For sliders, adjust value
-            if (this.isNavigating && this.currentIndex >= 0) {
-                const currentElement = this.focusableElements[this.currentIndex];
-                if (currentElement && currentElement.type === 'range') {
-                    this.adjustSlider(currentElement as HTMLInputElement, rightPressed ? 1 : -1);
-                    handled = true;
-                }
+            if (this.isSliderFocused()) {
+                this.adjustSlider(this.focusableElements[this.currentIndex] as HTMLInputElement, rightPressed ? 1 : -1);
+                handled = true;
+            } else {
+                // Allow horizontal navigation
+                this.navigateHorizontal(rightPressed ? 1 : -1);
+                handled = true;
             }
         } else if (aPressed) {
             if (this.isNavigating && this.currentIndex >= 0) {
@@ -279,6 +282,38 @@ export class UniversalNavigationManager {
         this.focusCurrentElement();
     }
 
+    private navigateHorizontal(direction: number): void {
+        if (this.focusableElements.length === 0) return;
+
+        if (!this.isNavigating) {
+            this.currentIndex = 0;
+        } else {
+            // Find elements in the same row (similar top position)
+            const currentElement = this.focusableElements[this.currentIndex];
+            const currentRect = currentElement.getBoundingClientRect();
+            
+            const sameRowElements = this.focusableElements
+                .map((el, index) => ({ element: el, index }))
+                .filter(({ element }) => {
+                    const rect = element.getBoundingClientRect();
+                    return Math.abs(rect.top - currentRect.top) <= 10; // Same row threshold
+                });
+
+            if (sameRowElements.length > 1) {
+                const currentRowIndex = sameRowElements.findIndex(({ index }) => index === this.currentIndex);
+                if (currentRowIndex !== -1) {
+                    const newRowIndex = Math.max(0, Math.min(
+                        sameRowElements.length - 1,
+                        currentRowIndex + direction
+                    ));
+                    this.currentIndex = sameRowElements[newRowIndex].index;
+                }
+            }
+        }
+
+        this.focusCurrentElement();
+    }
+
     private adjustSlider(slider: HTMLInputElement, direction: number): void {
         const currentValue = parseInt(slider.value);
         const min = parseInt(slider.min) || 0;
@@ -296,12 +331,13 @@ export class UniversalNavigationManager {
         if (this.currentIndex < 0 || this.currentIndex >= this.focusableElements.length) return;
 
         const element = this.focusableElements[this.currentIndex];
+        const inputElement = element as HTMLInputElement;
         
-        if (element.tagName === 'BUTTON' || element.type === 'submit' || element.type === 'button') {
+        if (element.tagName === 'BUTTON' || inputElement.type === 'submit' || inputElement.type === 'button') {
             element.click();
         } else if (element.tagName === 'A') {
             element.click();
-        } else if (element.type === 'checkbox' || element.type === 'radio') {
+        } else if (inputElement.type === 'checkbox' || inputElement.type === 'radio') {
             element.click();
         } else {
             element.focus();
@@ -351,6 +387,13 @@ export class UniversalNavigationManager {
         this.stopNavigation();
         this.focusableElements = [];
         this.currentIndex = -1;
+    }
+
+    private isSliderFocused(): boolean {
+        return this.isNavigating && 
+               this.currentIndex >= 0 && 
+               this.currentIndex < this.focusableElements.length &&
+               (this.focusableElements[this.currentIndex] as HTMLInputElement).type === 'range';
     }
 
     public destroy(): void {
