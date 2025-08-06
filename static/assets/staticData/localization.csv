@@ -176,3 +176,6 @@ confirmStartLevel,"確認開始關卡","Confirm Start Level","レベル開始確
 aboutToStartLevel,"即將開始關卡","About to start level","レベルを開始します"
 startLevel,"開始關卡","Start Level","レベル開始"
 notPlayed,"未遊玩","Not Played","未プレイ"
+levelCompleted,"關卡完成","Level Completed","レベルクリア"
+completionTime,"完成時間","Completion Time","クリア時間"
+congratulations,"恭喜過關！","Congratulations!","おめでとうございます！"

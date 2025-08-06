@@ -118,7 +118,14 @@
     
     // Update stage record if this is better than previous
     const currentSpeed = getDisplayScrollSpeed();
-    const isNewRecord = PlayerDataManager.updateStageRecord(selectedStage, {
+    let recordKey = selectedStage; // For endless mode
+    
+    // For level mode, use the specific level ID
+    if (gameMode === 'level' && levelId) {
+      recordKey = levelId;
+    }
+    
+    const isNewRecord = PlayerDataManager.updateStageRecord(recordKey, {
       time: gameStats.survivalTime,
       score: gameStats.score,
       speed: currentSpeed
@@ -310,7 +317,9 @@
         // Level completed, save progress and show completion
         saveToPlayerStore();
         levelGenerator.markGoalReached();
-        // Could trigger completion popup here
+        
+        // Show level completion popup
+        handleLevelComplete();
       }
     } else {
       newEntities = { enemies: [], coins: [], traps: [] };
@@ -481,6 +490,48 @@
           text: $t("playAgain"),
           onClick: () => {
             initGame(); // Restart the game
+            return PopupResult.Close;
+          }
+        },
+        {
+          text: $t("backToMenu"),
+          onClick: () => {
+            onExit();
+            return PopupResult.Close;
+          }
+        }
+      ]
+    });
+  }
+
+  async function handleLevelComplete() {
+    gameState = 'gameOver'; // Pause the game
+    
+    const result = await PopupStore.open({
+      title: $t("levelCompleted"),
+      content: `<div style="background: rgba(0,0,0,0.8); color: white; padding: 20px; border-radius: 10px; text-align: left; line-height: 1.2; font-size: 1rem;">
+        <div style="margin: 3px 0; display: flex; align-items: center; gap: 8px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
+          <strong>${$t("completionTime")}:</strong> ${formatTime(gameStats.survivalTime)}
+        </div>
+        <div style="margin: 3px 0; display: flex; align-items: center; gap: 8px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 18V6"/></svg>
+          <strong>${$t("coinsCollectedLabel")}:</strong> ${gameStats.coins}
+        </div>
+        <div style="margin: 3px 0; display: flex; align-items: center; gap: 8px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="2"/></svg>
+          <strong>${$t("finalScoreLabel")}:</strong> ${gameStats.score}
+        </div>
+
+        <div style="margin-top: 10px; font-weight: bold; color: #34d399; text-align: center;">
+          ${$t("congratulations")}
+        </div>
+      </div>`,
+      buttons: [
+        {
+          text: $t("playAgain"),
+          onClick: () => {
+            initGame(); // Restart the level
             return PopupResult.Close;
           }
         },
