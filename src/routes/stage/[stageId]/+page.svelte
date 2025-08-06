@@ -12,11 +12,11 @@
 
   let goToNextScene: Writable<string | null>;
   
-  $: stageId = $page.params.stageId;
+  $: stageId = $page.params.stageId as string;
   $: stageData = StaticDataStore.getStageById(stageId);
   
   // Level definitions for each stage
-  const stageLevels = {
+  const stageLevels: Record<string, any[]> = {
     'stage1': [
       { id: 'stage1_1', nameKey: 'level1Name', difficultyStars: 1 },
       { id: 'stage1_2', nameKey: 'level2Name', difficultyStars: 2 },
@@ -27,7 +27,7 @@
     ]
   };
 
-  $: levels = stageLevels[stageId] || [];
+  $: levels = stageLevels[stageId || ''] || [];
 
   function formatTime(seconds: number): string {
     const minutes = Math.floor(seconds / 60);

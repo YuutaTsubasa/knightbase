@@ -24,7 +24,7 @@
   let runnerGame: RunnerMainGame;
 
   // Parse URL parameters for game mode
-  $: gameMode = $page.url.searchParams.get('mode') || 'endless';
+  $: gameMode = ($page.url.searchParams.get('mode') || 'endless') as 'endless' | 'level';
   $: levelId = $page.url.searchParams.get('levelId') || '';
   
   $: selectedCharacter = $playerStore.selectedCharacter;
