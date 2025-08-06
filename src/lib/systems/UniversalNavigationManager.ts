@@ -281,17 +281,22 @@ export class UniversalNavigationManager {
                     return Math.abs(rect.left - currentRect.left) <= 10; // Same column threshold
                 });
 
+            let moved = false;
+            
             if (sameColumnElements.length > 1) {
                 const currentColumnIndex = sameColumnElements.findIndex(({ index }) => index === this.currentIndex);
                 if (currentColumnIndex !== -1) {
-                    const newColumnIndex = Math.max(0, Math.min(
-                        sameColumnElements.length - 1,
-                        currentColumnIndex + direction
-                    ));
-                    this.currentIndex = sameColumnElements[newColumnIndex].index;
+                    const newColumnIndex = currentColumnIndex + direction;
+                    // Check if we can move within the same column
+                    if (newColumnIndex >= 0 && newColumnIndex < sameColumnElements.length) {
+                        this.currentIndex = sameColumnElements[newColumnIndex].index;
+                        moved = true;
+                    }
                 }
-            } else {
-                // No same-column elements, fallback to simple navigation
+            }
+            
+            // If we couldn't move within same column or no same-column elements, use simple navigation
+            if (!moved) {
                 this.currentIndex = Math.max(0, Math.min(
                     this.focusableElements.length - 1,
                     this.currentIndex + direction
@@ -319,17 +324,22 @@ export class UniversalNavigationManager {
                     return Math.abs(rect.top - currentRect.top) <= 10; // Same row threshold
                 });
 
+            let moved = false;
+            
             if (sameRowElements.length > 1) {
                 const currentRowIndex = sameRowElements.findIndex(({ index }) => index === this.currentIndex);
                 if (currentRowIndex !== -1) {
-                    const newRowIndex = Math.max(0, Math.min(
-                        sameRowElements.length - 1,
-                        currentRowIndex + direction
-                    ));
-                    this.currentIndex = sameRowElements[newRowIndex].index;
+                    const newRowIndex = currentRowIndex + direction;
+                    // Check if we can move within the same row
+                    if (newRowIndex >= 0 && newRowIndex < sameRowElements.length) {
+                        this.currentIndex = sameRowElements[newRowIndex].index;
+                        moved = true;
+                    }
                 }
-            } else {
-                // No same-row elements, fallback to simple vertical navigation
+            }
+            
+            // If we couldn't move within same row or no same-row elements, use simple navigation
+            if (!moved) {
                 this.currentIndex = Math.max(0, Math.min(
                     this.focusableElements.length - 1,
                     this.currentIndex + direction
