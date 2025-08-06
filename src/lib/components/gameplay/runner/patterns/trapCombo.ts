@@ -5,7 +5,7 @@ export class TrapComboPattern extends Pattern {
   private spacing: number;
 
   constructor(trapCount: number = 3, spacing: number = 150) {
-    super('trap-combo');
+    super('trapCombo');
     this.trapCount = trapCount;
     this.spacing = spacing;
   }

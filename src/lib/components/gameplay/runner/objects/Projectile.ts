@@ -1,5 +1,6 @@
 import { SpriteAnimationObject } from './SpriteAnimationObject';
 import type { Position, Size } from '../types/GameTypes';
+import { characterAttackEffectImageKey } from '$lib/utils/KeyHelper';
 
 export class Projectile extends SpriteAnimationObject {
   public velocityX: number = 8;
@@ -9,7 +10,7 @@ export class Projectile extends SpriteAnimationObject {
     super(
       position,
       size,
-      `character_attack_effect_${characterKey}`,
+      characterAttackEffectImageKey(characterKey),
       1, // Single frame for projectile
       0   // No animation
     );

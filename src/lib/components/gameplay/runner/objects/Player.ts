@@ -2,6 +2,7 @@ import { SpriteAnimationObject } from './SpriteAnimationObject';
 import { Projectile } from './Projectile';
 import type { Position, Size, CollisionBox, AnimationType } from '../types/GameTypes';
 import { AudioManager } from '$lib/systems/AudioManager';
+import { characterAttackAudioKey, characterAttackImageKey, characterJumpImageKey, characterRunImageKey, characterWalkAudioKey } from '$lib/utils/KeyHelper';
 
 export class Player extends SpriteAnimationObject {
   public velocityY: number = 0;
@@ -26,7 +27,7 @@ export class Player extends SpriteAnimationObject {
     super(
       position, 
       size, 
-      `character_run_${characterKey}`, 
+      characterRunImageKey(characterKey), 
       6, // totalFrames
       100, // animationSpeed
       collisionBox
@@ -63,15 +64,15 @@ export class Player extends SpriteAnimationObject {
     let newSpriteKey = '';
     switch (this.animation) {
       case 'run':
-        newSpriteKey = `character_run_${this.characterKey}`;
+        newSpriteKey = characterRunImageKey(this.characterKey);
         this.animationSpeed = 100;
         break;
       case 'jump':
-        newSpriteKey = `character_jump_${this.characterKey}`;
+        newSpriteKey = characterJumpImageKey(this.characterKey);
         this.animationSpeed = 100;
         break;
       case 'attack':
-        newSpriteKey = `character_attack_${this.characterKey}`;
+        newSpriteKey = characterAttackImageKey(this.characterKey);
         this.animationSpeed = 150; // Slower for attack animation
         break;
     }
@@ -85,10 +86,10 @@ export class Player extends SpriteAnimationObject {
     // Play walk audio on specific frames for run and attack animations
     if ((this.animation === 'run' || this.animation === 'attack') && 
         (this.animationFrame === 0 || this.animationFrame === 3)) {
-      AudioManager.play(`character_walk_${this.characterKey}`);
+      AudioManager.play(characterWalkAudioKey(this.characterKey));
     } else if (this.animation === 'jump' && 
                (this.animationFrame === 0 || this.animationFrame === 5)) {
-      AudioManager.play(`character_walk_${this.characterKey}`);
+      AudioManager.play(characterWalkAudioKey(this.characterKey));
     }
 
     // Return to previous animation when attack completes
@@ -110,8 +111,8 @@ export class Player extends SpriteAnimationObject {
       this.setAnimation('attack');
       
       // Play attack audio
-      AudioManager.play(`character_attack_${this.characterKey}`);
-      
+      AudioManager.play(characterAttackAudioKey(this.characterKey));
+
       // Create projectile
       return new Projectile(
         { x: this.x + this.width / 2, y: this.y },

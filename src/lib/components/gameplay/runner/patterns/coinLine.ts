@@ -6,7 +6,7 @@ export class CoinLinePattern extends Pattern {
   private height: number;
 
   constructor(coinCount: number = 5, spacing: number = 80, height: number = 200) {
-    super('coin-line');
+    super('coinLine');
     this.coinCount = coinCount;
     this.spacing = spacing;
     this.height = height;

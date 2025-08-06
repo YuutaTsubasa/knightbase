@@ -1,3 +1,4 @@
+import { stageBackgroundImageKey } from '$lib/utils/KeyHelper';
 import { Layer } from './Layer';
 
 export class BackgroundLayer extends Layer {
@@ -29,7 +30,7 @@ export class BackgroundLayer extends Layer {
   }
 
   private renderBackground(ctx: CanvasRenderingContext2D, images: Record<string, HTMLImageElement>): void {
-    const backgroundImage = images[`stage_background_${this.stageKey}`];
+    const backgroundImage = images[stageBackgroundImageKey(this.stageKey)];
     
     if (backgroundImage) {
       const bgWidth = ctx.canvas.width;

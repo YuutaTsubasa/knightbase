@@ -96,12 +96,17 @@
       autoClose: () => assetsLoaded
     });
 
+    const backgroundImageKey = stageBackgroundImageKey(selectedStage);
+    const runImageKey = characterRunImageKey(selectedCharacter);
+    const jumpImageKey = characterJumpImageKey(selectedCharacter);
+    const attackImageKey = characterAttackImageKey(selectedCharacter);
+    const attackEffectImageKey = characterAttackEffectImageKey(selectedCharacter);
     const imagePromises = Object.entries({
-      [`stage_background_${selectedStage}`]: imageAssets[stageBackgroundImageKey(selectedStage)],
-      [`character_run_${selectedCharacter}`]: imageAssets[characterRunImageKey(selectedCharacter)],
-      [`character_jump_${selectedCharacter}`]: imageAssets[characterJumpImageKey(selectedCharacter)],
-      [`character_attack_${selectedCharacter}`]: imageAssets[characterAttackImageKey(selectedCharacter)],
-      [`character_attack_effect_${selectedCharacter}`]: imageAssets[characterAttackEffectImageKey(selectedCharacter)],
+      [backgroundImageKey]: imageAssets[backgroundImageKey],
+      [runImageKey]: imageAssets[runImageKey],
+      [jumpImageKey]: imageAssets[jumpImageKey],
+      [attackImageKey]: imageAssets[attackImageKey],
+      [attackEffectImageKey]: imageAssets[attackEffectImageKey],
       enemy: imageAssets.enemy,
       coin: imageAssets.coin,
       trap: imageAssets.trap,
@@ -208,6 +213,12 @@
     if (gameState !== 'playing' || !assetsLoaded) return;
 
     const currentScrollSpeed = getCurrentScrollSpeed();
+    if (!isStop) {
+      backgroundLayer.update(deltaTime, currentScrollSpeed);
+      characterLayer.update(deltaTime, currentScrollSpeed);
+      trapEnemyLayer.update(deltaTime, currentScrollSpeed);
+      effectLayer.update(deltaTime, currentScrollSpeed);
+    }
 
     if (waitForCountdown) return;
 
@@ -229,16 +240,6 @@
         }
       }
       
-      // During countdown, update animations based on isStop flag
-      // This allows player and background to move during game start countdown
-      // but stop during resume countdown
-      if (!isStop) {
-        backgroundLayer.update(deltaTime, currentScrollSpeed);
-        characterLayer.update(deltaTime, currentScrollSpeed);
-        trapEnemyLayer.update(deltaTime, currentScrollSpeed);
-        effectLayer.update(deltaTime, currentScrollSpeed);
-      }
-      
       return;
     }
 
@@ -251,19 +252,11 @@
     }
 
     // Update layers
-    if (!isStop) {
-      backgroundLayer.update(deltaTime, currentScrollSpeed);
-      characterLayer.update(deltaTime, currentScrollSpeed);
-      trapEnemyLayer.update(deltaTime, currentScrollSpeed);
-      effectLayer.update(deltaTime, currentScrollSpeed);
-
-      // Generate new entities
-      const newEntities = endlessGenerator.update(deltaTime);
-      newEntities.enemies.forEach(enemy => trapEnemyLayer.addEnemy(enemy));
-      newEntities.coins.forEach(coin => trapEnemyLayer.addCoin(coin));
-      newEntities.traps.forEach(trap => trapEnemyLayer.addTrap(trap));
-    }
-
+    const newEntities = endlessGenerator.update(deltaTime);
+    newEntities.enemies.forEach(enemy => trapEnemyLayer.addEnemy(enemy));
+    newEntities.coins.forEach(coin => trapEnemyLayer.addCoin(coin));
+    newEntities.traps.forEach(trap => trapEnemyLayer.addTrap(trap));
+    
     // Handle collisions
     handleCollisions();
 
