@@ -77,7 +77,7 @@ export class UniversalNavigationManager {
             const popupElements = document.querySelectorAll('.popupBackdrop button, .popupBackdrop input, .popupBackdrop select, .popupBackdrop textarea, .popupBackdrop a[href]') as NodeListOf<HTMLElement>;
             
             popupElements.forEach(element => {
-                if (this.isElementVisible(element) && !element.disabled) {
+                if (this.isElementVisible(element) && !(element as HTMLInputElement | HTMLButtonElement | HTMLSelectElement | HTMLTextAreaElement).disabled) {
                     this.focusableElements.push(element);
                 }
             });
@@ -89,7 +89,7 @@ export class UniversalNavigationManager {
                 // Skip elements that are inside popups
                 if (!element.closest('.popupBackdrop') && 
                     this.isElementVisible(element) && 
-                    !element.disabled) {
+                    !(element as HTMLInputElement | HTMLButtonElement | HTMLSelectElement | HTMLTextAreaElement).disabled) {
                     this.focusableElements.push(element);
                 }
             });
@@ -165,15 +165,15 @@ export class UniversalNavigationManager {
             
             case 'ArrowLeft':
             case 'ArrowRight':
+                e.preventDefault();
                 // For sliders, adjust value
-                if (this.isNavigating && this.currentIndex >= 0) {
-                    const currentElement = this.focusableElements[this.currentIndex];
-                    if (currentElement && currentElement.type === 'range') {
-                        e.preventDefault();
-                        this.adjustSlider(currentElement as HTMLInputElement, e.code === 'ArrowRight' ? 1 : -1);
-                        handled = true;
-                    }
+                if (this.isSliderFocused()) {
+                    this.adjustSlider(this.focusableElements[this.currentIndex] as HTMLInputElement, e.code === 'ArrowRight' ? 1 : -1);
+                } else {
+                    // Allow horizontal navigation to start navigation mode
+                    this.navigateHorizontal(e.code === 'ArrowRight' ? 1 : -1);
                 }
+                handled = true;
                 break;
             
             case 'Enter':
@@ -244,13 +244,13 @@ export class UniversalNavigationManager {
             handled = true;
         } else if (leftPressed || rightPressed) {
             // For sliders, adjust value
-            if (this.isNavigating && this.currentIndex >= 0) {
-                const currentElement = this.focusableElements[this.currentIndex];
-                if (currentElement && currentElement.type === 'range') {
-                    this.adjustSlider(currentElement as HTMLInputElement, rightPressed ? 1 : -1);
-                    handled = true;
-                }
+            if (this.isSliderFocused()) {
+                this.adjustSlider(this.focusableElements[this.currentIndex] as HTMLInputElement, rightPressed ? 1 : -1);
+            } else {
+                // Allow horizontal navigation
+                this.navigateHorizontal(rightPressed ? 1 : -1);
             }
+            handled = true;
         } else if (aPressed) {
             if (this.isNavigating && this.currentIndex >= 0) {
                 this.activateCurrentElement();
@@ -270,10 +270,81 @@ export class UniversalNavigationManager {
         if (!this.isNavigating) {
             this.currentIndex = 0;
         } else {
-            this.currentIndex = Math.max(0, Math.min(
-                this.focusableElements.length - 1,
-                this.currentIndex + direction
-            ));
+            // Find elements in the same column (similar left position)
+            const currentElement = this.focusableElements[this.currentIndex];
+            const currentRect = currentElement.getBoundingClientRect();
+            
+            const sameColumnElements = this.focusableElements
+                .map((el, index) => ({ element: el, index }))
+                .filter(({ element }) => {
+                    const rect = element.getBoundingClientRect();
+                    return Math.abs(rect.left - currentRect.left) <= 10; // Same column threshold
+                });
+
+            let moved = false;
+            
+            if (sameColumnElements.length > 1) {
+                const currentColumnIndex = sameColumnElements.findIndex(({ index }) => index === this.currentIndex);
+                if (currentColumnIndex !== -1) {
+                    const newColumnIndex = currentColumnIndex + direction;
+                    // Check if we can move within the same column
+                    if (newColumnIndex >= 0 && newColumnIndex < sameColumnElements.length) {
+                        this.currentIndex = sameColumnElements[newColumnIndex].index;
+                        moved = true;
+                    }
+                }
+            }
+            
+            // If we couldn't move within same column or no same-column elements, use simple navigation
+            if (!moved) {
+                this.currentIndex = Math.max(0, Math.min(
+                    this.focusableElements.length - 1,
+                    this.currentIndex + direction
+                ));
+            }
+        }
+
+        this.focusCurrentElement();
+    }
+
+    private navigateHorizontal(direction: number): void {
+        if (this.focusableElements.length === 0) return;
+
+        if (!this.isNavigating) {
+            this.currentIndex = 0;
+        } else {
+            // Find elements in the same row (similar top position)
+            const currentElement = this.focusableElements[this.currentIndex];
+            const currentRect = currentElement.getBoundingClientRect();
+            
+            const sameRowElements = this.focusableElements
+                .map((el, index) => ({ element: el, index }))
+                .filter(({ element }) => {
+                    const rect = element.getBoundingClientRect();
+                    return Math.abs(rect.top - currentRect.top) <= 10; // Same row threshold
+                });
+
+            let moved = false;
+            
+            if (sameRowElements.length > 1) {
+                const currentRowIndex = sameRowElements.findIndex(({ index }) => index === this.currentIndex);
+                if (currentRowIndex !== -1) {
+                    const newRowIndex = currentRowIndex + direction;
+                    // Check if we can move within the same row
+                    if (newRowIndex >= 0 && newRowIndex < sameRowElements.length) {
+                        this.currentIndex = sameRowElements[newRowIndex].index;
+                        moved = true;
+                    }
+                }
+            }
+            
+            // If we couldn't move within same row or no same-row elements, use simple navigation
+            if (!moved) {
+                this.currentIndex = Math.max(0, Math.min(
+                    this.focusableElements.length - 1,
+                    this.currentIndex + direction
+                ));
+            }
         }
 
         this.focusCurrentElement();
@@ -296,12 +367,13 @@ export class UniversalNavigationManager {
         if (this.currentIndex < 0 || this.currentIndex >= this.focusableElements.length) return;
 
         const element = this.focusableElements[this.currentIndex];
+        const inputElement = element as HTMLInputElement;
         
-        if (element.tagName === 'BUTTON' || element.type === 'submit' || element.type === 'button') {
+        if (element.tagName === 'BUTTON' || inputElement.type === 'submit' || inputElement.type === 'button') {
             element.click();
         } else if (element.tagName === 'A') {
             element.click();
-        } else if (element.type === 'checkbox' || element.type === 'radio') {
+        } else if (inputElement.type === 'checkbox' || inputElement.type === 'radio') {
             element.click();
         } else {
             element.focus();
@@ -351,6 +423,13 @@ export class UniversalNavigationManager {
         this.stopNavigation();
         this.focusableElements = [];
         this.currentIndex = -1;
+    }
+
+    private isSliderFocused(): boolean {
+        return this.isNavigating && 
+               this.currentIndex >= 0 && 
+               this.currentIndex < this.focusableElements.length &&
+               (this.focusableElements[this.currentIndex] as HTMLInputElement).type === 'range';
     }
 
     public destroy(): void {
