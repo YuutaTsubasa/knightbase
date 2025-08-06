@@ -44,11 +44,14 @@ export class UniversalNavigationManager {
         this.isGameplayPage = isGameplay;
     }
 
-    public refreshFocusableElements(isInitial: boolean = true): void {
-         // Check if popup is open by looking at the DOM
+    private hasActivePopup(): boolean {
+        // Check if there are any popups or a backdrop indicating an open popup
         const popupBackdrop = document.querySelector('.popupBackdrop');
-        const hasActivePopup = this.popups.length > 0 || popupBackdrop !== null;
+        return this.popups.length > 0 || popupBackdrop !== null;
+    }
 
+    public refreshFocusableElements(isInitial: boolean = true): void {
+        const hasActivePopup = this.hasActivePopup();
         if (!hasActivePopup && this.isGameplayPage) return;
 
         this.focusableElements = [];
@@ -200,13 +203,7 @@ export class UniversalNavigationManager {
         if (!browser) return;
 
         const pollGamepad = () => {
-            if (this.isGameplayPage) {
-                this.animationFrameId = requestAnimationFrame(pollGamepad);
-                return;
-            }
-
             const gamepads = navigator.getGamepads();
-            
             for (let i = 0; i < gamepads.length; i++) {
                 const gamepad = gamepads[i];
                 if (gamepad && gamepad.connected) {

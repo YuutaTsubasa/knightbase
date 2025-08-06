@@ -23,6 +23,7 @@
   import { EndlessGenerator } from "./endless/endlessGenerator";
   
   import type { GameState, GameStats } from "./types/GameTypes";
+    import { UniversalNavigationManager } from "$lib/systems/UniversalNavigationManager";
 
   // Props
   export let selectedCharacter: string;
@@ -82,7 +83,6 @@
 
   // Input handling
   let keysPressed: Record<string, boolean> = {};
-  let gamepadIndex: number | null = null;
 
   $: stageData = StaticDataStore.getStageById(selectedStage);
   $: stageGroundOffsetY = $stageData?.groundOffsetY ?? 0;
@@ -427,23 +427,9 @@
     keysPressed[event.code] = false;
   }
   
-  function setupGamepadSupport() {
-    window.addEventListener('gamepadconnected', (e) => {
-      gamepadIndex = e.gamepad.index;
-    });
-    
-    window.addEventListener('gamepaddisconnected', (e) => {
-      if (gamepadIndex === e.gamepad.index) {
-        gamepadIndex = null;
-      }
-    });
-  }
-  
   function handleGamepadInput() {
-    if (gamepadIndex === null) return;
-    
     const gamepads = navigator.getGamepads();
-    const gamepad = gamepads[gamepadIndex];
+    const gamepad = gamepads.filter(gamepad => gamepad && gamepad.connected)[0];
     if (!gamepad) return;
     
     if (gamepad.buttons[0]?.pressed) jump();
@@ -489,7 +475,6 @@
       
       window.addEventListener('keydown', handleKeyDown);
       window.addEventListener('keyup', handleKeyUp);
-      setupGamepadSupport();
       
       initGame();
       gameLoop();
