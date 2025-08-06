@@ -114,8 +114,8 @@
           onClick: () => {
             // Save selected stage to PlayerStore
             playerStore.update(data => ({ ...data, selectedStage: stageId }));
-            // Navigate to gameplay
-            goToNextScene.set("/gameplay");
+            // Navigate to stage detail page to choose levels
+            goToNextScene.set(`/stage/${stageId}`);
             return PopupResult.Close;
           }
         }

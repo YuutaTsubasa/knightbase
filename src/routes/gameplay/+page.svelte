@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { page } from '$app/stores';
   import { imageAssets } from "$lib/assets/ImageAssets";
   import { t } from "$lib/systems/LocalizationStore";
   import Page from "$lib/components/Page.svelte";
@@ -22,6 +23,10 @@
   let goToNextScene: Writable<string | null>;
   let runnerGame: RunnerMainGame;
 
+  // Parse URL parameters for game mode
+  $: gameMode = $page.url.searchParams.get('mode') || 'endless';
+  $: levelId = $page.url.searchParams.get('levelId') || '';
+  
   $: selectedCharacter = $playerStore.selectedCharacter;
   $: selectedStage = $playerStore.selectedStage;
   $: stageData = StaticDataStore.getStageById(selectedStage);
@@ -177,7 +182,12 @@
   }
 
   function goToStage() {
-    goToNextScene.set("/stage");
+    // If we came from a level, go back to the stage detail page
+    if (gameMode === 'level' && selectedStage) {
+      goToNextScene.set(`/stage/${selectedStage}`);
+    } else {
+      goToNextScene.set("/stage");
+    }
   }
 
   function saveToPlayerStore() {
@@ -278,7 +288,8 @@
       onPause={handlePause}
       onSave={saveToPlayerStore}
       onExit={goToStage}
-      gameMode="endless"
+      gameMode={gameMode}
+      {levelId}
     />
 
     <!-- Hidden Touch Controls (without text overlay) -->
