@@ -13,6 +13,7 @@
   import { stageBackgroundImageKey } from "$lib/utils/KeyHelper";
   import { AudioManager } from "$lib/systems/AudioManager";
   import { StaticDataStore } from "$lib/systems/StaticDataStore";
+  import { PlayerDataManager } from "$lib/systems/PlayerStore";
   
   // Import the new modular runner game
   import RunnerMainGame from "$lib/components/gameplay/runner/RunnerMainGame.svelte";
@@ -49,8 +50,16 @@
     return 8 + Math.floor(gameStats.survivalTime / 10) * 0.05;
   }
 
+  function getDisplayScrollSpeed(): number {
+    // Display speed starts at 1.0x but actual speed is still 8.0x
+    return 1 + Math.floor(gameStats.survivalTime / 10) * 0.05;
+  }
+
   async function handleGameOver(stats: GameStats) {
     gameStats = stats;
+    
+    // Save progress to player store
+    saveToPlayerStore();
     
     const result = await PopupStore.open({
       title: $t("gameOver"),
@@ -69,7 +78,7 @@
         </div>
         <div style="margin: 3px 0; display: flex; align-items: center; gap: 8px;">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13,2 3,14 12,14 11,22 21,10 12,10"/></svg>
-          <strong>${$t("finalSpeedLabel")}:</strong> ${getCurrentScrollSpeed().toFixed(1)}x
+          <strong>${$t("finalSpeedLabel")}:</strong> ${getDisplayScrollSpeed().toFixed(1)}x
         </div>
 
         <div style="margin-top: 5px; font-style: italic; color: #fbbf24;">
@@ -120,7 +129,7 @@
         </div>
         <div style="margin: 3px 0; display: flex; align-items: center; gap: 8px;">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13,2 3,14 12,14 11,22 21,10 12,10"/></svg>
-          <strong>${$t("currentSpeedLabel")}:</strong> ${getCurrentScrollSpeed().toFixed(1)}x
+          <strong>${$t("currentSpeedLabel")}:</strong> ${getDisplayScrollSpeed().toFixed(1)}x
         </div>
         
         <div style="margin-top: 5px; font-style: italic; color: #fbbf24;">
@@ -156,11 +165,39 @@
   }
 
   function jump() {
-    // Touch control - handled by RunnerMainGame
+    if (runnerGame) {
+      runnerGame.triggerJump();
+    }
   }
 
   function attack() {
-    // Touch control - handled by RunnerMainGame  
+    if (runnerGame) {
+      runnerGame.triggerAttack();
+    }
+  }
+
+  function goToStage() {
+    goToNextScene.set("/stage");
+  }
+
+  function saveToPlayerStore() {
+    // Add collected coins as gold to player resources
+    PlayerDataManager.addResources({ gold: gameStats.coins });
+    
+    // Update stage record if this is better than previous
+    const currentSpeed = getDisplayScrollSpeed();
+    const isNewRecord = PlayerDataManager.updateStageRecord(selectedStage, {
+      time: gameStats.survivalTime,
+      score: gameStats.score,
+      speed: currentSpeed
+    });
+    
+    // Update the store to trigger reactivity
+    playerStore.set(PlayerDataManager.getData());
+    
+    if (isNewRecord) {
+      console.log('New record set!');
+    }
   }
 
   // Periodic stats update
@@ -239,6 +276,8 @@
       {selectedStage}
       onGameOver={handleGameOver}
       onPause={handlePause}
+      onSave={saveToPlayerStore}
+      onExit={goToStage}
       gameMode="endless"
     />
 

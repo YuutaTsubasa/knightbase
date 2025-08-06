@@ -21,16 +21,20 @@
   
   // Generator import
   import { EndlessGenerator } from "./endless/endlessGenerator";
-  
+  import { LevelGenerator } from "./levels/LevelGenerator";
+
   import type { GameState, GameStats } from "./types/GameTypes";
-    import { UniversalNavigationManager } from "$lib/systems/UniversalNavigationManager";
+  import { UniversalNavigationManager } from "$lib/systems/UniversalNavigationManager";
 
   // Props
   export let selectedCharacter: string;
   export let selectedStage: string;
   export let onGameOver: (stats: GameStats) => void;
   export let onPause: (stats: GameStats) => void;
+  export let onSave: (stats: GameStats) => void = () => {}; // New callback for saving progress
+  export let onExit: () => void = () => {}; // New callback for exiting
   export let gameMode: 'endless' | 'level' = 'endless';
+  export let levelId: string = ''; // For level mode
 
   // Canvas and rendering
   let canvas: HTMLCanvasElement;
@@ -46,6 +50,7 @@
   // Game entities  
   let player: Player;
   let endlessGenerator: EndlessGenerator;
+  let levelGenerator: LevelGenerator;
 
   // Game state
   let gameState: GameState = 'playing';
@@ -182,8 +187,12 @@
     );
     characterLayer.setPlayer(player);
 
-    // Initialize endless generator
-    endlessGenerator = new EndlessGenerator();
+    // Initialize generator based on game mode
+    if (gameMode === 'endless') {
+      endlessGenerator = new EndlessGenerator();
+    } else {
+      levelGenerator = new LevelGenerator(levelId || 'stage1_1', GAME_SETTINGS.GROUND_Y + stageGroundOffsetY);
+    }
 
     // Start countdown
     waitForCountdown = true;
@@ -251,8 +260,30 @@
       lastSurvivalSecond = currentSecond;
     }
 
-    // Update layers
-    const newEntities = endlessGenerator.update(deltaTime);
+    // Update layers and generate new entities based on game mode
+    let newEntities: { enemies: any[], coins: any[], traps: any[] };
+    
+    if (gameMode === 'endless' && endlessGenerator) {
+      newEntities = endlessGenerator.update(deltaTime);
+    } else if (gameMode === 'level' && levelGenerator) {
+      newEntities = levelGenerator.update(deltaTime);
+      
+      // Check if level is completed
+      if (levelGenerator.isLevelCompleted() && !levelGenerator.isGoalReached()) {
+        // Level completed, save progress and show completion
+        onSave({
+          ...gameStats,
+          survivalTime: gameStats.survivalTime,
+          score: gameStats.score,
+          coins: gameStats.coins
+        });
+        levelGenerator.markGoalReached();
+        // Could trigger completion popup here
+      }
+    } else {
+      newEntities = { enemies: [], coins: [], traps: [] };
+    }
+    
     newEntities.enemies.forEach(enemy => trapEnemyLayer.addEnemy(enemy));
     newEntities.coins.forEach(coin => trapEnemyLayer.addCoin(coin));
     newEntities.traps.forEach(trap => trapEnemyLayer.addTrap(trap));
@@ -466,6 +497,14 @@
 
   export function getGameStats(): GameStats {
     return { ...gameStats };
+  }
+
+  export function triggerJump() {
+    jump();
+  }
+
+  export function triggerAttack() {
+    attack();
   }
 
   onMount(async () => {
