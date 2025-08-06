@@ -3,7 +3,7 @@ import path from "path";
 import sharp from "sharp";
 
 const tsPath = path.resolve("src/lib/assets/ImageAssets.ts");
-const backupDir = path.resolve("originalAssets");
+const backupDir = path.resolve("originalAssets/images");
 const exts = [".png", ".jpg", ".jpeg"];
 
 // 建立備份資料夾

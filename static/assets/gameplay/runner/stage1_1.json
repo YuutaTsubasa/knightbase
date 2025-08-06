@@ -1,0 +1,52 @@
+{
+  "id": "stage1_1",
+  "name": "Beginner's Path",
+  "patterns": [
+    {
+      "type": "coinLine",
+      "params": {
+        "coinCount": 3,
+        "spacing": 120,
+        "height": 150
+      }
+    },
+    {
+      "type": "gap",
+      "params": {
+        "distance": 200
+      }
+    },
+    {
+      "type": "trapCombo", 
+      "params": {
+        "trapCount": 2,
+        "spacing": 180
+      }
+    },
+    {
+      "type": "gap",
+      "params": {
+        "distance": 150
+      }
+    },
+    {
+      "type": "coinArc",
+      "params": {
+        "coinCount": 5,
+        "arcHeight": 200,
+        "arcWidth": 400,
+        "startY": 300
+      }
+    },
+    {
+      "type": "gap",
+      "params": {
+        "distance": 300
+      }
+    },
+    {
+      "type": "goal",
+      "params": {}
+    }
+  ]
+}

@@ -1,0 +1,71 @@
+{
+  "id": "stage1_5",
+  "name": "Final Challenge",
+  "patterns": [
+    {
+      "type": "coinLine",
+      "params": {
+        "coinCount": 3,
+        "spacing": 120,
+        "height": 180
+      }
+    },
+    {
+      "type": "enemyCoinCombo",
+      "params": {
+        "enemyCount": 2,
+        "coinCount": 3,
+        "spacing": 100
+      }
+    },
+    {
+      "type": "trapCombo",
+      "params": {
+        "trapCount": 3,
+        "spacing": 80
+      }
+    },
+    {
+      "type": "coinArc",
+      "params": {
+        "coinCount": 10,
+        "arcHeight": 400,
+        "arcWidth": 800,
+        "startY": 100
+      }
+    },
+    {
+      "type": "gap",
+      "params": {
+        "distance": 150
+      }
+    },
+    {
+      "type": "enemyCoinCombo",
+      "params": {
+        "enemyCount": 4,
+        "coinCount": 6,
+        "spacing": 110
+      }
+    },
+    {
+      "type": "trapCombo",
+      "params": {
+        "trapCount": 5,
+        "spacing": 75
+      }
+    },
+    {
+      "type": "coinLine",
+      "params": {
+        "coinCount": 8,
+        "spacing": 60,
+        "height": 300
+      }
+    },
+    {
+      "type": "goal",
+      "params": {}
+    }
+  ]
+}

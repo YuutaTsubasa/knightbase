@@ -1,0 +1,48 @@
+{
+  "id": "stage1_3",
+  "name": "Speed Trial", 
+  "patterns": [
+    {
+      "type": "coinLine",
+      "params": {
+        "coinCount": 5,
+        "spacing": 80,
+        "height": 200
+      }
+    },
+    {
+      "type": "trapCombo",
+      "params": {
+        "trapCount": 2,
+        "spacing": 100
+      }
+    },
+    {
+      "type": "coinArc", 
+      "params": {
+        "coinCount": 7,
+        "arcHeight": 300,
+        "arcWidth": 600,
+        "startY": 200
+      }
+    },
+    {
+      "type": "enemyCoinCombo",
+      "params": {
+        "enemyCount": 2,
+        "coinCount": 4,
+        "spacing": 120
+      }
+    },
+    {
+      "type": "gap",
+      "params": {
+        "distance": 400
+      }
+    },
+    {
+      "type": "goal",
+      "params": {}
+    }
+  ]
+}

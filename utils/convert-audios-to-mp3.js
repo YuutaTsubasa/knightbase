@@ -6,7 +6,7 @@ import { promisify } from "util";
 const execAsync = promisify(exec);
 
 const audioDir = path.resolve("static/assets/audios");
-const backupDir = path.resolve("originalAudioAssets");
+const backupDir = path.resolve("originalAssets/audios");
 const tsPath = path.resolve("src/lib/assets/AudioAssets.ts");
 
 // 支援的音效格式
