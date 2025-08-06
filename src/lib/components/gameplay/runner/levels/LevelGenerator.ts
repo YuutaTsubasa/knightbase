@@ -4,6 +4,7 @@ import { TextAssetManager } from '$lib/assets/TextAssets';
 import { Enemy } from '../objects/Enemy';
 import { Coin } from '../objects/Coin';
 import { Trap } from '../objects/Trap';
+import { Goal } from '../objects/Goal';
 import type { PatternEntity } from '../objects/Pattern';
 
 export class LevelGenerator {
@@ -31,8 +32,8 @@ export class LevelGenerator {
     }
   }
 
-  public update(deltaTime: number): { enemies: Enemy[], coins: Coin[], traps: Trap[] } {
-    const result = { enemies: [] as Enemy[], coins: [] as Coin[], traps: [] as Trap[] };
+  public update(deltaTime: number): { enemies: Enemy[], coins: Coin[], traps: Trap[], goals: Goal[] } {
+    const result = { enemies: [] as Enemy[], coins: [] as Coin[], traps: [] as Trap[], goals: [] as Goal[] };
 
     // Check if level is completed
     if (this.currentPatternIndex >= this.patterns.length) {
@@ -55,6 +56,8 @@ export class LevelGenerator {
           result.coins.push(obj);
         } else if (obj instanceof Trap) {
           result.traps.push(obj);
+        } else if (obj instanceof Goal) {
+          result.goals.push(obj);
         }
       });
 

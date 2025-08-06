@@ -7,13 +7,15 @@
   import { imageAssets } from "$lib/assets/ImageAssets";
   import { stageBackgroundImageKey } from "$lib/utils/KeyHelper";
   import Page from "$lib/components/Page.svelte";
+  import Topbar from "$lib/components/Topbar.svelte";
   import { wait, waitUntil } from "$lib/utils/Wait";
   import { get, writable, type Writable } from "svelte/store";
   import { onMount } from "svelte";
-  import { Play, Trophy, Clock, Target, Lock, ArrowLeft } from "lucide-svelte";
+  import { Play, Trophy, Clock, Target, Lock } from "lucide-svelte";
   import { PopupStore, PopupResult } from "$lib/systems/PopupStore";
 
   let goToNextScene: Writable<string | null>;
+  let topbarHeight = 0;
   
   $: stageId = $page.params.stageId as string;
   $: stageData = StaticDataStore.getStageById(stageId);
@@ -99,23 +101,21 @@
 </script>
 
 <Page mainProgress={main} 
-  contentStyle="box-sizing: border-box; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 2rem;">
+  contentStyle="box-sizing: border-box; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 2rem; padding-top: var(--topbarHeight, 0px);">
   
   <!-- Layered background effects for page wrapper -->
   <div slot="outside" class="pageBackground" style="background-image: url({imageAssets[stageBackgroundImageKey(stageId)]});">
   </div>
   
-  <div class="stageHeader">
-    <button class="backBtn" on:click={goBack}>
-      <ArrowLeft size={20} />
-    </button>
-    <div class="stageInfo">
-      <h1 class="stageTitle">{$stageData?.nameKey ? $t($stageData.nameKey) : stageId}</h1>
-      <p class="stageDescription">{$stageData?.descriptionKey ? $t($stageData.descriptionKey) : ''}</p>
-    </div>
-  </div>
+  <slot name="outside">
+    <Topbar 
+      primaryTitle={$stageData?.nameKey ? $t($stageData.nameKey) : stageId} 
+      secondaryTitle={$stageData?.descriptionKey ? $t($stageData.descriptionKey) : ''}
+      onHeightChange={(height) => topbarHeight = height}
+      onBack={goBack} />
+  </slot>
 
-  <div class="levelsGrid">
+  <div class="levelsGrid" style={`--topbarHeight: ${topbarHeight}px;`}>
     {#each levels as level}
       {@const record = getLevelRecord(level.id)}
       {@const isCompleted = record?.completed ?? false}
@@ -183,56 +183,14 @@
 </Page>
 
 <style>
-  .stageHeader {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    width: 100%;
-    max-width: 800px;
-    margin-bottom: 2rem;
-  }
-
-  .backBtn {
-    background: rgba(255, 255, 255, 0.2);
-    border: none;
-    color: white;
-    padding: 0.5rem 1rem;
-    border-radius: 0.5rem;
-    font-size: 1.5rem;
-    cursor: pointer;
-    transition: background 0.3s;
-  }
-
-  .backBtn:hover {
-    background: rgba(255, 255, 255, 0.3);
-  }
-
-  .stageInfo {
-    flex: 1;
-    text-align: center;
-  }
-
-  .stageTitle {
-    color: white;
-    font-size: 2rem;
-    font-weight: bold;
-    margin: 0;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-  }
-
-  .stageDescription {
-    color: rgba(255, 255, 255, 0.9);
-    font-size: 1rem;
-    margin: 0.5rem 0 0 0;
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
-  }
-
   .levelsGrid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     gap: 1.5rem;
     width: 100%;
     max-width: 1000px;
+    padding-top: var(--topbarHeight, 0px);
+    margin-top: 1rem;
   }
 
   .levelCard {
@@ -381,10 +339,6 @@
     
     .levelCard {
       padding: 1rem;
-    }
-    
-    .stageTitle {
-      font-size: 1.5rem;
     }
   }
 

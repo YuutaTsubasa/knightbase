@@ -312,22 +312,18 @@
     } else if (gameMode === 'level' && levelGenerator) {
       newEntities = levelGenerator.update(deltaTime);
       
-      // Check if level is completed
-      if (levelGenerator.isLevelCompleted() && !levelGenerator.isGoalReached()) {
-        // Level completed, save progress and show completion
-        saveToPlayerStore();
-        levelGenerator.markGoalReached();
-        
-        // Show level completion popup
-        handleLevelComplete();
-      }
+      // Level completion is now handled only via goal collision
+      // No automatic completion when patterns are finished
     } else {
-      newEntities = { enemies: [], coins: [], traps: [] };
+      newEntities = { enemies: [], coins: [], traps: [], goals: [] };
     }
     
     newEntities.enemies.forEach(enemy => trapEnemyLayer.addEnemy(enemy));
     newEntities.coins.forEach(coin => trapEnemyLayer.addCoin(coin));
     newEntities.traps.forEach(trap => trapEnemyLayer.addTrap(trap));
+    if (newEntities.goals) {
+      newEntities.goals.forEach(goal => trapEnemyLayer.addGoal(goal));
+    }
     
     // Handle collisions
     handleCollisions();
@@ -355,6 +351,20 @@
         AudioManager.play("sfx_coin");
       }
     });
+
+    // Collision with goals (for level mode)
+    if (gameMode === 'level') {
+      trapEnemyLayer.getGoals().forEach(goal => {
+        if (!goal.reached && player.checkCollision(goal)) {
+          goal.reach();
+          levelGenerator?.markGoalReached();
+          
+          // Show level completion popup
+          saveToPlayerStore();
+          handleLevelComplete();
+        }
+      });
+    }
 
     // Collision with enemies and traps
     [...trapEnemyLayer.getEnemies(), ...trapEnemyLayer.getTraps()].forEach(entity => {
