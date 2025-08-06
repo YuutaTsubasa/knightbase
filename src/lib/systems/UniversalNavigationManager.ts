@@ -165,17 +165,15 @@ export class UniversalNavigationManager {
             
             case 'ArrowLeft':
             case 'ArrowRight':
+                e.preventDefault();
                 // For sliders, adjust value
                 if (this.isSliderFocused()) {
-                    e.preventDefault();
                     this.adjustSlider(this.focusableElements[this.currentIndex] as HTMLInputElement, e.code === 'ArrowRight' ? 1 : -1);
-                    handled = true;
                 } else {
                     // Allow horizontal navigation to start navigation mode
-                    e.preventDefault();
                     this.navigateHorizontal(e.code === 'ArrowRight' ? 1 : -1);
-                    handled = true;
                 }
+                handled = true;
                 break;
             
             case 'Enter':
@@ -248,12 +246,11 @@ export class UniversalNavigationManager {
             // For sliders, adjust value
             if (this.isSliderFocused()) {
                 this.adjustSlider(this.focusableElements[this.currentIndex] as HTMLInputElement, rightPressed ? 1 : -1);
-                handled = true;
             } else {
                 // Allow horizontal navigation
                 this.navigateHorizontal(rightPressed ? 1 : -1);
-                handled = true;
             }
+            handled = true;
         } else if (aPressed) {
             if (this.isNavigating && this.currentIndex >= 0) {
                 this.activateCurrentElement();
@@ -273,10 +270,33 @@ export class UniversalNavigationManager {
         if (!this.isNavigating) {
             this.currentIndex = 0;
         } else {
-            this.currentIndex = Math.max(0, Math.min(
-                this.focusableElements.length - 1,
-                this.currentIndex + direction
-            ));
+            // Find elements in the same column (similar left position)
+            const currentElement = this.focusableElements[this.currentIndex];
+            const currentRect = currentElement.getBoundingClientRect();
+            
+            const sameColumnElements = this.focusableElements
+                .map((el, index) => ({ element: el, index }))
+                .filter(({ element }) => {
+                    const rect = element.getBoundingClientRect();
+                    return Math.abs(rect.left - currentRect.left) <= 10; // Same column threshold
+                });
+
+            if (sameColumnElements.length > 1) {
+                const currentColumnIndex = sameColumnElements.findIndex(({ index }) => index === this.currentIndex);
+                if (currentColumnIndex !== -1) {
+                    const newColumnIndex = Math.max(0, Math.min(
+                        sameColumnElements.length - 1,
+                        currentColumnIndex + direction
+                    ));
+                    this.currentIndex = sameColumnElements[newColumnIndex].index;
+                }
+            } else {
+                // No same-column elements, fallback to simple navigation
+                this.currentIndex = Math.max(0, Math.min(
+                    this.focusableElements.length - 1,
+                    this.currentIndex + direction
+                ));
+            }
         }
 
         this.focusCurrentElement();
@@ -308,6 +328,12 @@ export class UniversalNavigationManager {
                     ));
                     this.currentIndex = sameRowElements[newRowIndex].index;
                 }
+            } else {
+                // No same-row elements, fallback to simple vertical navigation
+                this.currentIndex = Math.max(0, Math.min(
+                    this.focusableElements.length - 1,
+                    this.currentIndex + direction
+                ));
             }
         }
 
