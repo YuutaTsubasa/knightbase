@@ -4,11 +4,14 @@
   import { t } from "$lib/systems/LocalizationStore";
   import { StaticDataStore } from "$lib/systems/StaticDataStore";
   import { playerStore, PlayerDataManager } from "$lib/systems/PlayerStore";
+  import { imageAssets } from "$lib/assets/ImageAssets";
+  import { stageBackgroundImageKey } from "$lib/utils/KeyHelper";
   import Page from "$lib/components/Page.svelte";
   import { wait, waitUntil } from "$lib/utils/Wait";
   import { get, writable, type Writable } from "svelte/store";
   import { onMount } from "svelte";
-  import { Play, Trophy, Clock, Target, Lock } from "lucide-svelte";
+  import { Play, Trophy, Clock, Target, Lock, ArrowLeft } from "lucide-svelte";
+  import { PopupStore, PopupResult } from "$lib/systems/PopupStore";
 
   let goToNextScene: Writable<string | null>;
   
@@ -47,7 +50,33 @@
     goToNextScene.set('/stage');
   }
 
-  function playLevel(levelId: string, endless: boolean = false) {
+  async function playLevel(levelId: string, endless: boolean = false) {
+    // Show confirmation popup
+    const levelName = endless ? $t('endlessMode') : $t(levels.find(l => l.id === levelId)?.nameKey || levelId);
+    let confirmed = false;
+    
+    const result = await PopupStore.open({
+      title: $t("confirmStartLevel"),
+      content: `${$t("aboutToStartLevel")} "${levelName}"`,
+      buttons: [
+        {
+          text: $t("cancel"),
+          onClick: () => PopupResult.Close
+        },
+        {
+          text: $t("startLevel"),
+          onClick: () => {
+            confirmed = true;
+            return PopupResult.Close;
+          }
+        }
+      ]
+    });
+
+    if (!confirmed) {
+      return; // User cancelled
+    }
+    
     // Store selected level in player data for gameplay
     PlayerDataManager.update({ 
       selectedStage: stageId,
@@ -72,8 +101,14 @@
 <Page mainProgress={main} 
   contentStyle="box-sizing: border-box; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 2rem;">
   
+  <!-- Layered background effects for page wrapper -->
+  <div slot="outside" class="pageBackground" style="background-image: url({imageAssets[stageBackgroundImageKey(stageId)]});">
+  </div>
+  
   <div class="stageHeader">
-    <button class="backBtn" on:click={goBack}>←</button>
+    <button class="backBtn" on:click={goBack}>
+      <ArrowLeft size={20} />
+    </button>
     <div class="stageInfo">
       <h1 class="stageTitle">{$stageData?.nameKey ? $t($stageData.nameKey) : stageId}</h1>
       <p class="stageDescription">{$stageData?.descriptionKey ? $t($stageData.descriptionKey) : ''}</p>
@@ -130,7 +165,7 @@
           </div>
         {:else if !isLocked}
           <div class="notCompleted">
-            <span>{$t('notCompleted')}</span>
+            <span>{level.endless ? $t('notPlayed') : $t('notCompleted')}</span>
           </div>
         {/if}
 
@@ -351,5 +386,41 @@
     .stageTitle {
       font-size: 1.5rem;
     }
+  }
+
+  .pageBackground {
+    position: absolute;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    background-size: repeat;
+    background-position: center;
+    z-index: 0;
+  }
+
+  .pageBackground::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(5px);
+  }
+
+  .pageBackground::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+      repeating-linear-gradient(
+        45deg,
+        rgba(255,255,255,0.2) 0 1px,
+        transparent 1px 40px
+      ),
+      repeating-linear-gradient(
+        -45deg,
+        rgba(255,255,255,0.2) 0 1px,
+        transparent 1px 40px
+      );
   }
 </style>

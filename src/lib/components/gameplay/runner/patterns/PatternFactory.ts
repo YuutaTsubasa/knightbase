@@ -1,10 +1,10 @@
 import { Pattern } from '../objects/Pattern';
-import { CoinLinePattern } from './coinLine';
-import { TrapComboPattern } from './trapCombo';
-import { CoinArcPattern } from './coinArc';
-import { EnemyCoinComboPattern } from './enemyCoinCombo';
-import { GapPattern } from './gap';
-import { GoalPattern } from './goal';
+import { CoinLinePattern } from './CoinLine';
+import { TrapComboPattern } from './TrapCombo';
+import { CoinArcPattern } from './CoinArc';
+import { EnemyCoinComboPattern } from './EnemyCoinCombo';
+import { GapPattern } from './Gap';
+import { GoalPattern } from './Goal';
 
 interface PatternConfig {
   type: string;
