@@ -15,41 +15,17 @@ export class LevelGenerator {
   private groundY: number = 480;
   private levelCompleted: boolean = false;
   private goalReached: boolean = false;
-  private patternsLoaded: boolean = false;
-  private loadPromise: Promise<void>;
   private lastPatternGeneratedTime: number = 0; // Add cooldown tracking
   private minPatternInterval: number = 1000; // Minimum 1 second between patterns
 
-  constructor(stageId: string, groundY: number = 480) {
+  constructor(patterns: Pattern[], groundY: number = 480) {
+    this.patterns = patterns;
     this.groundY = groundY;
-    this.loadPromise = this.loadLevel(stageId);
-  }
-
-  public waitForLoad(): Promise<void> {
-    return this.loadPromise;
-  }
-
-  private async loadLevel(stageId: string): Promise<void> {
-    try {
-      const patternData = await TextAssetManager.loadPatternData(stageId);
-      this.patterns = PatternFactory.createPatternsFromJson(patternData);
-      this.patternsLoaded = true;
-      console.log(`Loaded level ${stageId} with ${this.patterns.length} patterns`);
-    } catch (error) {
-      console.error(`Failed to load level ${stageId}:`, error);
-      // Fallback to empty level
-      this.patterns = [];
-      this.patternsLoaded = true;
-    }
+    console.log(`Initialized level generator with ${this.patterns.length} patterns`);
   }
 
   public update(deltaTime: number, currentScrollSpeed: number, playerDistanceTraveled: number): { enemies: Enemy[], coins: Coin[], traps: Trap[], goals: Goal[] } {
     const result = { enemies: [] as Enemy[], coins: [] as Coin[], traps: [] as Trap[], goals: [] as Goal[] };
-
-    // Don't start generating until patterns are loaded
-    if (!this.patternsLoaded) {
-      return result;
-    }
 
     // Update player distance
     this.playerDistanceTraveled = playerDistanceTraveled;
@@ -124,10 +100,6 @@ export class LevelGenerator {
     this.levelCompleted = false;
     this.goalReached = false;
     this.lastPatternGeneratedTime = 0; // Reset cooldown
-  }
-
-  public isPatternsLoaded(): boolean {
-    return this.patternsLoaded;
   }
 
   public getTotalPatterns(): number {

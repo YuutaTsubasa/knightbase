@@ -26,6 +26,9 @@
   // Generator import
   import { EndlessGenerator } from "./generators/EndlessGenerator";
   import { LevelGenerator } from "./generators/LevelGenerator";
+  import { PatternFactory } from "./patterns/PatternFactory";
+  import { TextAssetManager } from "$lib/assets/TextAssets";
+  import type { Pattern } from "./patterns/Pattern";
 
   import type { GameState, GameStats } from "./types/GameTypes";
   import { UniversalNavigationManager } from "$lib/systems/UniversalNavigationManager";
@@ -188,13 +191,25 @@
     ];
     
     // Load level patterns if in level mode
-    let levelLoadPromise = Promise.resolve();
+    let levelPatterns: Pattern[] = [];
     if (gameMode === 'level' && levelId) {
-      levelGenerator = new LevelGenerator(levelId, GAME_SETTINGS.GROUND_Y + stageGroundOffsetY);
-      levelLoadPromise = levelGenerator.waitForLoad();
+      try {
+        const patternData = await TextAssetManager.loadPatternData(levelId);
+        levelPatterns = PatternFactory.createPatternsFromJson(patternData);
+      } catch (error) {
+        console.error(`Failed to load level ${levelId}:`, error);
+        // Fallback to empty level
+        levelPatterns = [];
+      }
     }
     
-    await Promise.all([...imagePromises, ...audioPreloadPromises, levelLoadPromise]);
+    await Promise.all([...imagePromises, ...audioPreloadPromises]);
+    
+    // Create level generator with loaded patterns
+    if (gameMode === 'level' && levelId) {
+      levelGenerator = new LevelGenerator(levelPatterns, GAME_SETTINGS.GROUND_Y + stageGroundOffsetY);
+    }
+    
     assetsLoaded = true;
   }
 
@@ -244,8 +259,9 @@
     if (gameMode === 'endless') {
       endlessGenerator = new EndlessGenerator();
     } else if (gameMode === 'level' && !levelGenerator) {
-      // If levelGenerator wasn't created in loadAssets (for some reason), create it here
-      levelGenerator = new LevelGenerator(levelId || 'stage1_1', GAME_SETTINGS.GROUND_Y + stageGroundOffsetY);
+      // If levelGenerator wasn't created in loadAssets (for some reason), create it here with empty patterns
+      console.warn('LevelGenerator not created during loadAssets, creating with empty patterns');
+      levelGenerator = new LevelGenerator([], GAME_SETTINGS.GROUND_Y + stageGroundOffsetY);
     }
 
     // Start countdown
