@@ -32,25 +32,29 @@ export class Enemy extends SpriteAnimationObject {
     this.moveWithScroll(scrollSpeed);
   }
 
-  public render(ctx: CanvasRenderingContext2D, images: Record<string, HTMLImageElement>): void {
+  public render(ctx: CanvasRenderingContext2D, images: Record<string, HTMLImageElement>, groundY?: number): void {
     const image = images[this.spriteSheetKey];
     if (!image) {
-      this.renderFallback(ctx);
+      this.renderFallback(ctx, groundY);
       return;
     }
+
+    // Calculate render position with groundY offset
+    const renderY = groundY !== undefined ? groundY + this.y : this.y;
 
     ctx.save();
     if (this.facingLeft) {
       ctx.scale(-1, 1);
-      ctx.drawImage(image, -this.x - this.width, this.y, this.width, this.height);
+      ctx.drawImage(image, -this.x - this.width, renderY, this.width, this.height);
     } else {
-      ctx.drawImage(image, this.x, this.y, this.width, this.height);
+      ctx.drawImage(image, this.x, renderY, this.width, this.height);
     }
     ctx.restore();
   }
 
-  protected renderFallback(ctx: CanvasRenderingContext2D): void {
+  protected renderFallback(ctx: CanvasRenderingContext2D, groundY?: number): void {
+    const renderY = groundY !== undefined ? groundY + this.y : this.y;
     ctx.fillStyle = '#e74c3c';
-    ctx.fillRect(this.x, this.y, this.width, this.height);
+    ctx.fillRect(this.x, renderY, this.width, this.height);
   }
 }

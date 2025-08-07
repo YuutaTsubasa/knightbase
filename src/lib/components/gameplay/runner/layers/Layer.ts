@@ -47,8 +47,8 @@ export class Layer {
   }
 
   // Render all entities in this layer
-  public render(ctx: CanvasRenderingContext2D, images: Record<string, HTMLImageElement>): void {
+  public render(ctx: CanvasRenderingContext2D, images: Record<string, HTMLImageElement>, groundY?: number): void {
     // Render all entities
-    this.entities.forEach(entity => entity.render(ctx, images));
+    this.entities.forEach(entity => entity.render(ctx, images, groundY));
   }
 }

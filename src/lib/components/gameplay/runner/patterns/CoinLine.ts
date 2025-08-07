@@ -21,7 +21,7 @@ export class CoinLinePattern extends Pattern {
         type: 'coin',
         position: {
           x: startX + i * this.spacing,
-          y: groundY - this.height - Math.random() * 100 // Slight height variation
+          y: -this.height - Math.random() * 100 // Relative height above ground
         }
       });
     }

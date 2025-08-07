@@ -29,7 +29,7 @@ export class CoinArcPattern extends Pattern {
         type: 'coin',
         position: {
           x: startX + i * stepX,
-          y: groundY - this.startY - arcY
+          y: -this.startY - arcY // Relative to ground
         }
       });
     }

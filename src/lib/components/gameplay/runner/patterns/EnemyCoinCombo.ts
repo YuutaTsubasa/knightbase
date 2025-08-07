@@ -24,7 +24,7 @@ export class EnemyCoinComboPattern extends Pattern {
         type: 'enemy',
         position: {
           x: currentX,
-          y: groundY - Enemy.getSize().height
+          y: -Enemy.getSize().height // Relative to ground
         }
       });
       currentX += this.spacing;
@@ -36,7 +36,7 @@ export class EnemyCoinComboPattern extends Pattern {
         type: 'coin',
         position: {
           x: currentX,
-          y: groundY - 200 - Math.random() * 50 // Higher than usual to reward jumping over enemy
+          y: -200 - Math.random() * 50 // Higher than usual to reward jumping over enemy
         }
       });
       currentX += this.spacing * 0.8; // Tighter spacing for coins

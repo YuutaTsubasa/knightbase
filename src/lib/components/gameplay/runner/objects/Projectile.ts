@@ -21,8 +21,9 @@ export class Projectile extends SpriteAnimationObject {
     this.x += this.velocityX;
   }
 
-  protected renderFallback(ctx: CanvasRenderingContext2D): void {
+  protected renderFallback(ctx: CanvasRenderingContext2D, groundY?: number): void {
+    const renderY = groundY !== undefined ? groundY + this.y : this.y;
     ctx.fillStyle = '#9b59b6';
-    ctx.fillRect(this.x, this.y, this.width, this.height);
+    ctx.fillRect(this.x, renderY, this.width, this.height);
   }
 }

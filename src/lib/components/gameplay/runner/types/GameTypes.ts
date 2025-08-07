@@ -34,7 +34,7 @@ export interface GameSettings {
 // Entity interfaces
 export interface GameEntity extends Position, Size, CollisionBox {
   update(deltaTime: number, scrollSpeed: number): void;
-  render(ctx: CanvasRenderingContext2D, images: Record<string, HTMLImageElement>): void;
+  render(ctx: CanvasRenderingContext2D, images: Record<string, HTMLImageElement>, groundY?: number): void;
   isOffScreen(canvasWidth: number): boolean;
 }
 

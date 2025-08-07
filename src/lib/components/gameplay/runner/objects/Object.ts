@@ -47,7 +47,7 @@ export abstract class Object implements GameEntity {
 
   // Abstract methods that must be implemented by subclasses
   public abstract update(deltaTime: number, scrollSpeed: number): void;
-  public abstract render(ctx: CanvasRenderingContext2D, images: Record<string, HTMLImageElement>): void;
+  public abstract render(ctx: CanvasRenderingContext2D, images: Record<string, HTMLImageElement>, groundY?: number): void;
 
   // Helper method for basic movement (used by many objects)
   protected moveWithScroll(scrollSpeed: number): void {

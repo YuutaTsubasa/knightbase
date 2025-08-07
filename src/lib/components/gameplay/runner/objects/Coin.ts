@@ -34,21 +34,25 @@ export class Coin extends SpriteAnimationObject {
     }
   }
 
-  public render(ctx: CanvasRenderingContext2D, images: Record<string, HTMLImageElement>): void {
+  public render(ctx: CanvasRenderingContext2D, images: Record<string, HTMLImageElement>, groundY?: number): void {
     if (this.collected) return;
     const image = images[this.spriteSheetKey];
     if (!image) {
-      this.renderFallback(ctx);
+      this.renderFallback(ctx, groundY);
       return;
     }
-    ctx.drawImage(image, this.x, this.y, this.width, this.height);
+    
+    // Calculate render position with groundY offset
+    const renderY = groundY !== undefined ? groundY + this.y : this.y;
+    ctx.drawImage(image, this.x, renderY, this.width, this.height);
   }
 
-  protected renderFallback(ctx: CanvasRenderingContext2D): void {
+  protected renderFallback(ctx: CanvasRenderingContext2D, groundY?: number): void {
     if (this.collected) return;
+    const renderY = groundY !== undefined ? groundY + this.y : this.y;
     ctx.fillStyle = '#f1c40f';
     ctx.beginPath();
-    ctx.arc(this.x + this.width/2, this.y + this.height/2, this.width/2, 0, 2 * Math.PI);
+    ctx.arc(this.x + this.width/2, renderY + this.height/2, this.width/2, 0, 2 * Math.PI);
     ctx.fill();
   }
 

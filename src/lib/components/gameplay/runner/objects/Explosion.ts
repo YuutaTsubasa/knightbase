@@ -37,14 +37,17 @@ export class Explosion extends SpriteAnimationObject {
     }
   }
 
-  protected renderFallback(ctx: CanvasRenderingContext2D): void {
+  protected renderFallback(ctx: CanvasRenderingContext2D, groundY?: number): void {
     if (this.finished) return;
+    
+    // Calculate render position with groundY offset
+    const renderY = groundY !== undefined ? groundY + this.y : this.y;
     
     // Simple expanding circle as fallback
     const radius = (this.animationFrame / this.totalFrames) * this.width / 2;
     ctx.fillStyle = `rgba(255, ${255 - this.animationFrame * 40}, 0, ${1 - this.animationFrame / this.totalFrames})`;
     ctx.beginPath();
-    ctx.arc(this.x + this.width/2, this.y + this.height/2, radius, 0, 2 * Math.PI);
+    ctx.arc(this.x + this.width/2, renderY + this.height/2, radius, 0, 2 * Math.PI);
     ctx.fill();
   }
 }

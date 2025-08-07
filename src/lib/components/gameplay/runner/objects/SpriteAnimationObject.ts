@@ -40,10 +40,10 @@ export abstract class SpriteAnimationObject extends Object implements AnimatedEn
   }
 
   // Render sprite with animation frame
-  public render(ctx: CanvasRenderingContext2D, images: Record<string, HTMLImageElement>): void {
+  public render(ctx: CanvasRenderingContext2D, images: Record<string, HTMLImageElement>, groundY?: number): void {
     const image = images[this.spriteSheetKey];
     if (!image) {
-      this.renderFallback(ctx);
+      this.renderFallback(ctx, groundY);
       return;
     }
 
@@ -52,34 +52,40 @@ export abstract class SpriteAnimationObject extends Object implements AnimatedEn
     const frameHeight = image.height;
     const frameX = this.animationFrame * frameWidth;
 
+    // Calculate render position with groundY offset
+    const renderY = groundY !== undefined ? groundY + this.y : this.y;
+
     // Draw the specific frame
     ctx.drawImage(
       image,
       frameX, 0, frameWidth, frameHeight,  // Source rectangle (sprite frame)
-      this.x, this.y, this.width, this.height  // Destination rectangle
+      this.x, renderY, this.width, this.height  // Destination rectangle
     );
   }
 
   // Render sprite with flipping support
-  protected renderFlipped(ctx: CanvasRenderingContext2D, images: Record<string, HTMLImageElement>, facingLeft: boolean): void {
+  protected renderFlipped(ctx: CanvasRenderingContext2D, images: Record<string, HTMLImageElement>, facingLeft: boolean, groundY?: number): void {
     const image = images[this.spriteSheetKey];
     if (!image) {
-      this.renderFallback(ctx);
+      this.renderFallback(ctx, groundY);
       return;
     }
+
+    // Calculate render position with groundY offset
+    const renderY = groundY !== undefined ? groundY + this.y : this.y;
 
     ctx.save();
     if (facingLeft) {
       ctx.scale(-1, 1);
-      ctx.drawImage(image, -this.x - this.width, this.y, this.width, this.height);
+      ctx.drawImage(image, -this.x - this.width, renderY, this.width, this.height);
     } else {
-      ctx.drawImage(image, this.x, this.y, this.width, this.height);
+      ctx.drawImage(image, this.x, renderY, this.width, this.height);
     }
     ctx.restore();
   }
 
   // Fallback rendering for when image is not loaded
-  protected abstract renderFallback(ctx: CanvasRenderingContext2D): void;
+  protected abstract renderFallback(ctx: CanvasRenderingContext2D, groundY?: number): void;
 
   // Set animation state
   public setAnimation(animation: string): void {

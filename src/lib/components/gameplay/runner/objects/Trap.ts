@@ -31,10 +31,13 @@ export class Trap extends SpriteAnimationObject {
     this.moveWithScroll(scrollSpeed);
   }
 
-  protected renderFallback(ctx: CanvasRenderingContext2D): void {
+  protected renderFallback(ctx: CanvasRenderingContext2D, groundY?: number): void {
+    // Calculate render position with groundY offset
+    const renderY = groundY !== undefined ? groundY + this.y : this.y;
+    
     // Draw trap spikes as fallback
     ctx.fillStyle = '#8b0000';
-    ctx.fillRect(this.x, this.y, this.width, this.height);
+    ctx.fillRect(this.x, renderY, this.width, this.height);
     
     // Draw spike pattern
     ctx.fillStyle = '#ff0000';
@@ -42,9 +45,9 @@ export class Trap extends SpriteAnimationObject {
     const spikeWidth = this.width / spikeCount;
     for (let i = 0; i < spikeCount; i++) {
       ctx.beginPath();
-      ctx.moveTo(this.x + i * spikeWidth, this.y + this.height);
-      ctx.lineTo(this.x + i * spikeWidth + spikeWidth/2, this.y);
-      ctx.lineTo(this.x + (i + 1) * spikeWidth, this.y + this.height);
+      ctx.moveTo(this.x + i * spikeWidth, renderY + this.height);
+      ctx.lineTo(this.x + i * spikeWidth + spikeWidth/2, renderY);
+      ctx.lineTo(this.x + (i + 1) * spikeWidth, renderY + this.height);
       ctx.closePath();
       ctx.fill();
     }

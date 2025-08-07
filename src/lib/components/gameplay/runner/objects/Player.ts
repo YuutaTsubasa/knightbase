@@ -139,22 +139,23 @@ export class Player extends SpriteAnimationObject {
     return null;
   }
 
-  protected renderFallback(ctx: CanvasRenderingContext2D): void {
+  protected renderFallback(ctx: CanvasRenderingContext2D, groundY?: number): void {
+    const renderY = groundY !== undefined ? groundY + this.y : this.y;
     ctx.fillStyle = '#ff6b6b';
-    ctx.fillRect(this.x, this.y, this.width, this.height);
+    ctx.fillRect(this.x, renderY, this.width, this.height);
   }
 
   // Render with invincibility flashing
-  public render(ctx: CanvasRenderingContext2D, images: Record<string, HTMLImageElement>): void {
+  public render(ctx: CanvasRenderingContext2D, images: Record<string, HTMLImageElement>, groundY?: number): void {
     if (!this.isInvincible) {
-      super.render(ctx, images);
+      super.render(ctx, images, groundY);
       return;
     }
 
     // Flash every 100ms during invincibility
     const shouldDraw = Math.floor(this.invincibleTimer / 100) % 2 === 0;
     if (shouldDraw) {
-      super.render(ctx, images);
+      super.render(ctx, images, groundY);
     }
   }
 

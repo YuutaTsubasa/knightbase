@@ -347,18 +347,6 @@
     
     if (gameMode === 'endless' && endlessGenerator) {
       newEntities = endlessGenerator.update(deltaTime);
-      // Apply ground position to endless mode entities
-      const groundY = GAME_SETTINGS.GROUND_Y + stageGroundOffsetY;
-      newEntities.enemies.forEach(enemy => {
-        enemy.y = groundY - enemy.height;
-      });
-      newEntities.traps.forEach(trap => {
-        trap.y = groundY - trap.height;
-      });
-      // Coins keep their relative Y position but adjust to ground
-      newEntities.coins.forEach(coin => {
-        coin.y = groundY + coin.y; // coin.y is already relative
-      });
     } else if (gameMode === 'level' && levelGenerator) {
       const groundY = GAME_SETTINGS.GROUND_Y + stageGroundOffsetY;
       newEntities = levelGenerator.update(deltaTime, currentScrollSpeed, playerDistanceTraveled, groundY);
@@ -460,14 +448,17 @@
   function render() {
     if (!ctx || !assetsLoaded) return;
     
+    // Calculate ground position
+    const groundY = GAME_SETTINGS.GROUND_Y + stageGroundOffsetY;
+    
     // Render background first
     renderBackground(ctx);
     
-    // Render layers in order
-    effectLayer.render(ctx, loadedImages);
-    trapEnemyLayer.render(ctx, loadedImages);
+    // Render layers in order with groundY for positioning
+    effectLayer.render(ctx, loadedImages, groundY);
+    trapEnemyLayer.render(ctx, loadedImages, groundY);
     
-    // Render character layer (player and projectiles)
+    // Render character layer (player and projectiles) - no groundY needed as player handles its own positioning
     characterLayer.render(ctx, loadedImages);
 
     // Render countdown
