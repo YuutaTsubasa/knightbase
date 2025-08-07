@@ -11,16 +11,20 @@ export class LevelGenerator {
   private patterns: Pattern[] = [];
   private currentPatternIndex: number = 0;
   private currentX: number = 800; // Start off-screen
+  private playerDistanceTraveled: number = 0; // Track player's actual distance
   private groundY: number = 480;
   private levelCompleted: boolean = false;
   private goalReached: boolean = false;
   private patternsLoaded: boolean = false;
-  private lastGenerationTime: number = 0;
-  private generationInterval: number = 2000; // Generate every 2 seconds
+  private loadPromise: Promise<void>;
 
   constructor(stageId: string, groundY: number = 480) {
     this.groundY = groundY;
-    this.loadLevel(stageId);
+    this.loadPromise = this.loadLevel(stageId);
+  }
+
+  public waitForLoad(): Promise<void> {
+    return this.loadPromise;
   }
 
   private async loadLevel(stageId: string): Promise<void> {
@@ -37,13 +41,16 @@ export class LevelGenerator {
     }
   }
 
-  public update(deltaTime: number): { enemies: Enemy[], coins: Coin[], traps: Trap[], goals: Goal[] } {
+  public update(deltaTime: number, currentScrollSpeed: number, playerDistanceTraveled: number): { enemies: Enemy[], coins: Coin[], traps: Trap[], goals: Goal[] } {
     const result = { enemies: [] as Enemy[], coins: [] as Coin[], traps: [] as Trap[], goals: [] as Goal[] };
 
     // Don't start generating until patterns are loaded
     if (!this.patternsLoaded) {
       return result;
     }
+
+    // Update player distance
+    this.playerDistanceTraveled = playerDistanceTraveled;
 
     // Check if level is completed
     if (this.currentPatternIndex >= this.patterns.length) {
@@ -54,15 +61,14 @@ export class LevelGenerator {
       return result;
     }
 
-    // Check if it's time to generate the next pattern
-    this.lastGenerationTime += deltaTime;
-    if (this.lastGenerationTime >= this.generationInterval) {
-      this.lastGenerationTime = 0;
-
+    // Check if we should generate the next pattern based on distance
+    // Generate when player has traveled close enough to the next pattern position
+    const generationDistance = 400; // Generate when player is 400 pixels from pattern
+    if (this.playerDistanceTraveled + generationDistance >= this.currentX) {
       // Generate current pattern if not yet done
       const currentPattern = this.patterns[this.currentPatternIndex];
       if (currentPattern) {
-        console.log(`Generating pattern ${this.currentPatternIndex}: ${currentPattern.name}`);
+        console.log(`Generating pattern ${this.currentPatternIndex}: ${currentPattern.name} at distance ${this.currentX}`);
         const objects = currentPattern.createObjects(this.currentX, this.groundY);
         
         objects.forEach(obj => {
@@ -77,22 +83,9 @@ export class LevelGenerator {
           }
         });
 
-        // Move to next pattern
+        // Move to next pattern and update currentX based on pattern distance
         this.currentPatternIndex++;
-        
-        // Calculate next X position (includes gap patterns)
-        if (currentPattern.name === 'gap') {
-          // Cast to access gap-specific methods
-          const gapPattern = currentPattern as any;
-          if (gapPattern.getDistance) {
-            this.currentX += gapPattern.getDistance();
-          } else {
-            this.currentX += 200; // Default gap
-          }
-        } else {
-          // For other patterns, add some default spacing
-          this.currentX += 400;
-        }
+        this.currentX += currentPattern.getDistance();
       }
     }
 
@@ -114,9 +107,9 @@ export class LevelGenerator {
   public reset(): void {
     this.currentPatternIndex = 0;
     this.currentX = 800;
+    this.playerDistanceTraveled = 0;
     this.levelCompleted = false;
     this.goalReached = false;
-    this.lastGenerationTime = 0;
   }
 
   public isPatternsLoaded(): boolean {

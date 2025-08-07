@@ -64,6 +64,7 @@
     invincibleTimer: 0
   };
   let lastSurvivalSecond = 0;
+  let playerDistanceTraveled = 0; // Track total distance traveled
 
   // UI state
   let isPaused = false;
@@ -188,7 +189,14 @@
       AudioManager.preload("sfx_gameover"),
     ];
     
-    await Promise.all([...imagePromises, ...audioPreloadPromises]);
+    // Load level patterns if in level mode
+    let levelLoadPromise = Promise.resolve();
+    if (gameMode === 'level' && levelId) {
+      levelGenerator = new LevelGenerator(levelId, GAME_SETTINGS.GROUND_Y + stageGroundOffsetY);
+      levelLoadPromise = levelGenerator.waitForLoad();
+    }
+    
+    await Promise.all([...imagePromises, ...audioPreloadPromises, levelLoadPromise]);
     assetsLoaded = true;
   }
 
@@ -210,6 +218,7 @@
       invincibleTimer: 0
     };
     lastSurvivalSecond = 0;
+    playerDistanceTraveled = 0;
 
     // Initialize layers
     backgroundLayer = new BackgroundLayer(selectedStage, stageGroundOffsetY);
@@ -237,7 +246,8 @@
     // Initialize generator based on game mode
     if (gameMode === 'endless') {
       endlessGenerator = new EndlessGenerator();
-    } else {
+    } else if (gameMode === 'level' && !levelGenerator) {
+      // If levelGenerator wasn't created in loadAssets (for some reason), create it here
       levelGenerator = new LevelGenerator(levelId || 'stage1_1', GAME_SETTINGS.GROUND_Y + stageGroundOffsetY);
     }
 
@@ -304,13 +314,16 @@
       lastSurvivalSecond = currentSecond;
     }
 
+    // Update distance traveled for level pattern generation
+    playerDistanceTraveled += currentScrollSpeed * (deltaTime / 1000) * 60; // Convert to pixels per frame equivalent
+
     // Update layers and generate new entities based on game mode
     let newEntities: { enemies: any[], coins: any[], traps: any[] };
     
     if (gameMode === 'endless' && endlessGenerator) {
       newEntities = endlessGenerator.update(deltaTime);
     } else if (gameMode === 'level' && levelGenerator) {
-      newEntities = levelGenerator.update(deltaTime);
+      newEntities = levelGenerator.update(deltaTime, currentScrollSpeed, playerDistanceTraveled);
       
       // Level completion is now handled only via goal collision
       // No automatic completion when patterns are finished

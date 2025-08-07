@@ -15,17 +15,13 @@ export class GoalPattern extends Pattern {
         x: startX,
         y: groundY - 300 // High up to make it visible
       },
-      size: {
-        width: 128,
-        height: 256
-      },
-      collisionBox: {
-        collisionOffsetX: 16,
-        collisionOffsetY: 16,
-        collisionWidth: 96,
-        collisionHeight: 224
-      }
+      size: Goal.getDefaultSize(),
+      collisionBox: Goal.getDefaultCollisionBox()
     }];
+  }
+
+  public getDistance(): number {
+    return Goal.getDefaultSize().width; // Just the width of the goal
   }
 
   public createObjects(startX: number, groundY: number): any[] {

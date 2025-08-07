@@ -101,7 +101,7 @@
 </script>
 
 <Page mainProgress={main} 
-  contentStyle="box-sizing: border-box; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 2rem; padding-top: var(--topbarHeight, 0px);">
+  contentStyle="box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 2rem; padding-top: var(--topbarHeight, 0px);">
   
   <!-- Layered background effects for page wrapper -->
   <div slot="outside" class="pageBackground" style="background-image: url({imageAssets[stageBackgroundImageKey(stageId)]});">

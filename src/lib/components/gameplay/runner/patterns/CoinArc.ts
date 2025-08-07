@@ -1,4 +1,5 @@
 import { Pattern, type PatternEntity } from '../objects/Pattern';
+import { Coin } from '../objects/Coin';
 
 export class CoinArcPattern extends Pattern {
   private coinCount: number;
@@ -30,19 +31,15 @@ export class CoinArcPattern extends Pattern {
           x: startX + i * stepX,
           y: groundY - this.startY - arcY
         },
-        size: {
-          width: 128,
-          height: 128
-        },
-        collisionBox: {
-          collisionOffsetX: 16,
-          collisionOffsetY: 16,
-          collisionWidth: 96,
-          collisionHeight: 96
-        }
+        size: Coin.getDefaultSize(),
+        collisionBox: Coin.getDefaultCollisionBox()
       });
     }
 
     return entities;
+  }
+
+  public getDistance(): number {
+    return this.arcWidth + Coin.getDefaultSize().width; // Width of arc plus coin width for spacing
   }
 }

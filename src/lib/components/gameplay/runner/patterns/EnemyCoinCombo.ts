@@ -1,4 +1,6 @@
 import { Pattern, type PatternEntity } from '../objects/Pattern';
+import { Enemy } from '../objects/Enemy';
+import { Coin } from '../objects/Coin';
 
 export class EnemyCoinComboPattern extends Pattern {
   private enemyCount: number;
@@ -22,18 +24,10 @@ export class EnemyCoinComboPattern extends Pattern {
         type: 'enemy',
         position: {
           x: currentX,
-          y: groundY - 128
+          y: groundY - Enemy.getDefaultSize().height
         },
-        size: {
-          width: 128,
-          height: 128
-        },
-        collisionBox: {
-          collisionOffsetX: 16,
-          collisionOffsetY: 16,
-          collisionWidth: 96,
-          collisionHeight: 96
-        }
+        size: Enemy.getDefaultSize(),
+        collisionBox: Enemy.getDefaultCollisionBox()
       });
       currentX += this.spacing;
     }
@@ -46,20 +40,18 @@ export class EnemyCoinComboPattern extends Pattern {
           x: currentX,
           y: groundY - 200 - Math.random() * 50 // Higher than usual to reward jumping over enemy
         },
-        size: {
-          width: 128,
-          height: 128
-        },
-        collisionBox: {
-          collisionOffsetX: 16,
-          collisionOffsetY: 16,
-          collisionWidth: 96,
-          collisionHeight: 96
-        }
+        size: Coin.getDefaultSize(),
+        collisionBox: Coin.getDefaultCollisionBox()
       });
       currentX += this.spacing * 0.8; // Tighter spacing for coins
     }
 
     return entities;
+  }
+
+  public getDistance(): number {
+    const enemyDistance = this.enemyCount * this.spacing;
+    const coinDistance = this.coinCount * this.spacing * 0.8;
+    return enemyDistance + coinDistance;
   }
 }

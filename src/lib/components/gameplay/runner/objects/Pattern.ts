@@ -52,4 +52,7 @@ export abstract class Pattern {
 
     return objects;
   }
+
+  // Get total distance covered by this pattern
+  public abstract getDistance(): number;
 }

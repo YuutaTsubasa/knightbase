@@ -4,18 +4,32 @@ import type { Position, Size, CollisionBox } from '../types/GameTypes';
 export class Enemy extends SpriteAnimationObject {
   public facingLeft: boolean = true;
 
+  // Default size and collision box for enemies
+  public static getDefaultSize(): Size {
+    return { width: 160, height: 160 };
+  }
+
+  public static getDefaultCollisionBox(): CollisionBox {
+    return {
+      collisionOffsetX: 20,
+      collisionOffsetY: 20,
+      collisionWidth: 120,
+      collisionHeight: 120
+    };
+  }
+
   constructor(
     position: Position,
-    size: Size,
+    size?: Size,
     collisionBox?: Partial<CollisionBox>
   ) {
     super(
       position,
-      size,
+      size || Enemy.getDefaultSize(),
       'enemy',
       1, // Single frame for enemy (could be expanded)
       0,  // No animation for basic enemy
-      collisionBox
+      collisionBox || Enemy.getDefaultCollisionBox()
     );
   }
 
