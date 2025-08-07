@@ -1,8 +1,10 @@
 import { SpriteAnimationObject } from './SpriteAnimationObject';
+import { AudioManager } from '$lib/systems/AudioManager';
 import type { Position, Size } from '../types/GameTypes';
 
 export class Explosion extends SpriteAnimationObject {
   public finished: boolean = false;
+  private soundPlayed: boolean = false;
 
   constructor(
     position: Position,
@@ -20,6 +22,12 @@ export class Explosion extends SpriteAnimationObject {
   public update(deltaTime: number, scrollSpeed: number): void {
     this.moveWithScroll(scrollSpeed);
     this.updateAnimation(deltaTime);
+    
+    // Play explosion sound on first update (once)
+    if (!this.soundPlayed) {
+      AudioManager.play("sfx_explosion");
+      this.soundPlayed = true;
+    }
   }
 
   protected onAnimationFrameChange(): void {

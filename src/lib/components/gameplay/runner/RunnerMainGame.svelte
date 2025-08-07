@@ -413,7 +413,6 @@
           effectLayer.addExplosion(explosion);
           
           gameStats.score += 10;
-          AudioManager.play("sfx_explosion");
         }
       });
     });
