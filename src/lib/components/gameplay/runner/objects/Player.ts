@@ -164,6 +164,9 @@ export class Player extends SpriteAnimationObject {
       return false; // No damage taken due to invincibility
     }
     
+    // Play hurt sound effect
+    AudioManager.play("sfx_hurt");
+    
     this.isInvincible = true;
     this.invincibleTimer = this.invincibleDuration;
     return true; // Damage taken

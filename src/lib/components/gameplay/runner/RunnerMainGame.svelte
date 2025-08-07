@@ -14,14 +14,16 @@
   import { Play, Pause, Heart, Keyboard, Smartphone, Gamepad2, ArrowUpFromLine, Sword } from "lucide-svelte";
   
   // Layer imports
-  import { BackgroundLayer } from "./layers/BackgroundLayer";
-  import { CharacterLayer } from "./layers/CharacterLayer"; 
-  import { TrapEnemyLayer } from "./layers/TrapEnemyLayer";
-  import { EffectLayer } from "./layers/EffectLayer";
+  import { Layer } from "./layers/Layer";
   
   // Object imports
   import { Player } from "./objects/Player";
   import { Explosion } from "./objects/Explosion";
+  import { Coin } from "./objects/Coin";
+  import { Goal } from "./objects/Goal";
+  import { Enemy } from "./objects/Enemy";
+  import { Trap } from "./objects/Trap";
+  import { Projectile } from "./objects/Projectile";
   
   // Generator import
   import { EndlessGenerator } from "./generators/EndlessGenerator";
@@ -46,15 +48,18 @@
   let animationFrameId: number;
 
   // Game layers
-  let backgroundLayer: BackgroundLayer;
-  let characterLayer: CharacterLayer;
-  let trapEnemyLayer: TrapEnemyLayer;
-  let effectLayer: EffectLayer;
+  let backgroundLayer: Layer;
+  let characterLayer: Layer;
+  let trapEnemyLayer: Layer;
+  let effectLayer: Layer;
 
   // Game entities  
   let player: Player;
   let endlessGenerator: EndlessGenerator;
   let levelGenerator: LevelGenerator;
+
+  // Background state (moved from BackgroundLayer)
+  let backgroundOffset: number = 0;
 
   // Game state
   let gameState: GameState = 'playing';
@@ -91,6 +96,7 @@
   // Asset loading
   let assetsLoaded = false;
   let loadedImages: Record<string, HTMLImageElement> = {};
+  let levelPatterns: Pattern[] = []; // Store level patterns for initGame
 
   // Input handling
   let keysPressed: Record<string, boolean> = {};
@@ -191,7 +197,7 @@
     ];
     
     // Load level patterns if in level mode
-    let levelPatterns: Pattern[] = [];
+    levelPatterns = [];
     if (gameMode === 'level' && levelId) {
       try {
         const patternData = await TextAssetManager.loadPatternData(levelId);
@@ -204,11 +210,6 @@
     }
     
     await Promise.all([...imagePromises, ...audioPreloadPromises]);
-    
-    // Create level generator with loaded patterns
-    if (gameMode === 'level' && levelId) {
-      levelGenerator = new LevelGenerator(levelPatterns, GAME_SETTINGS.GROUND_Y + stageGroundOffsetY);
-    }
     
     assetsLoaded = true;
   }
@@ -232,10 +233,10 @@
     playerDistanceTraveled = 0;
 
     // Initialize layers
-    backgroundLayer = new BackgroundLayer(selectedStage, stageGroundOffsetY);
-    characterLayer = new CharacterLayer();
-    trapEnemyLayer = new TrapEnemyLayer();
-    effectLayer = new EffectLayer();
+    backgroundLayer = new Layer('background');
+    characterLayer = new Layer('character');
+    trapEnemyLayer = new Layer('trap-enemy');
+    effectLayer = new Layer('effects');
 
     // Initialize player
     player = new Player(
@@ -253,15 +254,14 @@
         collisionHeight: 216
       }
     );
-    characterLayer.setPlayer(player);
+    characterLayer.addEntity(player);
 
     // Initialize generator based on game mode
     if (gameMode === 'endless') {
       endlessGenerator = new EndlessGenerator();
-    } else if (gameMode === 'level' && !levelGenerator) {
-      // If levelGenerator wasn't created in loadAssets (for some reason), create it here with empty patterns
-      console.warn('LevelGenerator not created during loadAssets, creating with empty patterns');
-      levelGenerator = new LevelGenerator([], GAME_SETTINGS.GROUND_Y + stageGroundOffsetY);
+    } else if (gameMode === 'level') {
+      // Create LevelGenerator with loaded patterns
+      levelGenerator = new LevelGenerator(levelPatterns);
     }
 
     // Start countdown
@@ -290,10 +290,22 @@
 
     const currentScrollSpeed = getCurrentScrollSpeed();
     if (!isStop) {
+      // Update background offset
+      backgroundOffset -= currentScrollSpeed;
+      
+      // Update all layers
       backgroundLayer.update(deltaTime, currentScrollSpeed);
       characterLayer.update(deltaTime, currentScrollSpeed);
       trapEnemyLayer.update(deltaTime, currentScrollSpeed);
       effectLayer.update(deltaTime, currentScrollSpeed);
+      
+      // Remove finished explosions from effect layer
+      effectLayer.removeEntitiesWhere(entity => {
+        if (entity instanceof Explosion) {
+          return entity.finished;
+        }
+        return false;
+      });
     }
 
     if (waitForCountdown) return;
@@ -335,8 +347,21 @@
     
     if (gameMode === 'endless' && endlessGenerator) {
       newEntities = endlessGenerator.update(deltaTime);
+      // Apply ground position to endless mode entities
+      const groundY = GAME_SETTINGS.GROUND_Y + stageGroundOffsetY;
+      newEntities.enemies.forEach(enemy => {
+        enemy.y = groundY - enemy.height;
+      });
+      newEntities.traps.forEach(trap => {
+        trap.y = groundY - trap.height;
+      });
+      // Coins keep their relative Y position but adjust to ground
+      newEntities.coins.forEach(coin => {
+        coin.y = groundY + coin.y; // coin.y is already relative
+      });
     } else if (gameMode === 'level' && levelGenerator) {
-      newEntities = levelGenerator.update(deltaTime, currentScrollSpeed, playerDistanceTraveled);
+      const groundY = GAME_SETTINGS.GROUND_Y + stageGroundOffsetY;
+      newEntities = levelGenerator.update(deltaTime, currentScrollSpeed, playerDistanceTraveled, groundY);
       
       // Level completion is now handled only via goal collision
       // No automatic completion when patterns are finished
@@ -344,11 +369,11 @@
       newEntities = { enemies: [], coins: [], traps: [], goals: [] };
     }
     
-    newEntities.enemies.forEach(enemy => trapEnemyLayer.addEnemy(enemy));
-    newEntities.coins.forEach(coin => trapEnemyLayer.addCoin(coin));
-    newEntities.traps.forEach(trap => trapEnemyLayer.addTrap(trap));
+    newEntities.enemies.forEach(enemy => trapEnemyLayer.addEntity(enemy));
+    newEntities.coins.forEach(coin => trapEnemyLayer.addEntity(coin));
+    newEntities.traps.forEach(trap => trapEnemyLayer.addEntity(trap));
     if (newEntities.goals) {
-      newEntities.goals.forEach(goal => trapEnemyLayer.addGoal(goal));
+      newEntities.goals.forEach(goal => trapEnemyLayer.addEntity(goal));
     }
     
     // Handle collisions
@@ -358,11 +383,17 @@
   }
 
   function handleCollisions() {
-    const player = characterLayer.getPlayer();
     if (!player) return;
 
+    // Get entities from layers
+    const coins = trapEnemyLayer.getEntities().filter(entity => entity instanceof Coin) as Coin[];
+    const goals = trapEnemyLayer.getEntities().filter(entity => entity instanceof Goal) as Goal[];
+    const enemies = trapEnemyLayer.getEntities().filter(entity => entity instanceof Enemy) as Enemy[];
+    const traps = trapEnemyLayer.getEntities().filter(entity => entity instanceof Trap) as Trap[];
+    const projectiles = characterLayer.getEntities().filter(entity => entity instanceof Projectile) as Projectile[];
+
     // Collision with coins
-    trapEnemyLayer.getCoins().forEach(coin => {
+    coins.forEach(coin => {
       if (!coin.collected && player.checkCollision(coin)) {
         coin.collect();
         gameStats.coins++;
@@ -373,7 +404,7 @@
 
     // Collision with goals (for level mode)
     if (gameMode === 'level') {
-      trapEnemyLayer.getGoals().forEach(goal => {
+      goals.forEach(goal => {
         if (!goal.reached && player.checkCollision(goal)) {
           goal.reach();
           levelGenerator?.markGoalReached();
@@ -386,10 +417,10 @@
     }
 
     // Collision with enemies and traps
-    [...trapEnemyLayer.getEnemies(), ...trapEnemyLayer.getTraps()].forEach(entity => {
+    [...enemies, ...traps].forEach(entity => {
       if (player.checkCollision(entity) && player.takeDamage()) {
         gameStats.lives--;
-        AudioManager.play("sfx_hurt");
+        // Note: hurt sound is now played inside player.takeDamage()
         
         if (gameStats.lives <= 0) {
           handleGameOver();
@@ -398,8 +429,8 @@
     });
 
     // Projectile vs enemy collisions
-    characterLayer.getProjectiles().forEach(projectile => {
-      trapEnemyLayer.getEnemies().forEach(enemy => {
+    projectiles.forEach(projectile => {
+      enemies.forEach(enemy => {
         if (projectile.checkCollision(enemy)) {
           // Remove enemy and projectile
           trapEnemyLayer.removeEntity(enemy);
@@ -410,7 +441,7 @@
             { x: enemy.x - enemy.width / 2, y: enemy.y - enemy.height / 2 - 20 },
             { width: enemy.width * 2, height: enemy.height * 2 }
           );
-          effectLayer.addExplosion(explosion);
+          effectLayer.addEntity(explosion);
           
           gameStats.score += 10;
         }
@@ -418,21 +449,61 @@
     });
 
     // Clean up collected coins
-    trapEnemyLayer.removeCollectedCoins();
+    trapEnemyLayer.removeEntitiesWhere(entity => {
+      if (entity instanceof Coin) {
+        return entity.collected;
+      }
+      return false;
+    });
   }
 
   function render() {
     if (!ctx || !assetsLoaded) return;
     
+    // Render background first
+    renderBackground(ctx);
+    
     // Render layers in order
-    backgroundLayer.render(ctx, loadedImages);
     effectLayer.render(ctx, loadedImages);
     trapEnemyLayer.render(ctx, loadedImages);
+    
+    // Render character layer (player and projectiles)
     characterLayer.render(ctx, loadedImages);
 
     // Render countdown
     if (!waitForCountdown && showCountdown) {
       renderCountdown(ctx);
+    }
+  }
+
+  function renderBackground(ctx: CanvasRenderingContext2D): void {
+    // Clear canvas
+    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    
+    const backgroundImage = loadedImages[stageBackgroundImageKey(selectedStage)];
+    
+    if (backgroundImage) {
+      const bgWidth = ctx.canvas.width;
+      const bgHeight = ctx.canvas.height;
+      
+      // Background moved down, need to fill the top and draw extended background
+      const backgroundYOffset = bgHeight + stageGroundOffsetY;
+      const extendedHeight = bgHeight + backgroundYOffset;
+
+      const bgX1 = backgroundOffset % bgWidth;
+      const bgX2 = bgX1 + bgWidth;
+      
+      // Draw background pattern to fill entire extended area
+      for (let y = -backgroundYOffset; y < extendedHeight; y += bgHeight) {
+        ctx.drawImage(backgroundImage, bgX1, y, bgWidth, bgHeight);
+        ctx.drawImage(backgroundImage, bgX2, y, bgWidth, bgHeight);
+      }
+    } else {
+      // Fallback background
+      ctx.fillStyle = '#4a90e2';
+      ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+      ctx.fillStyle = '#8b5a3c';
+      ctx.fillRect(0, GAME_SETTINGS.GROUND_Y, ctx.canvas.width, ctx.canvas.height - GAME_SETTINGS.GROUND_Y);
     }
   }
 
@@ -670,7 +741,7 @@
     if (player && gameState === 'playing') {
       const projectile = player.attack();
       if (projectile) {
-        characterLayer.addProjectile(projectile);
+        characterLayer.addEntity(projectile);
       }
     }
   }

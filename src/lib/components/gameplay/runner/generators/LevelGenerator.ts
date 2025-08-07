@@ -12,19 +12,17 @@ export class LevelGenerator {
   private currentPatternIndex: number = 0;
   private currentX: number = 800; // Start off-screen
   private playerDistanceTraveled: number = 0; // Track player's actual distance
-  private groundY: number = 480;
   private levelCompleted: boolean = false;
   private goalReached: boolean = false;
   private lastPatternGeneratedTime: number = 0; // Add cooldown tracking
   private minPatternInterval: number = 1000; // Minimum 1 second between patterns
 
-  constructor(patterns: Pattern[], groundY: number = 480) {
+  constructor(patterns: Pattern[]) {
     this.patterns = patterns;
-    this.groundY = groundY;
     console.log(`Initialized level generator with ${this.patterns.length} patterns`);
   }
 
-  public update(deltaTime: number, currentScrollSpeed: number, playerDistanceTraveled: number): { enemies: Enemy[], coins: Coin[], traps: Trap[], goals: Goal[] } {
+  public update(deltaTime: number, currentScrollSpeed: number, playerDistanceTraveled: number, groundY: number): { enemies: Enemy[], coins: Coin[], traps: Trap[], goals: Goal[] } {
     const result = { enemies: [] as Enemy[], coins: [] as Coin[], traps: [] as Trap[], goals: [] as Goal[] };
 
     // Update player distance
@@ -57,7 +55,7 @@ export class LevelGenerator {
         // Calculate relative position for the pattern (off-screen to the right)
         // Convert from absolute distance to relative screen position
         const relativeX = 800 + 50 + (this.currentX - this.playerDistanceTraveled);
-        const objects = currentPattern.createObjects(relativeX, this.groundY);
+        const objects = currentPattern.createObjects(relativeX, groundY);
         
         objects.forEach(obj => {
           if (obj instanceof Enemy) {
