@@ -143,7 +143,7 @@
           {/if}
         </div>
 
-        {#if record && isCompleted}
+        {#if record && (isCompleted || level.endless)}
           <div class="recordsSection">
             <h4>{$t('records')}</h4>
             <div class="records">

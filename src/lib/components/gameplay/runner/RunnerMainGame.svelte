@@ -119,7 +119,7 @@
     
     // Update stage record if this is better than previous
     const currentSpeed = getDisplayScrollSpeed();
-    let recordKey = selectedStage; // For endless mode
+    let recordKey = `${selectedStage}_endless`; // For endless mode use stageId_endless format
     
     // For level mode, use the specific level ID
     if (gameMode === 'level' && levelId) {
@@ -318,7 +318,7 @@
     playerDistanceTraveled += currentScrollSpeed * (deltaTime / 1000) * 60; // Convert to pixels per frame equivalent
 
     // Update layers and generate new entities based on game mode
-    let newEntities: { enemies: any[], coins: any[], traps: any[] };
+    let newEntities: { enemies: any[], coins: any[], traps: any[], goals?: any[] };
     
     if (gameMode === 'endless' && endlessGenerator) {
       newEntities = endlessGenerator.update(deltaTime);
