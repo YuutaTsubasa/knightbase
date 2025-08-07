@@ -24,8 +24,8 @@
   import { Explosion } from "./objects/Explosion";
   
   // Generator import
-  import { EndlessGenerator } from "./endless/EndlessGenerator";
-  import { LevelGenerator } from "./levels/LevelGenerator";
+  import { EndlessGenerator } from "./generators/EndlessGenerator";
+  import { LevelGenerator } from "./generators/LevelGenerator";
 
   import type { GameState, GameStats } from "./types/GameTypes";
   import { UniversalNavigationManager } from "$lib/systems/UniversalNavigationManager";

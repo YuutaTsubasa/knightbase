@@ -69,7 +69,11 @@ export class LevelGenerator {
       const currentPattern = this.patterns[this.currentPatternIndex];
       if (currentPattern) {
         console.log(`Generating pattern ${this.currentPatternIndex}: ${currentPattern.name} at distance ${this.currentX}`);
-        const objects = currentPattern.createObjects(this.currentX, this.groundY);
+        
+        // Calculate relative position for the pattern (off-screen to the right)
+        // Convert from absolute distance to relative screen position
+        const relativeX = 800 + 50 + (this.currentX - this.playerDistanceTraveled);
+        const objects = currentPattern.createObjects(relativeX, this.groundY);
         
         objects.forEach(obj => {
           if (obj instanceof Enemy) {

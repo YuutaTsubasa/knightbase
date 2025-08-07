@@ -346,7 +346,6 @@
     position: absolute;
     inset: 0;
     width: 100vw;
-    height: 100vh;
     background-size: repeat;
     background-position: center;
     z-index: 0;
