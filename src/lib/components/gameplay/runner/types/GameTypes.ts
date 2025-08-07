@@ -50,6 +50,4 @@ export interface GameStats {
   coins: number;
   lives: number;
   score: number;
-  isInvincible: boolean;
-  invincibleTimer: number;
 }

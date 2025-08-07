@@ -46,12 +46,15 @@ export class CharacterLayer extends Layer {
     }
   }
 
-  // Override render to handle player separately
+  // Override render to handle player rendering
   public render(ctx: CanvasRenderingContext2D, images: Record<string, HTMLImageElement>): void {
     // Render projectiles first
     this.entities.forEach(entity => entity.render(ctx, images));
     
-    // Player rendering is handled separately via renderPlayerWithInvincibility
+    // Render player (now with internal invincibility handling)
+    if (this.player) {
+      this.player.render(ctx, images);
+    }
   }
 
   public addProjectile(projectile: Projectile): void {

@@ -1,6 +1,6 @@
 import type { GameEntity } from '../types/GameTypes';
 
-export abstract class Layer {
+export class Layer {
   protected entities: GameEntity[] = [];
   public name: string;
 
@@ -44,25 +44,11 @@ export abstract class Layer {
     
     // Remove off-screen entities
     this.entities = this.entities.filter(entity => !entity.isOffScreen(800)); // Canvas width
-    
-    // Layer-specific update logic
-    this.updateLayer(deltaTime, scrollSpeed);
   }
 
   // Render all entities in this layer
   public render(ctx: CanvasRenderingContext2D, images: Record<string, HTMLImageElement>): void {
-    // Layer-specific pre-render logic
-    this.preRender(ctx, images);
-    
     // Render all entities
     this.entities.forEach(entity => entity.render(ctx, images));
-    
-    // Layer-specific post-render logic
-    this.postRender(ctx, images);
   }
-
-  // Abstract methods for layer-specific behavior
-  protected abstract updateLayer(deltaTime: number, scrollSpeed: number): void;
-  protected abstract preRender(ctx: CanvasRenderingContext2D, images: Record<string, HTMLImageElement>): void;
-  protected abstract postRender(ctx: CanvasRenderingContext2D, images: Record<string, HTMLImageElement>): void;
 }

@@ -59,9 +59,7 @@
     survivalTime: 0,
     coins: 0,
     lives: 3,
-    score: 0,
-    isInvincible: false,
-    invincibleTimer: 0
+    score: 0
   };
   let lastSurvivalSecond = 0;
   let playerDistanceTraveled = 0; // Track total distance traveled
@@ -213,9 +211,7 @@
       survivalTime: 0,
       coins: 0,
       lives: 3,
-      score: 0,
-      isInvincible: false,
-      invincibleTimer: 0
+      score: 0
     };
     lastSurvivalSecond = 0;
     playerDistanceTraveled = 0;
@@ -234,6 +230,7 @@
       selectedCharacter,
       GAME_SETTINGS.GRAVITY,
       GAME_SETTINGS.JUMP_FORCE,
+      GAME_SETTINGS.INVINCIBLE_DURATION,
       {
         collisionOffsetX: 40,
         collisionOffsetY: 20,
@@ -341,14 +338,7 @@
     // Handle collisions
     handleCollisions();
 
-    // Update invincibility
-    if (gameStats.isInvincible) {
-      gameStats.invincibleTimer -= deltaTime;
-      if (gameStats.invincibleTimer <= 0) {
-        gameStats.isInvincible = false;
-        gameStats.invincibleTimer = 0;
-      }
-    }
+    // Invincibility is now handled internally by Player class during its update
   }
 
   function handleCollisions() {
@@ -381,10 +371,8 @@
 
     // Collision with enemies and traps
     [...trapEnemyLayer.getEnemies(), ...trapEnemyLayer.getTraps()].forEach(entity => {
-      if (player.checkCollision(entity) && !gameStats.isInvincible) {
+      if (player.checkCollision(entity) && player.takeDamage()) {
         gameStats.lives--;
-        gameStats.isInvincible = true;
-        gameStats.invincibleTimer = GAME_SETTINGS.INVINCIBLE_DURATION;
         AudioManager.play("sfx_hurt");
         
         if (gameStats.lives <= 0) {
@@ -426,14 +414,6 @@
     effectLayer.render(ctx, loadedImages);
     trapEnemyLayer.render(ctx, loadedImages);
     characterLayer.render(ctx, loadedImages);
-    
-    // Render player with invincibility
-    characterLayer.renderPlayerWithInvincibility(
-      ctx, 
-      loadedImages, 
-      gameStats.isInvincible, 
-      gameStats.invincibleTimer
-    );
 
     // Render countdown
     if (!waitForCountdown && showCountdown) {

@@ -9,10 +9,15 @@ export class Player extends SpriteAnimationObject {
   public onGround: boolean = true;
   public animation: AnimationType = 'run';
   
+  // Encapsulated invincibility state
+  public isInvincible: boolean = false;
+  public invincibleTimer: number = 0;
+  
   private groundY: number;
   private gravity: number;
   private jumpForce: number;
   private characterKey: string;
+  private invincibleDuration: number;
 
   constructor(
     position: Position,
@@ -21,6 +26,7 @@ export class Player extends SpriteAnimationObject {
     characterKey: string,
     gravity: number = 0.8,
     jumpForce: number = -20,
+    invincibleDuration: number = 2000,
     collisionBox?: Partial<CollisionBox>
   ) {
     // Call parent with run animation initially
@@ -37,6 +43,7 @@ export class Player extends SpriteAnimationObject {
     this.gravity = gravity;
     this.jumpForce = jumpForce;
     this.characterKey = characterKey;
+    this.invincibleDuration = invincibleDuration;
   }
 
   public update(deltaTime: number, scrollSpeed: number): void {
@@ -57,6 +64,15 @@ export class Player extends SpriteAnimationObject {
     // Update animation based on current state
     this.updateAnimationState();
     this.updateAnimation(deltaTime);
+
+    // Update invincibility timer
+    if (this.isInvincible) {
+      this.invincibleTimer -= deltaTime;
+      if (this.invincibleTimer <= 0) {
+        this.isInvincible = false;
+        this.invincibleTimer = 0;
+      }
+    }
   }
 
   private updateAnimationState(): void {
@@ -129,21 +145,38 @@ export class Player extends SpriteAnimationObject {
   }
 
   // Render with invincibility flashing
+  public render(ctx: CanvasRenderingContext2D, images: Record<string, HTMLImageElement>): void {
+    if (!this.isInvincible) {
+      super.render(ctx, images);
+      return;
+    }
+
+    // Flash every 100ms during invincibility
+    const shouldDraw = Math.floor(this.invincibleTimer / 100) % 2 === 0;
+    if (shouldDraw) {
+      super.render(ctx, images);
+    }
+  }
+
+  // Method to take damage
+  public takeDamage(): boolean {
+    if (this.isInvincible) {
+      return false; // No damage taken due to invincibility
+    }
+    
+    this.isInvincible = true;
+    this.invincibleTimer = this.invincibleDuration;
+    return true; // Damage taken
+  }
+
+  // Legacy method for compatibility (can be removed once all usage is updated)
   public renderWithInvincibility(
     ctx: CanvasRenderingContext2D, 
     images: Record<string, HTMLImageElement>,
     isInvincible: boolean,
     invincibleTimer: number
   ): void {
-    if (!isInvincible) {
-      this.render(ctx, images);
-      return;
-    }
-
-    // Flash every 100ms during invincibility
-    const shouldDraw = Math.floor(invincibleTimer / 100) % 2 === 0;
-    if (shouldDraw) {
-      this.render(ctx, images);
-    }
+    // For compatibility, just render normally (invincibility is now internal)
+    this.render(ctx, images);
   }
 }
