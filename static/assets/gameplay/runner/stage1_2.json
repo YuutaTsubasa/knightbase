@@ -1,0 +1,54 @@
+{
+  "id": "stage1_2", 
+  "name": "Rising Challenge",
+  "patterns": [
+    {
+      "type": "coinLine",
+      "params": {
+        "coinCount": 4,
+        "spacing": 100,
+        "height": 180
+      }
+    },
+    {
+      "type": "enemyCoinCombo",
+      "params": {
+        "enemyCount": 1,
+        "coinCount": 3,
+        "spacing": 150
+      }
+    },
+    {
+      "type": "gap",
+      "params": {
+        "distance": 200
+      }
+    },
+    {
+      "type": "trapCombo",
+      "params": {
+        "trapCount": 3,
+        "spacing": 120
+      }
+    },
+    {
+      "type": "coinArc",
+      "params": {
+        "coinCount": 6,
+        "arcHeight": 250,
+        "arcWidth": 500,
+        "startY": 250
+      }
+    },
+    {
+      "type": "gap",
+      "params": {
+        "distance": 250
+      }
+    },
+    {
+      "type": "goal",
+      "params": {}
+    }
+  ]
+}

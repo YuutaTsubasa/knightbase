@@ -1,4 +1,5 @@
 import { Pattern, type PatternEntity } from '../objects/Pattern';
+import { Coin } from '../objects/Coin';
 
 export class CoinLinePattern extends Pattern {
   private coinCount: number;
@@ -22,19 +23,15 @@ export class CoinLinePattern extends Pattern {
           x: startX + i * this.spacing,
           y: groundY - this.height - Math.random() * 100 // Slight height variation
         },
-        size: {
-          width: 128,
-          height: 128
-        },
-        collisionBox: {
-          collisionOffsetX: 16,
-          collisionOffsetY: 16,
-          collisionWidth: 96,
-          collisionHeight: 96
-        }
+        size: Coin.getDefaultSize(),
+        collisionBox: Coin.getDefaultCollisionBox()
       });
     }
 
     return entities;
+  }
+
+  public getDistance(): number {
+    return (this.coinCount - 1) * this.spacing + Coin.getDefaultSize().width;
   }
 }

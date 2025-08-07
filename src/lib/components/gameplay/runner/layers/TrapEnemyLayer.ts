@@ -2,6 +2,7 @@ import { Layer } from './Layer';
 import { Enemy } from '../objects/Enemy';
 import { Trap } from '../objects/Trap';
 import { Coin } from '../objects/Coin';
+import { Goal } from '../objects/Goal';
 
 export class TrapEnemyLayer extends Layer {
   constructor() {
@@ -32,6 +33,10 @@ export class TrapEnemyLayer extends Layer {
     this.addEntity(coin);
   }
 
+  public addGoal(goal: Goal): void {
+    this.addEntity(goal);
+  }
+
   public getEnemies(): Enemy[] {
     return this.entities.filter(entity => entity instanceof Enemy) as Enemy[];
   }
@@ -42,6 +47,10 @@ export class TrapEnemyLayer extends Layer {
 
   public getCoins(): Coin[] {
     return this.entities.filter(entity => entity instanceof Coin) as Coin[];
+  }
+
+  public getGoals(): Goal[] {
+    return this.entities.filter(entity => entity instanceof Goal) as Goal[];
   }
 
   // Remove collected coins

@@ -1,5 +1,18 @@
 import { writable } from "svelte/store";
 
+export interface StageRecord {
+  bestTime: number; // in seconds
+  bestScore: number;
+  bestSpeed: number; // in multiplier (e.g., 8.5)
+  completed: boolean;
+}
+
+export interface PlayerResources {
+  gold: number;
+  diamond: number;
+  gem: number;
+}
+
 export interface PlayerData {
   name: string;
   level: number;
@@ -11,6 +24,8 @@ export interface PlayerData {
   bgmVolume: number,
   sfxVolume: number,
   locale?: string,
+  resources: PlayerResources;
+  stageRecords: Record<string, StageRecord>; // stageId -> record
 }
 
 const DEFAULT_PLAYER_DATA : PlayerData = {
@@ -24,6 +39,12 @@ const DEFAULT_PLAYER_DATA : PlayerData = {
     bgmVolume: 50,
     sfxVolume: 50,
     locale: undefined,
+    resources: {
+      gold: 0,
+      diamond: 0,
+      gem: 0
+    },
+    stageRecords: {}
 }
 
 export class PlayerDataManager {
@@ -84,6 +105,67 @@ export class PlayerDataManager {
   static reset(): void {
     this.data = DEFAULT_PLAYER_DATA;
     this.save();
+  }
+
+  // Resource management methods
+  static addResources(resources: Partial<PlayerResources>): void {
+    if (resources.gold) this.data.resources.gold += resources.gold;
+    if (resources.diamond) this.data.resources.diamond += resources.diamond;
+    if (resources.gem) this.data.resources.gem += resources.gem;
+    this.save();
+  }
+
+  static spendResources(resources: Partial<PlayerResources>): boolean {
+    const canAfford = 
+      (resources.gold || 0) <= this.data.resources.gold &&
+      (resources.diamond || 0) <= this.data.resources.diamond &&
+      (resources.gem || 0) <= this.data.resources.gem;
+    
+    if (canAfford) {
+      if (resources.gold) this.data.resources.gold -= resources.gold;
+      if (resources.diamond) this.data.resources.diamond -= resources.diamond;
+      if (resources.gem) this.data.resources.gem -= resources.gem;
+      this.save();
+      return true;
+    }
+    return false;
+  }
+
+  // Stage record management methods
+  static updateStageRecord(stageId: string, stats: { time: number; score: number; speed: number }): boolean {
+    const existing = this.data.stageRecords[stageId];
+    let isNewRecord = false;
+
+    if (!existing) {
+      this.data.stageRecords[stageId] = {
+        bestTime: stats.time,
+        bestScore: stats.score,
+        bestSpeed: stats.speed,
+        completed: true
+      };
+      isNewRecord = true;
+    } else {
+      if (stats.time > existing.bestTime) {
+        existing.bestTime = stats.time;
+        isNewRecord = true;
+      }
+      if (stats.score > existing.bestScore) {
+        existing.bestScore = stats.score;
+        isNewRecord = true;
+      }
+      if (stats.speed > existing.bestSpeed) {
+        existing.bestSpeed = stats.speed;
+        isNewRecord = true;
+      }
+      existing.completed = true;
+    }
+
+    this.save();
+    return isNewRecord;
+  }
+
+  static getStageRecord(stageId: string): StageRecord | null {
+    return this.data.stageRecords[stageId] || null;
   }
 }
 

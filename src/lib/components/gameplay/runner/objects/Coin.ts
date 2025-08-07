@@ -4,18 +4,32 @@ import type { Position, Size, CollisionBox } from '../types/GameTypes';
 export class Coin extends SpriteAnimationObject {
   public collected: boolean = false;
 
+  // Default size and collision box for coins
+  public static getDefaultSize(): Size {
+    return { width: 128, height: 128 };
+  }
+
+  public static getDefaultCollisionBox(): CollisionBox {
+    return {
+      collisionOffsetX: 16,
+      collisionOffsetY: 16,
+      collisionWidth: 96,
+      collisionHeight: 96
+    };
+  }
+
   constructor(
     position: Position,
-    size: Size,
+    size?: Size,
     collisionBox?: Partial<CollisionBox>
   ) {
     super(
       position,
-      size,
+      size || Coin.getDefaultSize(),
       'coin',
       1, // Single frame for coin (could be expanded for spinning animation)
       0,  // No animation for basic coin
-      collisionBox
+      collisionBox || Coin.getDefaultCollisionBox()
     );
   }
 

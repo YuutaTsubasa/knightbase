@@ -14,7 +14,8 @@ body.route-shop {
 
 body.route-settings,
 body.route-character,
-body.route-stage {
+body.route-stage,
+body[class*="route-stage"] {
   overflow-x: hidden !important;
   overflow-y: auto !important;
 }

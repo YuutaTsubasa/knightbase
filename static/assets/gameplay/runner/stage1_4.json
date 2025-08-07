@@ -1,0 +1,56 @@
+{
+  "id": "stage1_4",
+  "name": "Master's Test",
+  "patterns": [
+    {
+      "type": "enemyCoinCombo",
+      "params": {
+        "enemyCount": 1,
+        "coinCount": 2,
+        "spacing": 100
+      }
+    },
+    {
+      "type": "trapCombo",
+      "params": {
+        "trapCount": 4,
+        "spacing": 90
+      }
+    },
+    {
+      "type": "coinArc",
+      "params": {
+        "coinCount": 8,
+        "arcHeight": 350,
+        "arcWidth": 700,
+        "startY": 150
+      }
+    },
+    {
+      "type": "gap",
+      "params": {
+        "distance": 100
+      }
+    },
+    {
+      "type": "enemyCoinCombo", 
+      "params": {
+        "enemyCount": 3,
+        "coinCount": 5,
+        "spacing": 140
+      }
+    },
+    {
+      "type": "coinLine",
+      "params": {
+        "coinCount": 6,
+        "spacing": 70,
+        "height": 250
+      }
+    },
+    {
+      "type": "goal",
+      "params": {}
+    }
+  ]
+}

@@ -8,7 +8,7 @@ const execAsync = promisify(exec);
 // 配置選項
 const config = {
   audioDir: path.resolve("static/assets/audios"),
-  backupDir: path.resolve("originalAudioAssets"),
+  backupDir: path.resolve("originalAssets/audios"),
   tsPath: path.resolve("src/lib/assets/AudioAssets.ts"),
   supportedFormats: [".wav", ".ogg", ".flac", ".aac", ".m4a", ".wma"],
   targetFormat: ".mp3",

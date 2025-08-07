@@ -5,13 +5,11 @@
   import Page from "$lib/components/Page.svelte";
   import Button from "$lib/components/Button.svelte";
   import Topbar from "$lib/components/Topbar.svelte";
-  import { PopupStore, PopupResult } from "$lib/systems/PopupStore";
   import { waitUntil } from "$lib/utils/Wait";
   import { get, writable, type Writable } from "svelte/store";
   import { AudioManager } from "$lib/systems/AudioManager";
   import { playerStore } from "$lib/systems/PlayerStore";
   import { StaticDataStore } from "$lib/systems/StaticDataStore";
-  import { format } from "$lib/utils/StringUtils";
   import { characterPortraitImageKey } from "$lib/utils/KeyHelper";
   import Image from "$lib/components/Image.svelte";
 
@@ -95,32 +93,12 @@
     goToNextScene.set("/character");
   }
 
-  async function enterStage(stageId: string) {
+  function enterStage(stageId: string) {
     AudioManager.play("sfx_confirm");
-    // Find the stage data to get the stage name
-    const stage = stages.find(s => s.id === stageId);
-    const stageName = stage ? $t(stage.nameKey) : stageId;
-
-    const result = await PopupStore.open({
-      title: $t("confirmEnterStage"),
-      content: format($t("confirmEnterStageContent"), stageName),
-      buttons: [
-        {
-          text: $t("cancel"),
-          onClick: () => PopupResult.Close
-        },
-        {
-          text: $t("enter"),
-          onClick: () => {
-            // Save selected stage to PlayerStore
-            playerStore.update(data => ({ ...data, selectedStage: stageId }));
-            // Navigate to gameplay
-            goToNextScene.set("/gameplay");
-            return PopupResult.Close;
-          }
-        }
-      ]
-    });
+    // Save selected stage to PlayerStore
+    playerStore.update(data => ({ ...data, selectedStage: stageId }));
+    // Navigate directly to stage detail page
+    goToNextScene.set(`/stage/${stageId}`);
   }
 </script>
 

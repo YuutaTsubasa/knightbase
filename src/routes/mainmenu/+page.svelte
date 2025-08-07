@@ -24,6 +24,7 @@
   $: playerTitle = playerData.selectedTitle;
   $: playerExperience = playerData.experience;
   $: selectedCharacter = playerData.selectedCharacter;
+  $: playerResources = playerData.resources;
 
   let goToNextScene: Writable<string | null>;
   async function main() {
@@ -45,9 +46,9 @@
     <div class="resourceContainer">
       <ResourceBar
         resources={[
-          { key: CoinsIcon, amount: "33645678", color: "gold" },
-          { key: DiamondIcon, amount: "25000", color:"lightblue", onAdd: () => console.log("add ticket") },
-          { key: GemIcon, amount: "124680", color:"lightpink", onAdd: () => console.log("add gem") },
+          { key: CoinsIcon, amount: playerResources.gold.toString(), color: "gold" },
+          { key: DiamondIcon, amount: playerResources.diamond.toString(), color:"lightblue", onAdd: () => console.log("add ticket") },
+          { key: GemIcon, amount: playerResources.gem.toString(), color:"lightpink", onAdd: () => console.log("add gem") },
         ]}
       />
     </div>

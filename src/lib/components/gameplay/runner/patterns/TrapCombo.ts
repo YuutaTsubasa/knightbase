@@ -1,4 +1,5 @@
 import { Pattern, type PatternEntity } from '../objects/Pattern';
+import { Trap } from '../objects/Trap';
 
 export class TrapComboPattern extends Pattern {
   private trapCount: number;
@@ -18,21 +19,17 @@ export class TrapComboPattern extends Pattern {
         type: 'trap',
         position: {
           x: startX + i * this.spacing,
-          y: groundY - 96
+          y: groundY - Trap.getDefaultSize().height
         },
-        size: {
-          width: 128,
-          height: 96
-        },
-        collisionBox: {
-          collisionOffsetX: 16,
-          collisionOffsetY: 8,
-          collisionWidth: 96,
-          collisionHeight: 32
-        }
+        size: Trap.getDefaultSize(),
+        collisionBox: Trap.getDefaultCollisionBox()
       });
     }
 
     return entities;
+  }
+
+  public getDistance(): number {
+    return (this.trapCount - 1) * this.spacing + Trap.getDefaultSize().width;
   }
 }

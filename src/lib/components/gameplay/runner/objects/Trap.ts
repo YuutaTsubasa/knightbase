@@ -2,18 +2,33 @@ import { SpriteAnimationObject } from './SpriteAnimationObject';
 import type { Position, Size, CollisionBox } from '../types/GameTypes';
 
 export class Trap extends SpriteAnimationObject {
+  
+  // Default size and collision box for traps
+  public static getDefaultSize(): Size {
+    return { width: 200, height: 80 };
+  }
+
+  public static getDefaultCollisionBox(): CollisionBox {
+    return {
+      collisionOffsetX: 10,
+      collisionOffsetY: 10,
+      collisionWidth: 180,
+      collisionHeight: 60
+    };
+  }
+
   constructor(
     position: Position,
-    size: Size,
+    size?: Size,
     collisionBox?: Partial<CollisionBox>
   ) {
     super(
       position,
-      size,
+      size || Trap.getDefaultSize(),
       'trap',
       1, // Single frame for trap
       0,  // No animation for trap
-      collisionBox
+      collisionBox || Trap.getDefaultCollisionBox()
     );
   }
 

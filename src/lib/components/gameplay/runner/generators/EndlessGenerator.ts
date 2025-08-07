@@ -1,9 +1,10 @@
 import { Pattern } from '../objects/Pattern';
-import { CoinLinePattern } from '../patterns/coinLine';
-import { TrapComboPattern } from '../patterns/trapCombo';
+import { CoinLinePattern } from '../patterns/CoinLine';
+import { TrapComboPattern } from '../patterns/TrapCombo';
 import { Enemy } from '../objects/Enemy';
 import { Coin } from '../objects/Coin';
 import { Trap } from '../objects/Trap';
+import { Goal } from '../objects/Goal';
 
 export class EndlessGenerator {
   private patterns: Pattern[];
@@ -21,9 +22,9 @@ export class EndlessGenerator {
     ];
   }
 
-  public update(deltaTime: number): { enemies: Enemy[], coins: Coin[], traps: Trap[] } {
+  public update(deltaTime: number): { enemies: Enemy[], coins: Coin[], traps: Trap[], goals: Goal[] } {
     const now = performance.now();
-    const result = { enemies: [] as Enemy[], coins: [] as Coin[], traps: [] as Trap[] };
+    const result = { enemies: [] as Enemy[], coins: [] as Coin[], traps: [] as Trap[], goals: [] as Goal[] };
 
     // Increase spawn chance every frame
     this.spawnChance += this.spawnChanceIncreasePerFrame;
