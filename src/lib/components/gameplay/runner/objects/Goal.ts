@@ -4,32 +4,27 @@ import type { Position, Size, CollisionBox } from '../types/GameTypes';
 export class Goal extends SpriteAnimationObject {
   public reached: boolean = false;
 
-  // Default size and collision box for goals
-  public static getDefaultSize(): Size {
-    return { width: 200, height: 200 };
+  public static getSize(): Size {
+    return { width: 200, height: 600 }; // Full Y-axis height
   }
 
-  public static getDefaultCollisionBox(): CollisionBox {
+  public static getCollisionBox(): CollisionBox {
     return {
-      collisionOffsetX: 30,
-      collisionOffsetY: 30,
-      collisionWidth: 140,
-      collisionHeight: 140
+      collisionOffsetX: 0,
+      collisionOffsetY: 0,
+      collisionWidth: 200,
+      collisionHeight: 600 // Cover full Y-axis for collision
     };
   }
 
-  constructor(
-    position: Position,
-    size?: Size,
-    collisionBox?: Partial<CollisionBox>
-  ) {
+  constructor(position: Position) {
     super(
       position,
-      size || Goal.getDefaultSize(),
+      Goal.getSize(),
       'goal', // Future goal sprite
       1, // Single frame for now
       0,  // No animation
-      collisionBox || Goal.getDefaultCollisionBox()
+      Goal.getCollisionBox()
     );
   }
 

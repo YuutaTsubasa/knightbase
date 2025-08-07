@@ -7,13 +7,6 @@ import { Goal } from '../objects/Goal';
 export interface PatternEntity {
   type: 'enemy' | 'coin' | 'trap' | 'goal';
   position: Position;
-  size: Size;
-  collisionBox?: {
-    collisionOffsetX: number;
-    collisionOffsetY: number;
-    collisionWidth: number;
-    collisionHeight: number;
-  };
 }
 
 export abstract class Pattern {
@@ -36,16 +29,16 @@ export abstract class Pattern {
     patternEntities.forEach(entity => {
       switch (entity.type) {
         case 'enemy':
-          objects.push(new Enemy(entity.position, entity.size, entity.collisionBox));
+          objects.push(new Enemy(entity.position));
           break;
         case 'coin':
-          objects.push(new Coin(entity.position, entity.size, entity.collisionBox));
+          objects.push(new Coin(entity.position));
           break;
         case 'trap':
-          objects.push(new Trap(entity.position, entity.size, entity.collisionBox));
+          objects.push(new Trap(entity.position));
           break;
         case 'goal':
-          objects.push(new Goal(entity.position, entity.size, entity.collisionBox));
+          objects.push(new Goal(entity.position));
           break;
       }
     });

@@ -1,4 +1,4 @@
-import { Pattern, type PatternEntity } from '../objects/Pattern';
+import { Pattern, type PatternEntity } from './Pattern';
 
 export class GapPattern extends Pattern {
   private distance: number;

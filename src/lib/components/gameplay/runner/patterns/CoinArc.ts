@@ -1,4 +1,4 @@
-import { Pattern, type PatternEntity } from '../objects/Pattern';
+import { Pattern, type PatternEntity } from './Pattern';
 import { Coin } from '../objects/Coin';
 
 export class CoinArcPattern extends Pattern {
@@ -30,9 +30,7 @@ export class CoinArcPattern extends Pattern {
         position: {
           x: startX + i * stepX,
           y: groundY - this.startY - arcY
-        },
-        size: Coin.getDefaultSize(),
-        collisionBox: Coin.getDefaultCollisionBox()
+        }
       });
     }
 
@@ -40,6 +38,6 @@ export class CoinArcPattern extends Pattern {
   }
 
   public getDistance(): number {
-    return this.arcWidth + Coin.getDefaultSize().width; // Width of arc plus coin width for spacing
+    return this.arcWidth + Coin.getSize().width; // Width of arc plus coin width for spacing
   }
 }

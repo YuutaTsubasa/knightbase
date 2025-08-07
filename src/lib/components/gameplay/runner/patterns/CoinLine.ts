@@ -1,4 +1,4 @@
-import { Pattern, type PatternEntity } from '../objects/Pattern';
+import { Pattern, type PatternEntity } from './Pattern';
 import { Coin } from '../objects/Coin';
 
 export class CoinLinePattern extends Pattern {
@@ -22,9 +22,7 @@ export class CoinLinePattern extends Pattern {
         position: {
           x: startX + i * this.spacing,
           y: groundY - this.height - Math.random() * 100 // Slight height variation
-        },
-        size: Coin.getDefaultSize(),
-        collisionBox: Coin.getDefaultCollisionBox()
+        }
       });
     }
 
@@ -32,6 +30,6 @@ export class CoinLinePattern extends Pattern {
   }
 
   public getDistance(): number {
-    return (this.coinCount - 1) * this.spacing + Coin.getDefaultSize().width;
+    return (this.coinCount - 1) * this.spacing + Coin.getSize().width;
   }
 }

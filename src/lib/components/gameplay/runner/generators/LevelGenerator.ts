@@ -1,11 +1,11 @@
-import { Pattern } from '../objects/Pattern';
+import { Pattern } from '../patterns/Pattern';
 import { PatternFactory } from '../patterns/PatternFactory';
 import { TextAssetManager } from '$lib/assets/TextAssets';
 import { Enemy } from '../objects/Enemy';
 import { Coin } from '../objects/Coin';
 import { Trap } from '../objects/Trap';
 import { Goal } from '../objects/Goal';
-import type { PatternEntity } from '../objects/Pattern';
+import type { PatternEntity } from '../patterns/Pattern';
 
 export class LevelGenerator {
   private patterns: Pattern[] = [];

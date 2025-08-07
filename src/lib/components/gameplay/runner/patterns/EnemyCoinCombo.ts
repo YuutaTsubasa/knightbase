@@ -1,4 +1,4 @@
-import { Pattern, type PatternEntity } from '../objects/Pattern';
+import { Pattern, type PatternEntity } from './Pattern';
 import { Enemy } from '../objects/Enemy';
 import { Coin } from '../objects/Coin';
 
@@ -24,10 +24,8 @@ export class EnemyCoinComboPattern extends Pattern {
         type: 'enemy',
         position: {
           x: currentX,
-          y: groundY - Enemy.getDefaultSize().height
-        },
-        size: Enemy.getDefaultSize(),
-        collisionBox: Enemy.getDefaultCollisionBox()
+          y: groundY - Enemy.getSize().height
+        }
       });
       currentX += this.spacing;
     }
@@ -39,9 +37,7 @@ export class EnemyCoinComboPattern extends Pattern {
         position: {
           x: currentX,
           y: groundY - 200 - Math.random() * 50 // Higher than usual to reward jumping over enemy
-        },
-        size: Coin.getDefaultSize(),
-        collisionBox: Coin.getDefaultCollisionBox()
+        }
       });
       currentX += this.spacing * 0.8; // Tighter spacing for coins
     }

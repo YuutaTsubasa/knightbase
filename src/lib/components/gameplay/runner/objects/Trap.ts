@@ -3,12 +3,11 @@ import type { Position, Size, CollisionBox } from '../types/GameTypes';
 
 export class Trap extends SpriteAnimationObject {
   
-  // Default size and collision box for traps
-  public static getDefaultSize(): Size {
+  public static getSize(): Size {
     return { width: 200, height: 80 };
   }
 
-  public static getDefaultCollisionBox(): CollisionBox {
+  public static getCollisionBox(): CollisionBox {
     return {
       collisionOffsetX: 10,
       collisionOffsetY: 10,
@@ -17,18 +16,14 @@ export class Trap extends SpriteAnimationObject {
     };
   }
 
-  constructor(
-    position: Position,
-    size?: Size,
-    collisionBox?: Partial<CollisionBox>
-  ) {
+  constructor(position: Position) {
     super(
       position,
-      size || Trap.getDefaultSize(),
+      Trap.getSize(),
       'trap',
       1, // Single frame for trap
       0,  // No animation for trap
-      collisionBox || Trap.getDefaultCollisionBox()
+      Trap.getCollisionBox()
     );
   }
 
