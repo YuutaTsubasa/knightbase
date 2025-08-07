@@ -58,7 +58,7 @@ export class EndlessGenerator {
 
   private createEnemy(): Enemy {
     return new Enemy(
-      { x: 800 + 50, y: -Enemy.getSize().height } // Y position relative to ground
+      { x: 800 + 50, y: 0 } // Y position relative to ground
     );
   }
 
@@ -66,14 +66,14 @@ export class EndlessGenerator {
     return new Coin(
       { 
         x: 800 + 50 + Math.random() * 200, 
-        y: -200 - Math.random() * 300  // Relative Y position above ground
+        y: 0 - Math.random() * 300  // Relative Y position above ground
       }
     );
   }
 
   private createTrap(): Trap {
     return new Trap(
-      { x: 800 + 50, y: -Trap.getSize().height } // Y position relative to ground
+      { x: 800 + 50, y: 0 } // Y position relative to ground
     );
   }
 

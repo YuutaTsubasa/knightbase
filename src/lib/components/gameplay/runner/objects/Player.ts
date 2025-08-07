@@ -1,6 +1,6 @@
 import { SpriteAnimationObject } from './SpriteAnimationObject';
 import { Projectile } from './Projectile';
-import type { Position, Size, CollisionBox, AnimationType } from '../types/GameTypes';
+import type { Position, Size, CollisionBox, AnimationType } from '../GameTypes';
 import { AudioManager } from '$lib/systems/AudioManager';
 import { characterAttackAudioKey, characterAttackImageKey, characterJumpImageKey, characterRunImageKey, characterWalkAudioKey } from '$lib/utils/KeyHelper';
 
@@ -22,7 +22,6 @@ export class Player extends SpriteAnimationObject {
   constructor(
     position: Position,
     size: Size,
-    groundY: number,
     characterKey: string,
     gravity: number = 0.8,
     jumpForce: number = -20,
@@ -39,7 +38,6 @@ export class Player extends SpriteAnimationObject {
       collisionBox
     );
     
-    this.groundY = groundY;
     this.gravity = gravity;
     this.jumpForce = jumpForce;
     this.characterKey = characterKey;
@@ -52,8 +50,8 @@ export class Player extends SpriteAnimationObject {
     this.y += this.velocityY;
 
     // Ground collision
-    if (this.y >= this.groundY - this.height) {
-      this.y = this.groundY - this.height;
+    if (this.y >= 0) {
+      this.y = 0;
       this.velocityY = 0;
       this.onGround = true;
       if (this.animation === 'jump') {

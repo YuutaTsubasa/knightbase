@@ -1,4 +1,4 @@
-import type { Position, Size, CollisionBox, GameEntity } from '../types/GameTypes';
+import type { Position, Size, CollisionBox, GameEntity } from '../GameTypes';
 
 export abstract class Object implements GameEntity {
   public x: number;

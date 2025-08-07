@@ -1,6 +1,6 @@
 import { SpriteAnimationObject } from './SpriteAnimationObject';
 import { AudioManager } from '$lib/systems/AudioManager';
-import type { Position, Size } from '../types/GameTypes';
+import type { Position, Size } from '../GameTypes';
 
 export class Explosion extends SpriteAnimationObject {
   public finished: boolean = false;

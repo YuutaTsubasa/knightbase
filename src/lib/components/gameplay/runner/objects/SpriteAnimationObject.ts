@@ -1,5 +1,5 @@
 import { Object } from './Object';
-import type { Position, Size, CollisionBox, AnimatedEntity } from '../types/GameTypes';
+import type { Position, Size, CollisionBox, AnimatedEntity } from '../GameTypes';
 
 export abstract class SpriteAnimationObject extends Object implements AnimatedEntity {
   public animationFrame: number = 0;

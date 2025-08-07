@@ -1,4 +1,4 @@
-import type { Position, Size } from '../types/GameTypes';
+import type { Position, Size } from '../GameTypes';
 import { Enemy } from '../objects/Enemy';
 import { Coin } from '../objects/Coin';
 import { Trap } from '../objects/Trap';

@@ -1,5 +1,5 @@
 import { SpriteAnimationObject } from './SpriteAnimationObject';
-import type { Position, Size } from '../types/GameTypes';
+import type { Position, Size } from '../GameTypes';
 import { characterAttackEffectImageKey } from '$lib/utils/KeyHelper';
 
 export class Projectile extends SpriteAnimationObject {

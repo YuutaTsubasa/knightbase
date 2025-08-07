@@ -1,4 +1,4 @@
-import type { GameEntity } from '../types/GameTypes';
+import type { GameEntity } from './GameTypes';
 
 export class Layer {
   protected entities: GameEntity[] = [];

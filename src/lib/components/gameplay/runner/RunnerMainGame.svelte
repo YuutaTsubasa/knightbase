@@ -1,6 +1,5 @@
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
-  import { get, writable, type Writable } from "svelte/store";
   import { AudioManager } from "$lib/systems/AudioManager";
   import { StaticDataStore } from "$lib/systems/StaticDataStore";
   import { PlayerDataManager } from "$lib/systems/PlayerStore";
@@ -14,7 +13,7 @@
   import { Play, Pause, Heart, Keyboard, Smartphone, Gamepad2, ArrowUpFromLine, Sword } from "lucide-svelte";
   
   // Layer imports
-  import { Layer } from "./layers/Layer";
+  import { Layer } from "./Layer";
   
   // Object imports
   import { Player } from "./objects/Player";
@@ -32,8 +31,7 @@
   import { TextAssetManager } from "$lib/assets/TextAssets";
   import type { Pattern } from "./patterns/Pattern";
 
-  import type { GameState, GameStats } from "./types/GameTypes";
-  import { UniversalNavigationManager } from "$lib/systems/UniversalNavigationManager";
+  import type { GameState, GameStats } from "./GameTypes";
 
   // Props
   export let selectedCharacter: string;
@@ -242,7 +240,6 @@
     player = new Player(
       { x: 50, y: GAME_SETTINGS.GROUND_Y - 256 },
       { width: 256, height: 256 },
-      GAME_SETTINGS.GROUND_Y,
       selectedCharacter,
       GAME_SETTINGS.GRAVITY,
       GAME_SETTINGS.JUMP_FORCE,
@@ -459,7 +456,7 @@
     trapEnemyLayer.render(ctx, loadedImages, groundY);
     
     // Render character layer (player and projectiles) - no groundY needed as player handles its own positioning
-    characterLayer.render(ctx, loadedImages);
+    characterLayer.render(ctx, loadedImages, groundY);
 
     // Render countdown
     if (!waitForCountdown && showCountdown) {

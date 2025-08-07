@@ -1,5 +1,5 @@
 import { SpriteAnimationObject } from './SpriteAnimationObject';
-import type { Position, Size, CollisionBox } from '../types/GameTypes';
+import type { Position, Size, CollisionBox } from '../GameTypes';
 
 export class Trap extends SpriteAnimationObject {
   
