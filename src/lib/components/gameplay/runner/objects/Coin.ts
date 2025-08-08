@@ -1,5 +1,6 @@
 import { SpriteAnimationObject } from './SpriteAnimationObject';
 import type { Position, Size, CollisionBox } from '../GameTypes';
+import { getRenderY } from '../Utils';
 
 export class Coin extends SpriteAnimationObject {
   public collected: boolean = false;
@@ -42,14 +43,18 @@ export class Coin extends SpriteAnimationObject {
       return;
     }
     
-    // Calculate render position with groundY offset
-    const renderY = groundY !== undefined ? groundY + this.y : this.y;
+    // Calculate render position using proper coordinate system conversion
+    const renderY = groundY !== undefined 
+      ? getRenderY(ctx.canvas.height, groundY, this.y) - this.height
+      : this.y;
     ctx.drawImage(image, this.x, renderY, this.width, this.height);
   }
 
   protected renderFallback(ctx: CanvasRenderingContext2D, groundY?: number): void {
     if (this.collected) return;
-    const renderY = groundY !== undefined ? groundY + this.y : this.y;
+    const renderY = groundY !== undefined 
+      ? getRenderY(ctx.canvas.height, groundY, this.y) - this.height
+      : this.y;
     ctx.fillStyle = '#f1c40f';
     ctx.beginPath();
     ctx.arc(this.x + this.width/2, renderY + this.height/2, this.width/2, 0, 2 * Math.PI);

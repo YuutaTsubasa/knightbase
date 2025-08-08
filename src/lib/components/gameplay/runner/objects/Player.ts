@@ -138,7 +138,9 @@ export class Player extends SpriteAnimationObject {
   }
 
   protected renderFallback(ctx: CanvasRenderingContext2D, groundY?: number): void {
-    const renderY = getRenderY(ctx.canvas.height, groundY !== undefined ? groundY + this.y : this.y);
+    const renderY = groundY !== undefined 
+      ? getRenderY(ctx.canvas.height, groundY, this.y) - this.height
+      : this.y;
     ctx.fillStyle = '#ff6b6b';
     ctx.fillRect(this.x, renderY, this.width, this.height);
   }

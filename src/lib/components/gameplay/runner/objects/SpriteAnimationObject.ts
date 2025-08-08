@@ -53,14 +53,16 @@ export abstract class SpriteAnimationObject extends Object implements AnimatedEn
     const frameHeight = image.height;
     const frameX = this.animationFrame * frameWidth;
 
-    // Calculate render position with groundY offset
-    const renderY = getRenderY(ctx.canvas.height, groundY !== undefined ? groundY + this.y : this.y);
+    // Calculate render position using proper coordinate system conversion
+    const renderY = groundY !== undefined 
+      ? getRenderY(ctx.canvas.height, groundY, this.y) - this.height
+      : this.y;
 
     // Draw the specific frame
     ctx.drawImage(
       image,
       frameX, 0, frameWidth, frameHeight,  // Source rectangle (sprite frame)
-      this.x, renderY - this.height, this.width, this.height  // Destination rectangle
+      this.x, renderY, this.width, this.height  // Destination rectangle
     );
   }
 
@@ -72,15 +74,17 @@ export abstract class SpriteAnimationObject extends Object implements AnimatedEn
       return;
     }
 
-    // Calculate render position with groundY offset
-    const renderY = getRenderY(ctx.canvas.height, groundY !== undefined ? groundY + this.y : this.y);
+    // Calculate render position using proper coordinate system conversion
+    const renderY = groundY !== undefined 
+      ? getRenderY(ctx.canvas.height, groundY, this.y) - this.height
+      : this.y;
 
     ctx.save();
     if (facingLeft) {
       ctx.scale(-1, 1);
-      ctx.drawImage(image, -this.x - this.width, renderY - this.height, this.width, this.height);
+      ctx.drawImage(image, -this.x - this.width, renderY, this.width, this.height);
     } else {
-      ctx.drawImage(image, this.x, renderY - this.height, this.width, this.height);
+      ctx.drawImage(image, this.x, renderY, this.width, this.height);
     }
     ctx.restore();
   }

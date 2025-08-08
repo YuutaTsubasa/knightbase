@@ -32,7 +32,7 @@
   import type { Pattern } from "./patterns/Pattern";
 
   import type { GameState, GameStats } from "./GameTypes";
-    import { getRenderY } from "./Utils";
+    import { getRenderY, getRenderGroundY } from "./Utils";
 
   // Props
   export let selectedCharacter: string;
@@ -443,7 +443,7 @@
     if (!ctx || !assetsLoaded) return;
     
     // Calculate ground position
-    const renderGroundY = getRenderY(ctx.canvas.height, GAME_SETTINGS.GROUND_Y);
+    const renderGroundY = getRenderGroundY(ctx.canvas.height, GAME_SETTINGS.GROUND_Y);
 
     // Render background first
     renderBackground(ctx, renderGroundY);

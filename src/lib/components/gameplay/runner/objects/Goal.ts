@@ -33,9 +33,25 @@ export class Goal extends SpriteAnimationObject {
     this.moveWithScroll(scrollSpeed);
   }
 
+  public render(ctx: CanvasRenderingContext2D, images: Record<string, HTMLImageElement>, groundY?: number): void {
+    const image = images[this.spriteSheetKey];
+    if (!image) {
+      this.renderFallback(ctx, groundY);
+      return;
+    }
+    
+    // Calculate render position using proper coordinate system conversion
+    const renderY = groundY !== undefined 
+      ? getRenderY(ctx.canvas.height, groundY, this.y) - this.height
+      : this.y;
+    ctx.drawImage(image, this.x, renderY, this.width, this.height);
+  }
+
   protected renderFallback(ctx: CanvasRenderingContext2D, groundY?: number): void {
-    // Calculate render position with groundY offset
-    const renderY = getRenderY(ctx.canvas.height, groundY !== undefined ? groundY + this.y : this.y);
+    // Calculate render position using proper coordinate system conversion
+    const renderY = groundY !== undefined 
+      ? getRenderY(ctx.canvas.height, groundY, this.y) - this.height
+      : this.y;
 
     // Draw goal flag as fallback
     ctx.fillStyle = '#00ff00';
@@ -43,10 +59,11 @@ export class Goal extends SpriteAnimationObject {
     
     // Draw flag pattern
     ctx.fillStyle = '#ffffff';
-    ctx.fillRect(this.x + 10, renderY - 10, this.width - 20, this.height - 20);
+    ctx.fillRect(this.x + 10, renderY + 10, this.width - 20, this.height - 20);
     
     ctx.fillStyle = '#ff0000';
-    ctx.fillText('GOAL', this.x + this.width/4, renderY - this.height/2);
+    ctx.font = '24px Arial';
+    ctx.fillText('GOAL', this.x + this.width/4, renderY + this.height/2);
   }
 
   public reach(): void {

@@ -40,8 +40,10 @@ export class Enemy extends SpriteAnimationObject {
       return;
     }
 
-    // Calculate render position with groundY offset
-    const renderY = getRenderY(ctx.canvas.height, groundY !== undefined ? groundY + this.y : this.y);
+    // Calculate render position using proper coordinate system conversion
+    const renderY = groundY !== undefined 
+      ? getRenderY(ctx.canvas.height, groundY, this.y) - this.height
+      : this.y;
 
     ctx.save();
     if (this.facingLeft) {
@@ -54,7 +56,9 @@ export class Enemy extends SpriteAnimationObject {
   }
 
   protected renderFallback(ctx: CanvasRenderingContext2D, groundY?: number): void {
-    const renderY = groundY !== undefined ? groundY + this.y : this.y;
+    const renderY = groundY !== undefined 
+      ? getRenderY(ctx.canvas.height, groundY, this.y) - this.height
+      : this.y;
     ctx.fillStyle = '#e74c3c';
     ctx.fillRect(this.x, renderY, this.width, this.height);
   }

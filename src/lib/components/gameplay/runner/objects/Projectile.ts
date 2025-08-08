@@ -1,6 +1,7 @@
 import { SpriteAnimationObject } from './SpriteAnimationObject';
 import type { Position, Size } from '../GameTypes';
 import { characterAttackEffectImageKey } from '$lib/utils/KeyHelper';
+import { getRenderY } from '../Utils';
 
 export class Projectile extends SpriteAnimationObject {
   public velocityX: number = 8;
@@ -20,7 +21,9 @@ export class Projectile extends SpriteAnimationObject {
   }
 
   protected renderFallback(ctx: CanvasRenderingContext2D, groundY?: number): void {
-    const renderY = groundY !== undefined ? groundY + this.y : this.y;
+    const renderY = groundY !== undefined 
+      ? getRenderY(ctx.canvas.height, groundY, this.y) - this.height
+      : this.y;
     ctx.fillStyle = '#9b59b6';
     ctx.fillRect(this.x, renderY, this.width, this.height);
   }

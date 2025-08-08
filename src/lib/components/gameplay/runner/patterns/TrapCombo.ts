@@ -19,7 +19,7 @@ export class TrapComboPattern extends Pattern {
         type: 'trap',
         position: {
           x: startX + i * this.spacing,
-          y: -Trap.getSize().height // Relative to ground
+          y: 0 // Y=0 at ground level
         }
       });
     }
