@@ -22,7 +22,7 @@ export class LevelGenerator {
     console.log(`Initialized level generator with ${this.patterns.length} patterns`);
   }
 
-  public update(deltaTime: number, currentScrollSpeed: number, playerDistanceTraveled: number, groundY: number): { enemies: Enemy[], coins: Coin[], traps: Trap[], goals: Goal[] } {
+  public update(deltaTime: number, currentScrollSpeed: number, playerDistanceTraveled: number): { enemies: Enemy[], coins: Coin[], traps: Trap[], goals: Goal[] } {
     const result = { enemies: [] as Enemy[], coins: [] as Coin[], traps: [] as Trap[], goals: [] as Goal[] };
 
     // Update player distance
@@ -55,7 +55,7 @@ export class LevelGenerator {
         // Calculate relative position for the pattern (off-screen to the right)
         // Convert from absolute distance to relative screen position
         const relativeX = 800 + 50 + (this.currentX - this.playerDistanceTraveled);
-        const objects = currentPattern.createObjects(relativeX, groundY);
+        const objects = currentPattern.createObjects(relativeX);
         
         objects.forEach(obj => {
           if (obj instanceof Enemy) {

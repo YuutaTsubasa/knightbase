@@ -13,7 +13,7 @@ export class CoinLinePattern extends Pattern {
     this.height = height;
   }
 
-  public generate(startX: number, groundY: number): PatternEntity[] {
+  public generate(startX: number): PatternEntity[] {
     const entities: PatternEntity[] = [];
 
     for (let i = 0; i < this.coinCount; i++) {

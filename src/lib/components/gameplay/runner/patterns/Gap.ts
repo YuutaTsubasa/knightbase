@@ -8,7 +8,7 @@ export class GapPattern extends Pattern {
     this.distance = distance;
   }
 
-  public generate(startX: number, groundY: number): PatternEntity[] {
+  public generate(startX: number): PatternEntity[] {
     // Gap pattern doesn't generate any entities, just provides spacing
     return [];
   }

@@ -19,11 +19,11 @@ export abstract class Pattern {
   }
 
   // Generate the pattern entities
-  public abstract generate(startX: number, groundY: number): PatternEntity[];
+  public abstract generate(startX: number): PatternEntity[];
 
   // Create actual game objects from pattern
-  public createObjects(startX: number, groundY: number): (Enemy | Coin | Trap | Goal)[] {
-    const patternEntities = this.generate(startX, groundY);
+  public createObjects(startX: number): (Enemy | Coin | Trap | Goal)[] {
+    const patternEntities = this.generate(startX);
     const objects: (Enemy | Coin | Trap | Goal)[] = [];
 
     patternEntities.forEach(entity => {

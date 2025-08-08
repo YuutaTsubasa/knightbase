@@ -6,7 +6,7 @@ export class GoalPattern extends Pattern {
     super('goal');
   }
 
-  public generate(startX: number, groundY: number): PatternEntity[] {
+  public generate(startX: number): PatternEntity[] {
     // The goal will be handled separately in the level system
     // This just marks the end point for pattern generation
     return [{

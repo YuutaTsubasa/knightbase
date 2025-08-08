@@ -1,5 +1,6 @@
 import { SpriteAnimationObject } from './SpriteAnimationObject';
 import type { Position, Size, CollisionBox } from '../GameTypes';
+import { getRenderY } from '../Utils';
 
 export class Goal extends SpriteAnimationObject {
   public reached: boolean = false;
@@ -34,18 +35,18 @@ export class Goal extends SpriteAnimationObject {
 
   protected renderFallback(ctx: CanvasRenderingContext2D, groundY?: number): void {
     // Calculate render position with groundY offset
-    const renderY = groundY !== undefined ? groundY + this.y : this.y;
-    
+    const renderY = getRenderY(ctx.canvas.height, groundY !== undefined ? groundY + this.y : this.y);
+
     // Draw goal flag as fallback
     ctx.fillStyle = '#00ff00';
     ctx.fillRect(this.x, renderY, this.width, this.height);
     
     // Draw flag pattern
     ctx.fillStyle = '#ffffff';
-    ctx.fillRect(this.x + 10, renderY + 10, this.width - 20, this.height - 20);
+    ctx.fillRect(this.x + 10, renderY - 10, this.width - 20, this.height - 20);
     
     ctx.fillStyle = '#ff0000';
-    ctx.fillText('GOAL', this.x + this.width/4, renderY + this.height/2);
+    ctx.fillText('GOAL', this.x + this.width/4, renderY - this.height/2);
   }
 
   public reach(): void {

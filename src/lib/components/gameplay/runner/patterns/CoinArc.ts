@@ -15,7 +15,7 @@ export class CoinArcPattern extends Pattern {
     this.startY = startY;
   }
 
-  public generate(startX: number, groundY: number): PatternEntity[] {
+  public generate(startX: number): PatternEntity[] {
     const entities: PatternEntity[] = [];
     const stepX = this.arcWidth / Math.max(1, this.coinCount - 1);
 

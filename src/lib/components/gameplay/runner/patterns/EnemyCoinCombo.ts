@@ -14,7 +14,7 @@ export class EnemyCoinComboPattern extends Pattern {
     this.spacing = spacing;
   }
 
-  public generate(startX: number, groundY: number): PatternEntity[] {
+  public generate(startX: number): PatternEntity[] {
     const entities: PatternEntity[] = [];
     let currentX = startX;
 

@@ -11,7 +11,7 @@ export class TrapComboPattern extends Pattern {
     this.spacing = spacing;
   }
 
-  public generate(startX: number, groundY: number): PatternEntity[] {
+  public generate(startX: number): PatternEntity[] {
     const entities: PatternEntity[] = [];
 
     for (let i = 0; i < this.trapCount; i++) {

@@ -1,5 +1,6 @@
 import { SpriteAnimationObject } from './SpriteAnimationObject';
 import type { Position, Size, CollisionBox } from '../GameTypes';
+import { getRenderY } from '../Utils';
 
 export class Enemy extends SpriteAnimationObject {
   public facingLeft: boolean = true;
@@ -40,7 +41,7 @@ export class Enemy extends SpriteAnimationObject {
     }
 
     // Calculate render position with groundY offset
-    const renderY = groundY !== undefined ? groundY + this.y : this.y;
+    const renderY = getRenderY(ctx.canvas.height, groundY !== undefined ? groundY + this.y : this.y);
 
     ctx.save();
     if (this.facingLeft) {

@@ -1,6 +1,7 @@
 import { SpriteAnimationObject } from './SpriteAnimationObject';
 import { AudioManager } from '$lib/systems/AudioManager';
 import type { Position, Size } from '../GameTypes';
+import { getRenderY } from '../Utils';
 
 export class Explosion extends SpriteAnimationObject {
   public finished: boolean = false;
@@ -41,8 +42,8 @@ export class Explosion extends SpriteAnimationObject {
     if (this.finished) return;
     
     // Calculate render position with groundY offset
-    const renderY = groundY !== undefined ? groundY + this.y : this.y;
-    
+    const renderY = getRenderY(ctx.canvas.height, groundY !== undefined ? groundY + this.y : this.y);
+
     // Simple expanding circle as fallback
     const radius = (this.animationFrame / this.totalFrames) * this.width / 2;
     ctx.fillStyle = `rgba(255, ${255 - this.animationFrame * 40}, 0, ${1 - this.animationFrame / this.totalFrames})`;

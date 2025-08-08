@@ -32,6 +32,7 @@
   import type { Pattern } from "./patterns/Pattern";
 
   import type { GameState, GameStats } from "./GameTypes";
+    import { getRenderY } from "./Utils";
 
   // Props
   export let selectedCharacter: string;
@@ -75,10 +76,10 @@
 
   // Game settings
   const GAME_SETTINGS = {
-    GRAVITY: 0.8,
-    JUMP_FORCE: -20,
-    GROUND_Y: 480,
+    GRAVITY: -0.8,
+    JUMP_FORCE: 20,
     BASE_SCROLL_SPEED: 8,
+    GROUND_Y: 120,
     INVINCIBLE_DURATION: 1500,
     MIN_TRAP_INTERVAL: 3000
   };
@@ -238,7 +239,7 @@
 
     // Initialize player
     player = new Player(
-      { x: 50, y: GAME_SETTINGS.GROUND_Y - 256 },
+      { x: 50, y: 0 },
       { width: 256, height: 256 },
       selectedCharacter,
       GAME_SETTINGS.GRAVITY,
@@ -345,11 +346,7 @@
     if (gameMode === 'endless' && endlessGenerator) {
       newEntities = endlessGenerator.update(deltaTime);
     } else if (gameMode === 'level' && levelGenerator) {
-      const groundY = GAME_SETTINGS.GROUND_Y + stageGroundOffsetY;
-      newEntities = levelGenerator.update(deltaTime, currentScrollSpeed, playerDistanceTraveled, groundY);
-      
-      // Level completion is now handled only via goal collision
-      // No automatic completion when patterns are finished
+      newEntities = levelGenerator.update(deltaTime, currentScrollSpeed, playerDistanceTraveled);
     } else {
       newEntities = { enemies: [], coins: [], traps: [], goals: [] };
     }
@@ -446,17 +443,17 @@
     if (!ctx || !assetsLoaded) return;
     
     // Calculate ground position
-    const groundY = GAME_SETTINGS.GROUND_Y + stageGroundOffsetY;
-    
+    const renderGroundY = getRenderY(ctx.canvas.height, GAME_SETTINGS.GROUND_Y);
+
     // Render background first
-    renderBackground(ctx);
+    renderBackground(ctx, renderGroundY);
     
     // Render layers in order with groundY for positioning
-    effectLayer.render(ctx, loadedImages, groundY);
-    trapEnemyLayer.render(ctx, loadedImages, groundY);
+    effectLayer.render(ctx, loadedImages, renderGroundY);
+    trapEnemyLayer.render(ctx, loadedImages, renderGroundY);
     
     // Render character layer (player and projectiles) - no groundY needed as player handles its own positioning
-    characterLayer.render(ctx, loadedImages, groundY);
+    characterLayer.render(ctx, loadedImages, renderGroundY);
 
     // Render countdown
     if (!waitForCountdown && showCountdown) {
@@ -464,23 +461,23 @@
     }
   }
 
-  function renderBackground(ctx: CanvasRenderingContext2D): void {
+  function renderBackground(ctx: CanvasRenderingContext2D, renderGroundY: number): void {
     // Clear canvas
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-    
+
     const backgroundImage = loadedImages[stageBackgroundImageKey(selectedStage)];
-    
+
     if (backgroundImage) {
       const bgWidth = ctx.canvas.width;
       const bgHeight = ctx.canvas.height;
-      
+
       // Background moved down, need to fill the top and draw extended background
       const backgroundYOffset = bgHeight + stageGroundOffsetY;
       const extendedHeight = bgHeight + backgroundYOffset;
 
       const bgX1 = backgroundOffset % bgWidth;
       const bgX2 = bgX1 + bgWidth;
-      
+
       // Draw background pattern to fill entire extended area
       for (let y = -backgroundYOffset; y < extendedHeight; y += bgHeight) {
         ctx.drawImage(backgroundImage, bgX1, y, bgWidth, bgHeight);
@@ -489,10 +486,20 @@
     } else {
       // Fallback background
       ctx.fillStyle = '#4a90e2';
-      ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+      ctx.fillRect(0, 0, ctx.canvas.width, renderGroundY);
       ctx.fillStyle = '#8b5a3c';
-      ctx.fillRect(0, GAME_SETTINGS.GROUND_Y, ctx.canvas.width, ctx.canvas.height - GAME_SETTINGS.GROUND_Y);
+      ctx.fillRect(0, renderGroundY, ctx.canvas.width, ctx.canvas.height - renderGroundY);
     }
+
+    // 畫 GROUND_Y 參考線
+    ctx.save();
+    ctx.strokeStyle = '#ff00ff';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, renderGroundY);
+    ctx.lineTo(ctx.canvas.width, renderGroundY);
+    ctx.stroke();
+    ctx.restore();
   }
 
   function renderCountdown(ctx: CanvasRenderingContext2D) {

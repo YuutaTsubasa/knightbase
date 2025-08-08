@@ -3,6 +3,7 @@ import { Projectile } from './Projectile';
 import type { Position, Size, CollisionBox, AnimationType } from '../GameTypes';
 import { AudioManager } from '$lib/systems/AudioManager';
 import { characterAttackAudioKey, characterAttackImageKey, characterJumpImageKey, characterRunImageKey, characterWalkAudioKey } from '$lib/utils/KeyHelper';
+import { getRenderY } from '../Utils';
 
 export class Player extends SpriteAnimationObject {
   public velocityY: number = 0;
@@ -13,7 +14,6 @@ export class Player extends SpriteAnimationObject {
   public isInvincible: boolean = false;
   public invincibleTimer: number = 0;
   
-  private groundY: number;
   private gravity: number;
   private jumpForce: number;
   private characterKey: string;
@@ -23,8 +23,8 @@ export class Player extends SpriteAnimationObject {
     position: Position,
     size: Size,
     characterKey: string,
-    gravity: number = 0.8,
-    jumpForce: number = -20,
+    gravity: number = -0.8,
+    jumpForce: number = 20,
     invincibleDuration: number = 2000,
     collisionBox?: Partial<CollisionBox>
   ) {
@@ -50,7 +50,7 @@ export class Player extends SpriteAnimationObject {
     this.y += this.velocityY;
 
     // Ground collision
-    if (this.y >= 0) {
+    if (this.y < 0) {
       this.y = 0;
       this.velocityY = 0;
       this.onGround = true;
@@ -138,7 +138,7 @@ export class Player extends SpriteAnimationObject {
   }
 
   protected renderFallback(ctx: CanvasRenderingContext2D, groundY?: number): void {
-    const renderY = groundY !== undefined ? groundY + this.y : this.y;
+    const renderY = getRenderY(ctx.canvas.height, groundY !== undefined ? groundY + this.y : this.y);
     ctx.fillStyle = '#ff6b6b';
     ctx.fillRect(this.x, renderY, this.width, this.height);
   }
