@@ -1,14 +1,14 @@
-import { PlayerDataManager } from "$lib/systems/PlayerStore";
 import { parse } from 'papaparse';
 import { writable, get, type Writable, derived } from "svelte/store";
+import { playerStore } from './PlayerStore';
 
 const FILE_PATH = "/assets/staticData/localization.csv"
 const DEFAULT_LOCALE = "en-us";
 const NOTHING = "#NOTHING#";
 export class LocalizationStore {
   static data: Writable<Record<string, Record<string, string>>> = writable({});
-  static locale = writable(DEFAULT_LOCALE);
-  
+  static locale = writable<string>(DEFAULT_LOCALE);
+
   static getLocale() {
     return get(this.locale);
   }
@@ -30,13 +30,23 @@ export class LocalizationStore {
 
     // Start loading in background but don't block
     const loadPromise = this.load().then(() => {
-      this.locale.set(PlayerDataManager.getData().locale ?? LocalizationStore.detectUserLocale());
-    }).catch(error => {
+      this.setLocale(get(playerStore).locale ?? LocalizationStore.detectUserLocale());
+    })
+    .catch(error => {
       console.warn('Failed to load localization assets:', error);
       // Set default locale even if loading fails
-      this.locale.set(DEFAULT_LOCALE);
+      this.setLocale(DEFAULT_LOCALE);
+    })
+    .finally(() => {
+      this.locale.subscribe(
+        (newLocale) => {
+          playerStore.update((playerData) => ({
+            ...playerData,
+            locale: newLocale
+          }));
+        }
+      );
     });
-
     return loadPromise;
   }
 
@@ -70,7 +80,6 @@ export class LocalizationStore {
       return;
 
     this.locale.set(newLocale);
-    PlayerDataManager.update({locale: newLocale});
   }
 }
 

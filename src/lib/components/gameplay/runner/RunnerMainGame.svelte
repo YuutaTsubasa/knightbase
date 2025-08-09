@@ -2,8 +2,7 @@
   import { onMount, onDestroy } from "svelte";
   import { AudioManager } from "$lib/systems/AudioManager";
   import { StaticDataStore } from "$lib/systems/StaticDataStore";
-  import { PlayerDataManager } from "$lib/systems/PlayerStore";
-  import { playerStore } from "$lib/systems/PlayerStore";
+  import { addResourcesToSaveData, playerStore, updateStageRecordToSaveData } from "$lib/systems/PlayerStore";
   import { characterAttackImageKey, characterJumpImageKey, characterRunImageKey, characterAttackEffectImageKey, stageBackgroundImageKey, stageBgmAudioKey, characterWalkAudioKey, characterAttackAudioKey } from "$lib/utils/KeyHelper";
   import { imageAssets } from "$lib/assets/ImageAssets";
   import { FontAssets } from "$lib/assets/FontAssets";
@@ -33,6 +32,7 @@
 
   import type { GameState, GameStats } from "./GameTypes";
   import { getRenderGroundY } from "./Utils";
+    import { get } from "svelte/store";
 
   // Props
   export let selectedCharacter: string;
@@ -121,7 +121,7 @@
 
   function saveToPlayerStore() {
     // Add collected coins as gold to player resources
-    PlayerDataManager.addResources({ gold: gameStats.coins });
+    addResourcesToSaveData({ gold: gameStats.coins });
     
     // Update stage record if this is better than previous
     const currentSpeed = getDisplayScrollSpeed();
@@ -132,18 +132,11 @@
       recordKey = levelId;
     }
     
-    const isNewRecord = PlayerDataManager.updateStageRecord(recordKey, {
+    const isNewRecord = updateStageRecordToSaveData(recordKey, {
       time: gameStats.survivalTime,
       score: gameStats.score,
       speed: currentSpeed
     });
-    
-    // Update the store to trigger reactivity
-    playerStore.set(PlayerDataManager.getData());
-    
-    if (isNewRecord) {
-      console.log('New record set!');
-    }
   }
 
   async function loadAssets() {
@@ -471,6 +464,7 @@
       const bgWidth = ctx.canvas.width;
       const bgHeight = ctx.canvas.height;
 
+      console.log(`${stageGroundOffsetY} ${get(StaticDataStore.getStageById(selectedStage))?.groundOffsetY ?? 0}`);
       // Background moved down, need to fill the top and draw extended background
       const backgroundYOffset = bgHeight + stageGroundOffsetY;
       const extendedHeight = bgHeight + backgroundYOffset;

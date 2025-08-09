@@ -1,23 +1,22 @@
 <script lang="ts">
   import PopupHost from '$lib/components/popup/PopupHost.svelte';
   import { FontAssets } from '$lib/assets/FontAssets';
-  import { LocalizationStore } from '$lib/systems/LocalizationStore';
-  import { StaticDataStore } from '$lib/systems/StaticDataStore';
   import { UniversalNavigationManager } from '$lib/systems/UniversalNavigationManager';
   import { page } from '$app/state';
   import { onMount, onDestroy } from 'svelte';
+  import { AudioManager } from '$lib/systems/AudioManager';
+  import { LocalizationStore } from '$lib/systems/LocalizationStore';
+  import { StaticDataStore } from '$lib/systems/StaticDataStore';
   let { children } = $props();
 
-  FontAssets.preload();
-  
   let navigationManager: UniversalNavigationManager | null = null;
-  
+
   // Initialize static data systems and navigation
-  onMount(() => {
+  onMount(async () => {
+    FontAssets.preload();
+    AudioManager.initialize();
     LocalizationStore.initialize();
     StaticDataStore.initialize();
-    
-    // Initialize universal navigation
     navigationManager = UniversalNavigationManager.getInstance();
   });
 

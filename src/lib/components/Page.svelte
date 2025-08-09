@@ -7,6 +7,7 @@
   import { FontAssets } from '$lib/assets/FontAssets';
   import { BACK_PATH } from '$lib/utils/Constant';
   import { LocalizationStore } from '$lib/systems/LocalizationStore';
+    import { StaticDataStore } from '$lib/systems/StaticDataStore';
   
   export let wrapperClass = '';
   export let wrapperStyle = '';
@@ -18,10 +19,7 @@
   onMount(async () => {
     const currentPath = page.url.pathname;
     const transition = new FadeTransitionComponent(pageElement);
-    
-    AudioManager.initialize();
-    LocalizationStore.initialize();
-    
+
     const playBgmPromise = AudioManager.play(`bgm_${currentPath.substring(1)}`);
     await transition.enter();
     const nextPath = await mainProgress();
