@@ -45,14 +45,17 @@ export class UniversalNavigationManager {
     }
 
     private hasActivePopup(): boolean {
-        // Check if there are any popups or a backdrop indicating an open popup
-        const popupBackdrop = document.querySelector('.popupBackdrop');
-        return this.popups.length > 0 || popupBackdrop !== null;
+        return this.popups.length > 0;
     }
 
     public refreshFocusableElements(isInitial: boolean = true): void {
         const hasActivePopup = this.hasActivePopup();
-        if (!hasActivePopup && this.isGameplayPage) return;
+        if (!hasActivePopup && this.isGameplayPage) {
+            this.currentIndex = -1;
+            this.isNavigating = false;
+            this.focusableElements = [];
+            return;
+        }
 
         this.focusableElements = [];
         

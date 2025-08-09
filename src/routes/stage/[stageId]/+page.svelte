@@ -3,7 +3,7 @@
   import { goto } from '$app/navigation';
   import { t } from "$lib/systems/LocalizationStore";
   import { StaticDataStore } from "$lib/systems/StaticDataStore";
-  import { playerStore, PlayerDataManager } from "$lib/systems/PlayerStore";
+  import { playerStore } from "$lib/systems/PlayerStore";
   import { imageAssets } from "$lib/assets/ImageAssets";
   import { stageBackgroundImageKey } from "$lib/utils/KeyHelper";
   import Page from "$lib/components/Page.svelte";
@@ -32,6 +32,7 @@
     ]
   };
 
+  $: playerData = $playerStore;
   $: levels = stageLevels[stageId || ''] || [];
 
   function formatTime(seconds: number): string {
@@ -42,10 +43,6 @@
 
   function formatNumber(num: number): string {
     return num.toLocaleString();
-  }
-
-  function getLevelRecord(levelId: string) {
-    return PlayerDataManager.getStageRecord(levelId);
   }
 
   function goBack() {
@@ -80,9 +77,9 @@
     }
     
     // Store selected level in player data for gameplay
-    PlayerDataManager.update({ 
-      selectedStage: stageId,
-      // Add a temp field for level selection
+    playerStore.update(currentData => {
+      currentData.selectedStage = stageId;
+      return currentData;
     });
     
     // Navigate to gameplay with level info
@@ -117,7 +114,7 @@
 
   <div class="levelsGrid" style={`--topbarHeight: ${topbarHeight}px;`}>
     {#each levels as level}
-      {@const record = getLevelRecord(level.id)}
+      {@const record = playerData.stageRecords[level.id] || null}
       {@const isCompleted = record?.completed ?? false}
       {@const isLocked = false} <!-- For now, no levels are locked -->
       

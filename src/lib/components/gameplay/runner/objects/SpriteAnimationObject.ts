@@ -1,5 +1,5 @@
 import { Object } from './Object';
-import type { Position, Size, CollisionBox, AnimatedEntity } from '../types/GameTypes';
+import type { Position, Size, CollisionBox, AnimatedEntity } from '../GameTypes';
 
 export abstract class SpriteAnimationObject extends Object implements AnimatedEntity {
   public animationFrame: number = 0;
@@ -40,10 +40,10 @@ export abstract class SpriteAnimationObject extends Object implements AnimatedEn
   }
 
   // Render sprite with animation frame
-  public render(ctx: CanvasRenderingContext2D, images: Record<string, HTMLImageElement>): void {
+  public render(ctx: CanvasRenderingContext2D, images: Record<string, HTMLImageElement>, renderGroundY?: number): void {
     const image = images[this.spriteSheetKey];
     if (!image) {
-      this.renderFallback(ctx);
+      this.renderFallback(ctx, renderGroundY);
       return;
     }
 
@@ -52,34 +52,44 @@ export abstract class SpriteAnimationObject extends Object implements AnimatedEn
     const frameHeight = image.height;
     const frameX = this.animationFrame * frameWidth;
 
+    // Calculate render position using proper coordinate system conversion
+    const renderY = renderGroundY !== undefined 
+      ? renderGroundY - this.y - this.height
+      : this.y;
+
     // Draw the specific frame
     ctx.drawImage(
       image,
       frameX, 0, frameWidth, frameHeight,  // Source rectangle (sprite frame)
-      this.x, this.y, this.width, this.height  // Destination rectangle
+      this.x, renderY, this.width, this.height  // Destination rectangle
     );
   }
 
   // Render sprite with flipping support
-  protected renderFlipped(ctx: CanvasRenderingContext2D, images: Record<string, HTMLImageElement>, facingLeft: boolean): void {
+  protected renderFlipped(ctx: CanvasRenderingContext2D, images: Record<string, HTMLImageElement>, facingLeft: boolean, renderGroundY?: number): void {
     const image = images[this.spriteSheetKey];
     if (!image) {
-      this.renderFallback(ctx);
+      this.renderFallback(ctx, renderGroundY);
       return;
     }
+
+    // Calculate render position using proper coordinate system conversion
+    const renderY = renderGroundY !== undefined
+      ? renderGroundY - this.y - this.height
+      : this.y;
 
     ctx.save();
     if (facingLeft) {
       ctx.scale(-1, 1);
-      ctx.drawImage(image, -this.x - this.width, this.y, this.width, this.height);
+      ctx.drawImage(image, -this.x - this.width, renderY, this.width, this.height);
     } else {
-      ctx.drawImage(image, this.x, this.y, this.width, this.height);
+      ctx.drawImage(image, this.x, renderY, this.width, this.height);
     }
     ctx.restore();
   }
 
   // Fallback rendering for when image is not loaded
-  protected abstract renderFallback(ctx: CanvasRenderingContext2D): void;
+  protected abstract renderFallback(ctx: CanvasRenderingContext2D, groundY?: number): void;
 
   // Set animation state
   public setAnimation(animation: string): void {

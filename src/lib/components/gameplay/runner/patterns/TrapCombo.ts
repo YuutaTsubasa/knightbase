@@ -1,4 +1,4 @@
-import { Pattern, type PatternEntity } from '../objects/Pattern';
+import { Pattern, type PatternEntity } from './Pattern';
 import { Trap } from '../objects/Trap';
 
 export class TrapComboPattern extends Pattern {
@@ -11,7 +11,7 @@ export class TrapComboPattern extends Pattern {
     this.spacing = spacing;
   }
 
-  public generate(startX: number, groundY: number): PatternEntity[] {
+  public generate(startX: number): PatternEntity[] {
     const entities: PatternEntity[] = [];
 
     for (let i = 0; i < this.trapCount; i++) {
@@ -19,10 +19,8 @@ export class TrapComboPattern extends Pattern {
         type: 'trap',
         position: {
           x: startX + i * this.spacing,
-          y: groundY - Trap.getDefaultSize().height
-        },
-        size: Trap.getDefaultSize(),
-        collisionBox: Trap.getDefaultCollisionBox()
+          y: 0 // Y=0 at ground level
+        }
       });
     }
 
@@ -30,6 +28,6 @@ export class TrapComboPattern extends Pattern {
   }
 
   public getDistance(): number {
-    return (this.trapCount - 1) * this.spacing + Trap.getDefaultSize().width;
+    return (this.trapCount - 1) * this.spacing + Trap.getSize().width;
   }
 }

@@ -98,6 +98,10 @@ export class StaticDataStore {
   private static loadedFiles: Set<string> = new Set();
 
   static async initialize() {
+    if (this.loadedFiles.size > 0) {
+      return;
+    }
+
     const promises = [
       this.loadPlayerData(),
       this.loadCharacterData(),

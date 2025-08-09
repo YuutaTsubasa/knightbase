@@ -1,6 +1,6 @@
 import { SpriteAnimationObject } from './SpriteAnimationObject';
 import { Projectile } from './Projectile';
-import type { Position, Size, CollisionBox, AnimationType } from '../types/GameTypes';
+import type { Position, Size, CollisionBox, AnimationType } from '../GameTypes';
 import { AudioManager } from '$lib/systems/AudioManager';
 import { characterAttackAudioKey, characterAttackImageKey, characterJumpImageKey, characterRunImageKey, characterWalkAudioKey } from '$lib/utils/KeyHelper';
 
@@ -9,18 +9,22 @@ export class Player extends SpriteAnimationObject {
   public onGround: boolean = true;
   public animation: AnimationType = 'run';
   
-  private groundY: number;
+  // Encapsulated invincibility state
+  public isInvincible: boolean = false;
+  public invincibleTimer: number = 0;
+  
   private gravity: number;
   private jumpForce: number;
   private characterKey: string;
+  private invincibleDuration: number;
 
   constructor(
     position: Position,
     size: Size,
-    groundY: number,
     characterKey: string,
-    gravity: number = 0.8,
-    jumpForce: number = -20,
+    gravity: number = -0.8,
+    jumpForce: number = 20,
+    invincibleDuration: number = 2000,
     collisionBox?: Partial<CollisionBox>
   ) {
     // Call parent with run animation initially
@@ -33,10 +37,10 @@ export class Player extends SpriteAnimationObject {
       collisionBox
     );
     
-    this.groundY = groundY;
     this.gravity = gravity;
     this.jumpForce = jumpForce;
     this.characterKey = characterKey;
+    this.invincibleDuration = invincibleDuration;
   }
 
   public update(deltaTime: number, scrollSpeed: number): void {
@@ -45,8 +49,8 @@ export class Player extends SpriteAnimationObject {
     this.y += this.velocityY;
 
     // Ground collision
-    if (this.y >= this.groundY - this.height) {
-      this.y = this.groundY - this.height;
+    if (this.y < 0) {
+      this.y = 0;
       this.velocityY = 0;
       this.onGround = true;
       if (this.animation === 'jump') {
@@ -57,6 +61,15 @@ export class Player extends SpriteAnimationObject {
     // Update animation based on current state
     this.updateAnimationState();
     this.updateAnimation(deltaTime);
+
+    // Update invincibility timer
+    if (this.isInvincible) {
+      this.invincibleTimer -= deltaTime;
+      if (this.invincibleTimer <= 0) {
+        this.isInvincible = false;
+        this.invincibleTimer = 0;
+      }
+    }
   }
 
   private updateAnimationState(): void {
@@ -123,27 +136,50 @@ export class Player extends SpriteAnimationObject {
     return null;
   }
 
-  protected renderFallback(ctx: CanvasRenderingContext2D): void {
+  protected renderFallback(ctx: CanvasRenderingContext2D, renderGroundY?: number): void {
+    const renderY = renderGroundY !== undefined
+      ? renderGroundY - this.y - this.height
+      : this.y;
     ctx.fillStyle = '#ff6b6b';
-    ctx.fillRect(this.x, this.y, this.width, this.height);
+    ctx.fillRect(this.x, renderY, this.width, this.height);
   }
 
   // Render with invincibility flashing
+  public render(ctx: CanvasRenderingContext2D, images: Record<string, HTMLImageElement>, renderGroundY?: number): void {
+    if (!this.isInvincible) {
+      super.render(ctx, images, renderGroundY);
+      return;
+    }
+
+    // Flash every 100ms during invincibility
+    const shouldDraw = Math.floor(this.invincibleTimer / 100) % 2 === 0;
+    if (shouldDraw) {
+      super.render(ctx, images, renderGroundY);
+    }
+  }
+
+  // Method to take damage
+  public takeDamage(): boolean {
+    if (this.isInvincible) {
+      return false; // No damage taken due to invincibility
+    }
+    
+    // Play hurt sound effect
+    AudioManager.play("sfx_hurt");
+    
+    this.isInvincible = true;
+    this.invincibleTimer = this.invincibleDuration;
+    return true; // Damage taken
+  }
+
+  // Legacy method for compatibility (can be removed once all usage is updated)
   public renderWithInvincibility(
     ctx: CanvasRenderingContext2D, 
     images: Record<string, HTMLImageElement>,
     isInvincible: boolean,
     invincibleTimer: number
   ): void {
-    if (!isInvincible) {
-      this.render(ctx, images);
-      return;
-    }
-
-    // Flash every 100ms during invincibility
-    const shouldDraw = Math.floor(invincibleTimer / 100) % 2 === 0;
-    if (shouldDraw) {
-      this.render(ctx, images);
-    }
+    // For compatibility, just render normally (invincibility is now internal)
+    this.render(ctx, images);
   }
 }

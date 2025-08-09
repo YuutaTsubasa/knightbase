@@ -1,4 +1,4 @@
-import { Pattern } from '../objects/Pattern';
+import { Pattern } from './Pattern';
 import { CoinLinePattern } from './CoinLine';
 import { TrapComboPattern } from './TrapCombo';
 import { CoinArcPattern } from './CoinArc';

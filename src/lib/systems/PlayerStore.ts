@@ -1,4 +1,4 @@
-import { writable } from "svelte/store";
+import { get, writable, type Writable } from "svelte/store";
 
 export interface StageRecord {
   bestTime: number; // in seconds
@@ -46,98 +46,96 @@ const DEFAULT_PLAYER_DATA : PlayerData = {
     },
     stageRecords: {}
 }
+const STORAGE_KEY = "playerData";
+export const playerStore: Writable<PlayerData> = writable(load());
 
-export class PlayerDataManager {
-  private static STORAGE_KEY = "playerData";
-  private static data: PlayerData = PlayerDataManager.load();
-
-  static load(): PlayerData {
-    const base64 = localStorage.getItem(this.STORAGE_KEY);
-    if (base64) {
-      try {
-        const json = atob(base64);
-        const parsed = JSON.parse(json);
-        return this.data = this.mergeDefaults(DEFAULT_PLAYER_DATA, parsed);
-      } catch {
-        return this.data = DEFAULT_PLAYER_DATA;
-      }
+function load(): PlayerData {
+  const base64 = localStorage.getItem(STORAGE_KEY);
+  if (base64) {
+    try {
+      const json = atob(base64);
+      const parsed = JSON.parse(json);
+      return mergeDefaults(DEFAULT_PLAYER_DATA, parsed);
+    } catch {
+      return DEFAULT_PLAYER_DATA;
     }
-    return this.data = DEFAULT_PLAYER_DATA;
   }
 
-  private static mergeDefaults<T>(defaults: T, actual: any): T {
-    const result: any = { ...defaults };
-    for (const key in defaults) {
-      if (typeof defaults[key] === "object" && defaults[key] !== null) {
-        result[key] = this.mergeDefaults(defaults[key], actual?.[key] ?? {});
-      } else {
-        result[key] = actual?.[key] ?? defaults[key];
-      }
+  return DEFAULT_PLAYER_DATA;
+}
+
+function mergeDefaults<T>(defaults: T, actual: any): T {
+  const result: any = { ...defaults };
+  for (const key in defaults) {
+    if (typeof defaults[key] === "object" && defaults[key] !== null) {
+      result[key] = mergeDefaults(defaults[key], actual?.[key] ?? {});
+    } else {
+      result[key] = actual?.[key] ?? defaults[key];
     }
-    return result;
   }
+  return result;
+}
 
-  static save(): void {
-    const json = JSON.stringify(this.data);
-    const base64 = btoa(json);
-    localStorage.setItem(this.STORAGE_KEY, base64);
-  }
+function save(data: PlayerData): void {
+  const json = JSON.stringify(data);
+  const base64 = btoa(json);
+  localStorage.setItem(STORAGE_KEY, base64);
+}
 
-  static getData(): PlayerData {
-    return this.data;
-  }
+playerStore.subscribe((data) => {
+  save(data);
+});
 
-  static update(partial: Partial<PlayerData>): void {
-    Object.assign(this.data, partial);
-    this.save();
-  }
+export function exportBase64FromSaveData(): string {
+  return btoa(JSON.stringify(get(playerStore)));
+}
 
-  static exportBase64(): string {
-    return btoa(JSON.stringify(this.data));
-  }
+export function importBase64ToSaveData(encoded: string): void {
+  const json = atob(encoded);
+  playerStore.set(JSON.parse(json));
+}
 
-  static importBase64(encoded: string): void {
-    const json = atob(encoded);
-    this.data = JSON.parse(json);
-    this.save();
-  }
+export function addResourcesToSaveData(resources: Partial<PlayerResources>): void {
+  playerStore.update((currentData) => {
+    if (resources.gold) currentData.resources.gold += resources.gold;
+    if (resources.diamond) currentData.resources.diamond += resources.diamond;
+    if (resources.gem) currentData.resources.gem += resources.gem;
+    return currentData;
+  });
+}
+export function spendResourcesFromSaveData(resources: Partial<PlayerResources>): boolean {
+  let isSpent = false;
+  playerStore.update((currentData) => {
+    const { resources: currentResources } = currentData;
+    if (!currentResources) return currentData;
 
-  static reset(): void {
-    this.data = DEFAULT_PLAYER_DATA;
-    this.save();
-  }
+    const canAfford =
+      (resources.gold || 0) <= currentResources.gold &&
+      (resources.diamond || 0) <= currentResources.diamond &&
+      (resources.gem || 0) <= currentResources.gem;
 
-  // Resource management methods
-  static addResources(resources: Partial<PlayerResources>): void {
-    if (resources.gold) this.data.resources.gold += resources.gold;
-    if (resources.diamond) this.data.resources.diamond += resources.diamond;
-    if (resources.gem) this.data.resources.gem += resources.gem;
-    this.save();
-  }
-
-  static spendResources(resources: Partial<PlayerResources>): boolean {
-    const canAfford = 
-      (resources.gold || 0) <= this.data.resources.gold &&
-      (resources.diamond || 0) <= this.data.resources.diamond &&
-      (resources.gem || 0) <= this.data.resources.gem;
-    
     if (canAfford) {
-      if (resources.gold) this.data.resources.gold -= resources.gold;
-      if (resources.diamond) this.data.resources.diamond -= resources.diamond;
-      if (resources.gem) this.data.resources.gem -= resources.gem;
-      this.save();
-      return true;
+      if (resources.gold) currentData.resources.gold -= resources.gold;
+      if (resources.diamond) currentData.resources.diamond -= resources.diamond;
+      if (resources.gem) currentData.resources.gem -= resources.gem;
+      isSpent = true;
+      return currentData;
     }
-    return false;
-  }
+    return currentData;
+  });
 
-  // Stage record management methods
-  static updateStageRecord(stageId: string, stats: { time: number; score: number; speed: number }): boolean {
-    const existing = this.data.stageRecords[stageId];
-    let isNewRecord = false;
+  return isSpent;
+}
 
+export function updateStageRecordToSaveData(stageId: string, stats: { time: number; score: number; speed: number }): boolean {
+  let isNewRecord = false;
+  playerStore.update((currentData) => {
+    if (!currentData.stageRecords) {
+      currentData.stageRecords = {};
+    }
+    const existing = currentData.stageRecords[stageId];
     if (!existing) {
-      this.data.stageRecords[stageId] = {
+      currentData.stageRecords[stageId] = {
         bestTime: stats.time,
         bestScore: stats.score,
         bestSpeed: stats.speed,
@@ -158,20 +156,9 @@ export class PlayerDataManager {
         isNewRecord = true;
       }
       existing.completed = true;
+      currentData.stageRecords[stageId] = existing;
     }
-
-    this.save();
-    return isNewRecord;
-  }
-
-  static getStageRecord(stageId: string): StageRecord | null {
-    return this.data.stageRecords[stageId] || null;
-  }
+    return currentData;
+  });
+  return isNewRecord;
 }
-
-export const playerStore = writable<PlayerData>(PlayerDataManager.getData());
-
-// 訂閱時更新本地儲存
-playerStore.subscribe((value) => {
-  PlayerDataManager.update(value);
-});

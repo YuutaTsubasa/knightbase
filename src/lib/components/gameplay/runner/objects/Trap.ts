@@ -1,34 +1,29 @@
 import { SpriteAnimationObject } from './SpriteAnimationObject';
-import type { Position, Size, CollisionBox } from '../types/GameTypes';
+import type { Position, Size, CollisionBox } from '../GameTypes';
 
 export class Trap extends SpriteAnimationObject {
   
-  // Default size and collision box for traps
-  public static getDefaultSize(): Size {
-    return { width: 200, height: 80 };
+  public static getSize(): Size {
+    return { width: 150, height: 80 };
   }
 
-  public static getDefaultCollisionBox(): CollisionBox {
+  public static getCollisionBox(): CollisionBox {
     return {
       collisionOffsetX: 10,
       collisionOffsetY: 10,
-      collisionWidth: 180,
+      collisionWidth: 130,
       collisionHeight: 60
     };
   }
 
-  constructor(
-    position: Position,
-    size?: Size,
-    collisionBox?: Partial<CollisionBox>
-  ) {
+  constructor(position: Position) {
     super(
       position,
-      size || Trap.getDefaultSize(),
+      Trap.getSize(),
       'trap',
       1, // Single frame for trap
       0,  // No animation for trap
-      collisionBox || Trap.getDefaultCollisionBox()
+      Trap.getCollisionBox()
     );
   }
 
@@ -36,10 +31,29 @@ export class Trap extends SpriteAnimationObject {
     this.moveWithScroll(scrollSpeed);
   }
 
-  protected renderFallback(ctx: CanvasRenderingContext2D): void {
+  public render(ctx: CanvasRenderingContext2D, images: Record<string, HTMLImageElement>, renderGroundY?: number): void {
+    const image = images[this.spriteSheetKey];
+    if (!image) {
+      this.renderFallback(ctx, renderGroundY);
+      return;
+    }
+    
+    // Calculate render position using proper coordinate system conversion
+    const renderY = renderGroundY !== undefined
+      ? renderGroundY - this.y - this.height
+      : this.y;
+    ctx.drawImage(image, this.x, renderY, this.width, this.height);
+  }
+
+  protected renderFallback(ctx: CanvasRenderingContext2D, renderGroundY?: number): void {
+    // Calculate render position using proper coordinate system conversion
+    const renderY = renderGroundY !== undefined
+      ? renderGroundY - this.y -this.height
+      : this.y;
+    
     // Draw trap spikes as fallback
     ctx.fillStyle = '#8b0000';
-    ctx.fillRect(this.x, this.y, this.width, this.height);
+    ctx.fillRect(this.x, renderY, this.width, this.height);
     
     // Draw spike pattern
     ctx.fillStyle = '#ff0000';
@@ -47,9 +61,9 @@ export class Trap extends SpriteAnimationObject {
     const spikeWidth = this.width / spikeCount;
     for (let i = 0; i < spikeCount; i++) {
       ctx.beginPath();
-      ctx.moveTo(this.x + i * spikeWidth, this.y + this.height);
-      ctx.lineTo(this.x + i * spikeWidth + spikeWidth/2, this.y);
-      ctx.lineTo(this.x + (i + 1) * spikeWidth, this.y + this.height);
+      ctx.moveTo(this.x + i * spikeWidth, renderY + this.height);
+      ctx.lineTo(this.x + i * spikeWidth + spikeWidth/2, renderY);
+      ctx.lineTo(this.x + (i + 1) * spikeWidth, renderY + this.height);
       ctx.closePath();
       ctx.fill();
     }

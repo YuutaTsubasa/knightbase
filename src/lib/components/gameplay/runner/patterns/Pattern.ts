@@ -1,4 +1,4 @@
-import type { Position, Size } from '../types/GameTypes';
+import type { Position, Size } from '../GameTypes';
 import { Enemy } from '../objects/Enemy';
 import { Coin } from '../objects/Coin';
 import { Trap } from '../objects/Trap';
@@ -7,13 +7,6 @@ import { Goal } from '../objects/Goal';
 export interface PatternEntity {
   type: 'enemy' | 'coin' | 'trap' | 'goal';
   position: Position;
-  size: Size;
-  collisionBox?: {
-    collisionOffsetX: number;
-    collisionOffsetY: number;
-    collisionWidth: number;
-    collisionHeight: number;
-  };
 }
 
 export abstract class Pattern {
@@ -26,26 +19,26 @@ export abstract class Pattern {
   }
 
   // Generate the pattern entities
-  public abstract generate(startX: number, groundY: number): PatternEntity[];
+  public abstract generate(startX: number): PatternEntity[];
 
   // Create actual game objects from pattern
-  public createObjects(startX: number, groundY: number): (Enemy | Coin | Trap | Goal)[] {
-    const patternEntities = this.generate(startX, groundY);
+  public createObjects(startX: number): (Enemy | Coin | Trap | Goal)[] {
+    const patternEntities = this.generate(startX);
     const objects: (Enemy | Coin | Trap | Goal)[] = [];
 
     patternEntities.forEach(entity => {
       switch (entity.type) {
         case 'enemy':
-          objects.push(new Enemy(entity.position, entity.size, entity.collisionBox));
+          objects.push(new Enemy(entity.position));
           break;
         case 'coin':
-          objects.push(new Coin(entity.position, entity.size, entity.collisionBox));
+          objects.push(new Coin(entity.position));
           break;
         case 'trap':
-          objects.push(new Trap(entity.position, entity.size, entity.collisionBox));
+          objects.push(new Trap(entity.position));
           break;
         case 'goal':
-          objects.push(new Goal(entity.position, entity.size, entity.collisionBox));
+          objects.push(new Goal(entity.position));
           break;
       }
     });

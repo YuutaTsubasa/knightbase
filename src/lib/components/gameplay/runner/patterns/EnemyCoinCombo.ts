@@ -1,4 +1,4 @@
-import { Pattern, type PatternEntity } from '../objects/Pattern';
+import { Pattern, type PatternEntity } from './Pattern';
 import { Enemy } from '../objects/Enemy';
 import { Coin } from '../objects/Coin';
 
@@ -14,7 +14,7 @@ export class EnemyCoinComboPattern extends Pattern {
     this.spacing = spacing;
   }
 
-  public generate(startX: number, groundY: number): PatternEntity[] {
+  public generate(startX: number): PatternEntity[] {
     const entities: PatternEntity[] = [];
     let currentX = startX;
 
@@ -24,10 +24,8 @@ export class EnemyCoinComboPattern extends Pattern {
         type: 'enemy',
         position: {
           x: currentX,
-          y: groundY - Enemy.getDefaultSize().height
-        },
-        size: Enemy.getDefaultSize(),
-        collisionBox: Enemy.getDefaultCollisionBox()
+          y: 0 // Y=0 at ground level
+        }
       });
       currentX += this.spacing;
     }
@@ -38,10 +36,8 @@ export class EnemyCoinComboPattern extends Pattern {
         type: 'coin',
         position: {
           x: currentX,
-          y: groundY - 200 - Math.random() * 50 // Higher than usual to reward jumping over enemy
-        },
-        size: Coin.getDefaultSize(),
-        collisionBox: Coin.getDefaultCollisionBox()
+          y: 200 + Math.random() * 50 // Positive Y above ground to reward jumping
+        }
       });
       currentX += this.spacing * 0.8; // Tighter spacing for coins
     }

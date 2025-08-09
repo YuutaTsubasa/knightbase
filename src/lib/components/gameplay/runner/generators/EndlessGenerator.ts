@@ -1,4 +1,4 @@
-import { Pattern } from '../objects/Pattern';
+import { Pattern } from '../patterns/Pattern';
 import { CoinLinePattern } from '../patterns/CoinLine';
 import { TrapComboPattern } from '../patterns/TrapCombo';
 import { Enemy } from '../objects/Enemy';
@@ -58,14 +58,7 @@ export class EndlessGenerator {
 
   private createEnemy(): Enemy {
     return new Enemy(
-      { x: 800 + 50, y: 480 - 192 }, // Canvas width + margin, ground - height
-      { width: 192, height: 192 },
-      {
-        collisionOffsetX: 24,
-        collisionOffsetY: 16,
-        collisionWidth: 144,
-        collisionHeight: 160
-      }
+      { x: 800 + 50, y: 0 } // Y=0 at ground level
     );
   }
 
@@ -73,28 +66,14 @@ export class EndlessGenerator {
     return new Coin(
       { 
         x: 800 + 50 + Math.random() * 200, 
-        y: 480 - 200 - Math.random() * 300 
-      },
-      { width: 128, height: 128 },
-      {
-        collisionOffsetX: 16,
-        collisionOffsetY: 16,
-        collisionWidth: 96,
-        collisionHeight: 96
+        y: Math.random() * 300  // Positive Y above ground (0-300 pixels above ground)
       }
     );
   }
 
   private createTrap(): Trap {
     return new Trap(
-      { x: 800 + 50, y: 480 - 96 },
-      { width: 128, height: 96 },
-      {
-        collisionOffsetX: 16,
-        collisionOffsetY: 8,
-        collisionWidth: 96,
-        collisionHeight: 32
-      }
+      { x: 800 + 50, y: 0 } // Y=0 at ground level
     );
   }
 

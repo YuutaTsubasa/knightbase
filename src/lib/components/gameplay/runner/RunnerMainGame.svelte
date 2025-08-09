@@ -1,10 +1,8 @@
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
-  import { get, writable, type Writable } from "svelte/store";
   import { AudioManager } from "$lib/systems/AudioManager";
   import { StaticDataStore } from "$lib/systems/StaticDataStore";
-  import { PlayerDataManager } from "$lib/systems/PlayerStore";
-  import { playerStore } from "$lib/systems/PlayerStore";
+  import { addResourcesToSaveData, playerStore, updateStageRecordToSaveData } from "$lib/systems/PlayerStore";
   import { characterAttackImageKey, characterJumpImageKey, characterRunImageKey, characterAttackEffectImageKey, stageBackgroundImageKey, stageBgmAudioKey, characterWalkAudioKey, characterAttackAudioKey } from "$lib/utils/KeyHelper";
   import { imageAssets } from "$lib/assets/ImageAssets";
   import { FontAssets } from "$lib/assets/FontAssets";
@@ -14,21 +12,27 @@
   import { Play, Pause, Heart, Keyboard, Smartphone, Gamepad2, ArrowUpFromLine, Sword } from "lucide-svelte";
   
   // Layer imports
-  import { BackgroundLayer } from "./layers/BackgroundLayer";
-  import { CharacterLayer } from "./layers/CharacterLayer"; 
-  import { TrapEnemyLayer } from "./layers/TrapEnemyLayer";
-  import { EffectLayer } from "./layers/EffectLayer";
+  import { Layer } from "./Layer";
   
   // Object imports
   import { Player } from "./objects/Player";
   import { Explosion } from "./objects/Explosion";
+  import { Coin } from "./objects/Coin";
+  import { Goal } from "./objects/Goal";
+  import { Enemy } from "./objects/Enemy";
+  import { Trap } from "./objects/Trap";
+  import { Projectile } from "./objects/Projectile";
   
   // Generator import
   import { EndlessGenerator } from "./generators/EndlessGenerator";
   import { LevelGenerator } from "./generators/LevelGenerator";
+  import { PatternFactory } from "./patterns/PatternFactory";
+  import { TextAssetManager } from "$lib/assets/TextAssets";
+  import type { Pattern } from "./patterns/Pattern";
 
-  import type { GameState, GameStats } from "./types/GameTypes";
-  import { UniversalNavigationManager } from "$lib/systems/UniversalNavigationManager";
+  import type { GameState, GameStats } from "./GameTypes";
+  import { getRenderGroundY } from "./Utils";
+    import { get } from "svelte/store";
 
   // Props
   export let selectedCharacter: string;
@@ -43,15 +47,18 @@
   let animationFrameId: number;
 
   // Game layers
-  let backgroundLayer: BackgroundLayer;
-  let characterLayer: CharacterLayer;
-  let trapEnemyLayer: TrapEnemyLayer;
-  let effectLayer: EffectLayer;
+  let backgroundLayer: Layer;
+  let characterLayer: Layer;
+  let trapEnemyLayer: Layer;
+  let effectLayer: Layer;
 
   // Game entities  
   let player: Player;
   let endlessGenerator: EndlessGenerator;
   let levelGenerator: LevelGenerator;
+
+  // Background state (moved from BackgroundLayer)
+  let backgroundOffset: number = 0;
 
   // Game state
   let gameState: GameState = 'playing';
@@ -59,9 +66,7 @@
     survivalTime: 0,
     coins: 0,
     lives: 3,
-    score: 0,
-    isInvincible: false,
-    invincibleTimer: 0
+    score: 0
   };
   let lastSurvivalSecond = 0;
   let playerDistanceTraveled = 0; // Track total distance traveled
@@ -71,10 +76,10 @@
 
   // Game settings
   const GAME_SETTINGS = {
-    GRAVITY: 0.8,
-    JUMP_FORCE: -20,
-    GROUND_Y: 480,
+    GRAVITY: -0.8,
+    JUMP_FORCE: 20,
     BASE_SCROLL_SPEED: 8,
+    GROUND_Y: 120,
     INVINCIBLE_DURATION: 1500,
     MIN_TRAP_INTERVAL: 3000
   };
@@ -90,6 +95,7 @@
   // Asset loading
   let assetsLoaded = false;
   let loadedImages: Record<string, HTMLImageElement> = {};
+  let levelPatterns: Pattern[] = []; // Store level patterns for initGame
 
   // Input handling
   let keysPressed: Record<string, boolean> = {};
@@ -110,12 +116,12 @@
 
   function getDisplayScrollSpeed(): number {
     // Display speed starts at 1.0x but actual speed is still 8.0x
-    return 1 + Math.floor(gameStats.survivalTime / 10) * 0.05;
+    return getCurrentScrollSpeed() - 7.0;
   }
 
   function saveToPlayerStore() {
     // Add collected coins as gold to player resources
-    PlayerDataManager.addResources({ gold: gameStats.coins });
+    addResourcesToSaveData({ gold: gameStats.coins });
     
     // Update stage record if this is better than previous
     const currentSpeed = getDisplayScrollSpeed();
@@ -126,18 +132,11 @@
       recordKey = levelId;
     }
     
-    const isNewRecord = PlayerDataManager.updateStageRecord(recordKey, {
+    const isNewRecord = updateStageRecordToSaveData(recordKey, {
       time: gameStats.survivalTime,
       score: gameStats.score,
       speed: currentSpeed
     });
-    
-    // Update the store to trigger reactivity
-    playerStore.set(PlayerDataManager.getData());
-    
-    if (isNewRecord) {
-      console.log('New record set!');
-    }
   }
 
   async function loadAssets() {
@@ -190,13 +189,20 @@
     ];
     
     // Load level patterns if in level mode
-    let levelLoadPromise = Promise.resolve();
+    levelPatterns = [];
     if (gameMode === 'level' && levelId) {
-      levelGenerator = new LevelGenerator(levelId, GAME_SETTINGS.GROUND_Y + stageGroundOffsetY);
-      levelLoadPromise = levelGenerator.waitForLoad();
+      try {
+        const patternData = await TextAssetManager.loadPatternData(levelId);
+        levelPatterns = PatternFactory.createPatternsFromJson(patternData);
+      } catch (error) {
+        console.error(`Failed to load level ${levelId}:`, error);
+        // Fallback to empty level
+        levelPatterns = [];
+      }
     }
     
-    await Promise.all([...imagePromises, ...audioPreloadPromises, levelLoadPromise]);
+    await Promise.all([...imagePromises, ...audioPreloadPromises]);
+    
     assetsLoaded = true;
   }
 
@@ -213,27 +219,25 @@
       survivalTime: 0,
       coins: 0,
       lives: 3,
-      score: 0,
-      isInvincible: false,
-      invincibleTimer: 0
+      score: 0
     };
     lastSurvivalSecond = 0;
     playerDistanceTraveled = 0;
 
     // Initialize layers
-    backgroundLayer = new BackgroundLayer(selectedStage, stageGroundOffsetY);
-    characterLayer = new CharacterLayer();
-    trapEnemyLayer = new TrapEnemyLayer();
-    effectLayer = new EffectLayer();
+    backgroundLayer = new Layer('background');
+    characterLayer = new Layer('character');
+    trapEnemyLayer = new Layer('trap-enemy');
+    effectLayer = new Layer('effects');
 
     // Initialize player
     player = new Player(
-      { x: 50, y: GAME_SETTINGS.GROUND_Y - 256 },
+      { x: 50, y: 0 },
       { width: 256, height: 256 },
-      GAME_SETTINGS.GROUND_Y,
       selectedCharacter,
       GAME_SETTINGS.GRAVITY,
       GAME_SETTINGS.JUMP_FORCE,
+      GAME_SETTINGS.INVINCIBLE_DURATION,
       {
         collisionOffsetX: 40,
         collisionOffsetY: 20,
@@ -241,14 +245,14 @@
         collisionHeight: 216
       }
     );
-    characterLayer.setPlayer(player);
+    characterLayer.addEntity(player);
 
     // Initialize generator based on game mode
     if (gameMode === 'endless') {
       endlessGenerator = new EndlessGenerator();
-    } else if (gameMode === 'level' && !levelGenerator) {
-      // If levelGenerator wasn't created in loadAssets (for some reason), create it here
-      levelGenerator = new LevelGenerator(levelId || 'stage1_1', GAME_SETTINGS.GROUND_Y + stageGroundOffsetY);
+    } else if (gameMode === 'level') {
+      // Create LevelGenerator with loaded patterns
+      levelGenerator = new LevelGenerator(levelPatterns);
     }
 
     // Start countdown
@@ -277,10 +281,22 @@
 
     const currentScrollSpeed = getCurrentScrollSpeed();
     if (!isStop) {
+      // Update background offset
+      backgroundOffset -= currentScrollSpeed;
+      
+      // Update all layers
       backgroundLayer.update(deltaTime, currentScrollSpeed);
       characterLayer.update(deltaTime, currentScrollSpeed);
       trapEnemyLayer.update(deltaTime, currentScrollSpeed);
       effectLayer.update(deltaTime, currentScrollSpeed);
+      
+      // Remove finished explosions from effect layer
+      effectLayer.removeEntitiesWhere(entity => {
+        if (entity instanceof Explosion) {
+          return entity.finished;
+        }
+        return false;
+      });
     }
 
     if (waitForCountdown) return;
@@ -315,7 +331,7 @@
     }
 
     // Update distance traveled for level pattern generation
-    playerDistanceTraveled += currentScrollSpeed * (deltaTime / 1000) * 60; // Convert to pixels per frame equivalent
+    playerDistanceTraveled += currentScrollSpeed; // Convert to pixels per frame equivalent
 
     // Update layers and generate new entities based on game mode
     let newEntities: { enemies: any[], coins: any[], traps: any[], goals?: any[] };
@@ -323,40 +339,36 @@
     if (gameMode === 'endless' && endlessGenerator) {
       newEntities = endlessGenerator.update(deltaTime);
     } else if (gameMode === 'level' && levelGenerator) {
-      newEntities = levelGenerator.update(deltaTime, currentScrollSpeed, playerDistanceTraveled);
-      
-      // Level completion is now handled only via goal collision
-      // No automatic completion when patterns are finished
+      newEntities = levelGenerator.update(playerDistanceTraveled);
     } else {
       newEntities = { enemies: [], coins: [], traps: [], goals: [] };
     }
-    
-    newEntities.enemies.forEach(enemy => trapEnemyLayer.addEnemy(enemy));
-    newEntities.coins.forEach(coin => trapEnemyLayer.addCoin(coin));
-    newEntities.traps.forEach(trap => trapEnemyLayer.addTrap(trap));
+
+    newEntities.enemies.forEach(enemy => trapEnemyLayer.addEntity(enemy));
+    newEntities.coins.forEach(coin => trapEnemyLayer.addEntity(coin));
+    newEntities.traps.forEach(trap => trapEnemyLayer.addEntity(trap));
     if (newEntities.goals) {
-      newEntities.goals.forEach(goal => trapEnemyLayer.addGoal(goal));
+      newEntities.goals.forEach(goal => trapEnemyLayer.addEntity(goal));
     }
     
     // Handle collisions
     handleCollisions();
 
-    // Update invincibility
-    if (gameStats.isInvincible) {
-      gameStats.invincibleTimer -= deltaTime;
-      if (gameStats.invincibleTimer <= 0) {
-        gameStats.isInvincible = false;
-        gameStats.invincibleTimer = 0;
-      }
-    }
+    // Invincibility is now handled internally by Player class during its update
   }
 
   function handleCollisions() {
-    const player = characterLayer.getPlayer();
     if (!player) return;
 
+    // Get entities from layers
+    const coins = trapEnemyLayer.getEntities().filter(entity => entity instanceof Coin) as Coin[];
+    const goals = trapEnemyLayer.getEntities().filter(entity => entity instanceof Goal) as Goal[];
+    const enemies = trapEnemyLayer.getEntities().filter(entity => entity instanceof Enemy) as Enemy[];
+    const traps = trapEnemyLayer.getEntities().filter(entity => entity instanceof Trap) as Trap[];
+    const projectiles = characterLayer.getEntities().filter(entity => entity instanceof Projectile) as Projectile[];
+
     // Collision with coins
-    trapEnemyLayer.getCoins().forEach(coin => {
+    coins.forEach(coin => {
       if (!coin.collected && player.checkCollision(coin)) {
         coin.collect();
         gameStats.coins++;
@@ -367,7 +379,7 @@
 
     // Collision with goals (for level mode)
     if (gameMode === 'level') {
-      trapEnemyLayer.getGoals().forEach(goal => {
+      goals.forEach(goal => {
         if (!goal.reached && player.checkCollision(goal)) {
           goal.reach();
           levelGenerator?.markGoalReached();
@@ -380,12 +392,10 @@
     }
 
     // Collision with enemies and traps
-    [...trapEnemyLayer.getEnemies(), ...trapEnemyLayer.getTraps()].forEach(entity => {
-      if (player.checkCollision(entity) && !gameStats.isInvincible) {
+    [...enemies, ...traps].forEach(entity => {
+      if (player.checkCollision(entity) && player.takeDamage()) {
         gameStats.lives--;
-        gameStats.isInvincible = true;
-        gameStats.invincibleTimer = GAME_SETTINGS.INVINCIBLE_DURATION;
-        AudioManager.play("sfx_hurt");
+        // Note: hurt sound is now played inside player.takeDamage()
         
         if (gameStats.lives <= 0) {
           handleGameOver();
@@ -394,8 +404,8 @@
     });
 
     // Projectile vs enemy collisions
-    characterLayer.getProjectiles().forEach(projectile => {
-      trapEnemyLayer.getEnemies().forEach(enemy => {
+    projectiles.forEach(projectile => {
+      enemies.forEach(enemy => {
         if (projectile.checkCollision(enemy)) {
           // Remove enemy and projectile
           trapEnemyLayer.removeEntity(enemy);
@@ -406,39 +416,84 @@
             { x: enemy.x - enemy.width / 2, y: enemy.y - enemy.height / 2 - 20 },
             { width: enemy.width * 2, height: enemy.height * 2 }
           );
-          effectLayer.addExplosion(explosion);
+          effectLayer.addEntity(explosion);
           
           gameStats.score += 10;
-          AudioManager.play("sfx_explosion");
         }
       });
     });
 
     // Clean up collected coins
-    trapEnemyLayer.removeCollectedCoins();
+    trapEnemyLayer.removeEntitiesWhere(entity => {
+      if (entity instanceof Coin) {
+        return entity.collected;
+      }
+      return false;
+    });
   }
 
   function render() {
     if (!ctx || !assetsLoaded) return;
     
-    // Render layers in order
-    backgroundLayer.render(ctx, loadedImages);
-    effectLayer.render(ctx, loadedImages);
-    trapEnemyLayer.render(ctx, loadedImages);
-    characterLayer.render(ctx, loadedImages);
+    // Calculate ground position
+    const renderGroundY = getRenderGroundY(ctx.canvas.height, GAME_SETTINGS.GROUND_Y);
+
+    // Render background first
+    renderBackground(ctx, renderGroundY);
     
-    // Render player with invincibility
-    characterLayer.renderPlayerWithInvincibility(
-      ctx, 
-      loadedImages, 
-      gameStats.isInvincible, 
-      gameStats.invincibleTimer
-    );
+    // Render layers in order with groundY for positioning
+    effectLayer.render(ctx, loadedImages, renderGroundY);
+    trapEnemyLayer.render(ctx, loadedImages, renderGroundY);
+    
+    // Render character layer (player and projectiles) - no groundY needed as player handles its own positioning
+    characterLayer.render(ctx, loadedImages, renderGroundY);
 
     // Render countdown
     if (!waitForCountdown && showCountdown) {
       renderCountdown(ctx);
     }
+  }
+
+  function renderBackground(ctx: CanvasRenderingContext2D, renderGroundY: number): void {
+    // Clear canvas
+    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+
+    const backgroundImage = loadedImages[stageBackgroundImageKey(selectedStage)];
+
+    if (backgroundImage) {
+      const bgWidth = ctx.canvas.width;
+      const bgHeight = ctx.canvas.height;
+
+      console.log(`${stageGroundOffsetY} ${get(StaticDataStore.getStageById(selectedStage))?.groundOffsetY ?? 0}`);
+      // Background moved down, need to fill the top and draw extended background
+      const backgroundYOffset = bgHeight + stageGroundOffsetY;
+      const extendedHeight = bgHeight + backgroundYOffset;
+
+      const bgX1 = backgroundOffset % bgWidth;
+      const bgX2 = bgX1 + bgWidth;
+
+      // Draw background pattern to fill entire extended area
+      for (let y = -backgroundYOffset; y < extendedHeight; y += bgHeight) {
+        ctx.drawImage(backgroundImage, bgX1, y, bgWidth, bgHeight);
+        ctx.drawImage(backgroundImage, bgX2, y, bgWidth, bgHeight);
+      }
+    } else {
+      // Fallback background
+      ctx.fillStyle = '#4a90e2';
+      ctx.fillRect(0, 0, ctx.canvas.width, renderGroundY);
+      ctx.fillStyle = '#8b5a3c';
+      ctx.fillRect(0, renderGroundY, ctx.canvas.width, ctx.canvas.height - renderGroundY);
+    }
+
+    // 畫 GROUND_Y 參考線
+    // ctx.save();
+    // ctx.strokeStyle = '#ff00ff';
+    // ctx.lineWidth = 2;
+    // ctx.beginPath();
+    // ctx.moveTo(0, renderGroundY);
+    // ctx.lineTo(ctx.canvas.width, renderGroundY);
+    // ctx.stroke();
+    // ctx.restore();
   }
 
   function renderCountdown(ctx: CanvasRenderingContext2D) {
@@ -675,7 +730,7 @@
     if (player && gameState === 'playing') {
       const projectile = player.attack();
       if (projectile) {
-        characterLayer.addProjectile(projectile);
+        characterLayer.addEntity(projectile);
       }
     }
   }

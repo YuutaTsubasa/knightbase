@@ -1,35 +1,30 @@
 import { SpriteAnimationObject } from './SpriteAnimationObject';
-import type { Position, Size, CollisionBox } from '../types/GameTypes';
+import type { Position, Size, CollisionBox } from '../GameTypes';
 
 export class Goal extends SpriteAnimationObject {
   public reached: boolean = false;
 
-  // Default size and collision box for goals
-  public static getDefaultSize(): Size {
-    return { width: 200, height: 200 };
+  public static getSize(): Size {
+    return { width: 200, height: 600 }; // Full Y-axis height
   }
 
-  public static getDefaultCollisionBox(): CollisionBox {
+  public static getCollisionBox(): CollisionBox {
     return {
-      collisionOffsetX: 30,
-      collisionOffsetY: 30,
-      collisionWidth: 140,
-      collisionHeight: 140
+      collisionOffsetX: 0,
+      collisionOffsetY: 0,
+      collisionWidth: 200,
+      collisionHeight: 600 // Cover full Y-axis for collision
     };
   }
 
-  constructor(
-    position: Position,
-    size?: Size,
-    collisionBox?: Partial<CollisionBox>
-  ) {
+  constructor(position: Position) {
     super(
       position,
-      size || Goal.getDefaultSize(),
+      Goal.getSize(),
       'goal', // Future goal sprite
       1, // Single frame for now
       0,  // No animation
-      collisionBox || Goal.getDefaultCollisionBox()
+      Goal.getCollisionBox()
     );
   }
 
@@ -37,17 +32,37 @@ export class Goal extends SpriteAnimationObject {
     this.moveWithScroll(scrollSpeed);
   }
 
-  protected renderFallback(ctx: CanvasRenderingContext2D): void {
+  public render(ctx: CanvasRenderingContext2D, images: Record<string, HTMLImageElement>, renderGroundY?: number): void {
+    const image = images[this.spriteSheetKey];
+    if (!image) {
+      this.renderFallback(ctx, renderGroundY);
+      return;
+    }
+    
+    // Calculate render position using proper coordinate system conversion
+    const renderY = renderGroundY !== undefined
+      ? renderGroundY - this.y - this.height
+      : this.y;
+    ctx.drawImage(image, this.x, renderY, this.width, this.height);
+  }
+
+  protected renderFallback(ctx: CanvasRenderingContext2D, renderGroundY?: number): void {
+    // Calculate render position using proper coordinate system conversion
+    const renderY = renderGroundY !== undefined
+      ? renderGroundY - this.y - this.height
+      : this.y;
+
     // Draw goal flag as fallback
     ctx.fillStyle = '#00ff00';
-    ctx.fillRect(this.x, this.y, this.width, this.height);
+    ctx.fillRect(this.x, renderY, this.width, this.height);
     
     // Draw flag pattern
     ctx.fillStyle = '#ffffff';
-    ctx.fillRect(this.x + 10, this.y + 10, this.width - 20, this.height - 20);
+    ctx.fillRect(this.x + 10, renderY + 10, this.width - 20, this.height - 20);
     
     ctx.fillStyle = '#ff0000';
-    ctx.fillText('GOAL', this.x + this.width/4, this.y + this.height/2);
+    ctx.font = '24px Arial';
+    ctx.fillText('GOAL', this.x + this.width/4, renderY + this.height/2);
   }
 
   public reach(): void {

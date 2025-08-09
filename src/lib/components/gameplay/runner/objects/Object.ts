@@ -1,4 +1,4 @@
-import type { Position, Size, CollisionBox, GameEntity } from '../types/GameTypes';
+import type { Position, Size, CollisionBox, GameEntity } from '../GameTypes';
 
 export abstract class Object implements GameEntity {
   public x: number;
@@ -47,15 +47,15 @@ export abstract class Object implements GameEntity {
 
   // Abstract methods that must be implemented by subclasses
   public abstract update(deltaTime: number, scrollSpeed: number): void;
-  public abstract render(ctx: CanvasRenderingContext2D, images: Record<string, HTMLImageElement>): void;
+  public abstract render(ctx: CanvasRenderingContext2D, images: Record<string, HTMLImageElement>, renderGroundY?: number): void;
 
   // Helper method for basic movement (used by many objects)
-  protected moveWithScroll(scrollSpeed: number): void {
-    this.x -= scrollSpeed;
+  protected moveWithScroll(scrollDeltaTimeSpeed: number): void {
+    this.x -= scrollDeltaTimeSpeed;
   }
 
   // Check if object is off-screen (for cleanup)
-  public isOffScreen(canvasWidth: number): boolean {
-    return this.x < -this.width || this.x > canvasWidth + this.width;
+  public isOffScreen(): boolean {
+    return this.x < -this.width;
   }
 }

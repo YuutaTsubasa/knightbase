@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { PlayerDataManager, playerStore } from '$lib/systems/PlayerStore';
+  import { exportBase64FromSaveData, importBase64ToSaveData, playerStore } from '$lib/systems/PlayerStore';
   import { BACK_PATH } from '$lib/utils/Constant';
   import Page from '$lib/components/Page.svelte';
   import { waitUntil } from '$lib/utils/Wait';
@@ -36,7 +36,7 @@
   }
 
   function handleBackup() {
-    const data = PlayerDataManager.exportBase64();
+    const data = exportBase64FromSaveData();
     if (!data) {
       restoreStatusType = StatusBoxType.Error;
       restoreStatus = 'noDataToBackup';
@@ -54,7 +54,7 @@
 
   function handleRestore() {
     try {
-      PlayerDataManager.importBase64(restoreText.trim());
+      importBase64ToSaveData(restoreText.trim());
       restoreStatusType = StatusBoxType.Success;
       restoreStatus = 'restoreSuccess';
     } catch {
