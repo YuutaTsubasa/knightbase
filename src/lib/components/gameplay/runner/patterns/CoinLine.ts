@@ -21,7 +21,7 @@ export class CoinLinePattern extends Pattern {
         type: 'coin',
         position: {
           x: startX + i * this.spacing,
-          y: this.height + Math.random() * 100 // Positive Y above ground (height + random)
+          y: this.height
         }
       });
     }
@@ -30,6 +30,6 @@ export class CoinLinePattern extends Pattern {
   }
 
   public getDistance(): number {
-    return (this.coinCount - 1) * this.spacing + Coin.getSize().width;
+    return (this.coinCount - 1) * this.spacing + this.coinCount * Coin.getSize().width;
   }
 }

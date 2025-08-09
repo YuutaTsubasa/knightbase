@@ -32,7 +32,7 @@
   import type { Pattern } from "./patterns/Pattern";
 
   import type { GameState, GameStats } from "./GameTypes";
-    import { getRenderY, getRenderGroundY } from "./Utils";
+  import { getRenderGroundY } from "./Utils";
 
   // Props
   export let selectedCharacter: string;
@@ -116,7 +116,7 @@
 
   function getDisplayScrollSpeed(): number {
     // Display speed starts at 1.0x but actual speed is still 8.0x
-    return 1 + Math.floor(gameStats.survivalTime / 10) * 0.05;
+    return getCurrentScrollSpeed() - 7.0;
   }
 
   function saveToPlayerStore() {
@@ -338,7 +338,7 @@
     }
 
     // Update distance traveled for level pattern generation
-    playerDistanceTraveled += currentScrollSpeed * (deltaTime / 1000) * 60; // Convert to pixels per frame equivalent
+    playerDistanceTraveled += currentScrollSpeed; // Convert to pixels per frame equivalent
 
     // Update layers and generate new entities based on game mode
     let newEntities: { enemies: any[], coins: any[], traps: any[], goals?: any[] };
@@ -346,11 +346,11 @@
     if (gameMode === 'endless' && endlessGenerator) {
       newEntities = endlessGenerator.update(deltaTime);
     } else if (gameMode === 'level' && levelGenerator) {
-      newEntities = levelGenerator.update(deltaTime, currentScrollSpeed, playerDistanceTraveled);
+      newEntities = levelGenerator.update(playerDistanceTraveled);
     } else {
       newEntities = { enemies: [], coins: [], traps: [], goals: [] };
     }
-    
+
     newEntities.enemies.forEach(enemy => trapEnemyLayer.addEntity(enemy));
     newEntities.coins.forEach(coin => trapEnemyLayer.addEntity(coin));
     newEntities.traps.forEach(trap => trapEnemyLayer.addEntity(trap));
@@ -492,14 +492,14 @@
     }
 
     // 畫 GROUND_Y 參考線
-    ctx.save();
-    ctx.strokeStyle = '#ff00ff';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(0, renderGroundY);
-    ctx.lineTo(ctx.canvas.width, renderGroundY);
-    ctx.stroke();
-    ctx.restore();
+    // ctx.save();
+    // ctx.strokeStyle = '#ff00ff';
+    // ctx.lineWidth = 2;
+    // ctx.beginPath();
+    // ctx.moveTo(0, renderGroundY);
+    // ctx.lineTo(ctx.canvas.width, renderGroundY);
+    // ctx.stroke();
+    // ctx.restore();
   }
 
   function renderCountdown(ctx: CanvasRenderingContext2D) {

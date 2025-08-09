@@ -1,18 +1,17 @@
 import { SpriteAnimationObject } from './SpriteAnimationObject';
 import type { Position, Size, CollisionBox } from '../GameTypes';
-import { getRenderY } from '../Utils';
 
 export class Trap extends SpriteAnimationObject {
   
   public static getSize(): Size {
-    return { width: 200, height: 80 };
+    return { width: 150, height: 80 };
   }
 
   public static getCollisionBox(): CollisionBox {
     return {
       collisionOffsetX: 10,
       collisionOffsetY: 10,
-      collisionWidth: 180,
+      collisionWidth: 130,
       collisionHeight: 60
     };
   }
@@ -32,24 +31,24 @@ export class Trap extends SpriteAnimationObject {
     this.moveWithScroll(scrollSpeed);
   }
 
-  public render(ctx: CanvasRenderingContext2D, images: Record<string, HTMLImageElement>, groundY?: number): void {
+  public render(ctx: CanvasRenderingContext2D, images: Record<string, HTMLImageElement>, renderGroundY?: number): void {
     const image = images[this.spriteSheetKey];
     if (!image) {
-      this.renderFallback(ctx, groundY);
+      this.renderFallback(ctx, renderGroundY);
       return;
     }
     
     // Calculate render position using proper coordinate system conversion
-    const renderY = groundY !== undefined 
-      ? getRenderY(ctx.canvas.height, groundY, this.y) - this.height
+    const renderY = renderGroundY !== undefined
+      ? renderGroundY - this.y - this.height
       : this.y;
     ctx.drawImage(image, this.x, renderY, this.width, this.height);
   }
 
-  protected renderFallback(ctx: CanvasRenderingContext2D, groundY?: number): void {
+  protected renderFallback(ctx: CanvasRenderingContext2D, renderGroundY?: number): void {
     // Calculate render position using proper coordinate system conversion
-    const renderY = groundY !== undefined 
-      ? getRenderY(ctx.canvas.height, groundY, this.y) - this.height
+    const renderY = renderGroundY !== undefined
+      ? renderGroundY - this.y -this.height
       : this.y;
     
     // Draw trap spikes as fallback

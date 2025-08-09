@@ -1,7 +1,6 @@
 import { SpriteAnimationObject } from './SpriteAnimationObject';
 import { AudioManager } from '$lib/systems/AudioManager';
 import type { Position, Size } from '../GameTypes';
-import { getRenderY } from '../Utils';
 
 export class Explosion extends SpriteAnimationObject {
   public finished: boolean = false;
@@ -38,12 +37,12 @@ export class Explosion extends SpriteAnimationObject {
     }
   }
 
-  protected renderFallback(ctx: CanvasRenderingContext2D, groundY?: number): void {
+  protected renderFallback(ctx: CanvasRenderingContext2D, renderGroundY?: number): void {
     if (this.finished) return;
     
     // Calculate render position using proper coordinate system conversion
-    const renderY = groundY !== undefined 
-      ? getRenderY(ctx.canvas.height, groundY, this.y) - this.height
+    const renderY = renderGroundY !== undefined
+      ? renderGroundY - this.y - this.height
       : this.y;
 
     // Simple expanding circle as fallback

@@ -43,12 +43,12 @@ export class Layer {
     this.entities.forEach(entity => entity.update(deltaTime, scrollSpeed));
     
     // Remove off-screen entities
-    this.entities = this.entities.filter(entity => !entity.isOffScreen(800)); // Canvas width
+    this.entities = this.entities.filter(entity => !entity.isOffScreen()); // Canvas width
   }
 
   // Render all entities in this layer
-  public render(ctx: CanvasRenderingContext2D, images: Record<string, HTMLImageElement>, groundY?: number): void {
+  public render(ctx: CanvasRenderingContext2D, images: Record<string, HTMLImageElement>, renderGroundY?: number): void {
     // Render all entities
-    this.entities.forEach(entity => entity.render(ctx, images, groundY));
+    this.entities.forEach(entity => entity.render(ctx, images, renderGroundY));
   }
 }

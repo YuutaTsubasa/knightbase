@@ -1,6 +1,5 @@
 import { Object } from './Object';
 import type { Position, Size, CollisionBox, AnimatedEntity } from '../GameTypes';
-import { getRenderY } from '../Utils';
 
 export abstract class SpriteAnimationObject extends Object implements AnimatedEntity {
   public animationFrame: number = 0;
@@ -41,10 +40,10 @@ export abstract class SpriteAnimationObject extends Object implements AnimatedEn
   }
 
   // Render sprite with animation frame
-  public render(ctx: CanvasRenderingContext2D, images: Record<string, HTMLImageElement>, groundY?: number): void {
+  public render(ctx: CanvasRenderingContext2D, images: Record<string, HTMLImageElement>, renderGroundY?: number): void {
     const image = images[this.spriteSheetKey];
     if (!image) {
-      this.renderFallback(ctx, groundY);
+      this.renderFallback(ctx, renderGroundY);
       return;
     }
 
@@ -54,8 +53,8 @@ export abstract class SpriteAnimationObject extends Object implements AnimatedEn
     const frameX = this.animationFrame * frameWidth;
 
     // Calculate render position using proper coordinate system conversion
-    const renderY = groundY !== undefined 
-      ? getRenderY(ctx.canvas.height, groundY, this.y) - this.height
+    const renderY = renderGroundY !== undefined 
+      ? renderGroundY - this.y - this.height
       : this.y;
 
     // Draw the specific frame
@@ -67,16 +66,16 @@ export abstract class SpriteAnimationObject extends Object implements AnimatedEn
   }
 
   // Render sprite with flipping support
-  protected renderFlipped(ctx: CanvasRenderingContext2D, images: Record<string, HTMLImageElement>, facingLeft: boolean, groundY?: number): void {
+  protected renderFlipped(ctx: CanvasRenderingContext2D, images: Record<string, HTMLImageElement>, facingLeft: boolean, renderGroundY?: number): void {
     const image = images[this.spriteSheetKey];
     if (!image) {
-      this.renderFallback(ctx, groundY);
+      this.renderFallback(ctx, renderGroundY);
       return;
     }
 
     // Calculate render position using proper coordinate system conversion
-    const renderY = groundY !== undefined 
-      ? getRenderY(ctx.canvas.height, groundY, this.y) - this.height
+    const renderY = renderGroundY !== undefined
+      ? renderGroundY - this.y - this.height
       : this.y;
 
     ctx.save();

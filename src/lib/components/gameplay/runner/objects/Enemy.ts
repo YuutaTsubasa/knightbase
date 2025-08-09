@@ -1,6 +1,5 @@
 import { SpriteAnimationObject } from './SpriteAnimationObject';
 import type { Position, Size, CollisionBox } from '../GameTypes';
-import { getRenderY } from '../Utils';
 
 export class Enemy extends SpriteAnimationObject {
   public facingLeft: boolean = true;
@@ -33,16 +32,16 @@ export class Enemy extends SpriteAnimationObject {
     this.moveWithScroll(scrollSpeed);
   }
 
-  public render(ctx: CanvasRenderingContext2D, images: Record<string, HTMLImageElement>, groundY?: number): void {
+  public render(ctx: CanvasRenderingContext2D, images: Record<string, HTMLImageElement>, renderGroundY?: number): void {
     const image = images[this.spriteSheetKey];
     if (!image) {
-      this.renderFallback(ctx, groundY);
+      this.renderFallback(ctx, renderGroundY);
       return;
     }
 
     // Calculate render position using proper coordinate system conversion
-    const renderY = groundY !== undefined 
-      ? getRenderY(ctx.canvas.height, groundY, this.y) - this.height
+    const renderY = renderGroundY !== undefined
+      ? renderGroundY - this.height
       : this.y;
 
     ctx.save();
@@ -55,9 +54,9 @@ export class Enemy extends SpriteAnimationObject {
     ctx.restore();
   }
 
-  protected renderFallback(ctx: CanvasRenderingContext2D, groundY?: number): void {
-    const renderY = groundY !== undefined 
-      ? getRenderY(ctx.canvas.height, groundY, this.y) - this.height
+  protected renderFallback(ctx: CanvasRenderingContext2D, renderGroundY?: number): void {
+    const renderY = renderGroundY !== undefined
+      ? renderGroundY - this.y - this.height
       : this.y;
     ctx.fillStyle = '#e74c3c';
     ctx.fillRect(this.x, renderY, this.width, this.height);

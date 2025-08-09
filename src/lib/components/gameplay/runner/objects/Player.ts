@@ -3,7 +3,6 @@ import { Projectile } from './Projectile';
 import type { Position, Size, CollisionBox, AnimationType } from '../GameTypes';
 import { AudioManager } from '$lib/systems/AudioManager';
 import { characterAttackAudioKey, characterAttackImageKey, characterJumpImageKey, characterRunImageKey, characterWalkAudioKey } from '$lib/utils/KeyHelper';
-import { getRenderY } from '../Utils';
 
 export class Player extends SpriteAnimationObject {
   public velocityY: number = 0;
@@ -137,25 +136,25 @@ export class Player extends SpriteAnimationObject {
     return null;
   }
 
-  protected renderFallback(ctx: CanvasRenderingContext2D, groundY?: number): void {
-    const renderY = groundY !== undefined 
-      ? getRenderY(ctx.canvas.height, groundY, this.y) - this.height
+  protected renderFallback(ctx: CanvasRenderingContext2D, renderGroundY?: number): void {
+    const renderY = renderGroundY !== undefined
+      ? renderGroundY - this.y - this.height
       : this.y;
     ctx.fillStyle = '#ff6b6b';
     ctx.fillRect(this.x, renderY, this.width, this.height);
   }
 
   // Render with invincibility flashing
-  public render(ctx: CanvasRenderingContext2D, images: Record<string, HTMLImageElement>, groundY?: number): void {
+  public render(ctx: CanvasRenderingContext2D, images: Record<string, HTMLImageElement>, renderGroundY?: number): void {
     if (!this.isInvincible) {
-      super.render(ctx, images, groundY);
+      super.render(ctx, images, renderGroundY);
       return;
     }
 
     // Flash every 100ms during invincibility
     const shouldDraw = Math.floor(this.invincibleTimer / 100) % 2 === 0;
     if (shouldDraw) {
-      super.render(ctx, images, groundY);
+      super.render(ctx, images, renderGroundY);
     }
   }
 
