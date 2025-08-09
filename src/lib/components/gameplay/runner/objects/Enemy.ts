@@ -41,7 +41,7 @@ export class Enemy extends SpriteAnimationObject {
 
     // Calculate render position using proper coordinate system conversion
     const renderY = renderGroundY !== undefined
-      ? renderGroundY - this.height
+      ? renderGroundY - this.y - this.height
       : this.y;
 
     ctx.save();

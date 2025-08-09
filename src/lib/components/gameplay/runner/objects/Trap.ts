@@ -48,7 +48,7 @@ export class Trap extends SpriteAnimationObject {
   protected renderFallback(ctx: CanvasRenderingContext2D, renderGroundY?: number): void {
     // Calculate render position using proper coordinate system conversion
     const renderY = renderGroundY !== undefined
-      ? renderGroundY - this.y -this.height
+      ? renderGroundY - this.y - this.height
       : this.y;
     
     // Draw trap spikes as fallback
