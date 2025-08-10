@@ -20,7 +20,7 @@
     const currentPath = page.url.pathname;
     const transition = new FadeTransitionComponent(pageElement);
 
-    const playBgmPromise = AudioManager.play(`bgm_${currentPath.substring(1)}`);
+    const playBgmPromise = AudioManager.play(`bgm_${currentPath.substring(1).replace("/", "_")}`);
     await transition.enter();
     const nextPath = await mainProgress();
     await transition.leave();

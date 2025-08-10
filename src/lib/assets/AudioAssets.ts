@@ -10,6 +10,8 @@ export const audioAssets: Record<string, {
   bgm_stage: {url: '/assets/audios/bgm_stage.mp3', group: 'bgm'},
   bgm_mission: {url: '/assets/audios/bgm_mission.mp3', group: 'bgm'},
   bgm_shop: {url: '/assets/audios/bgm_shop.mp3', group: 'bgm'},
+  bgm_stage_stage1: { url: '/assets/audios/bgm_stage_stage1.mp3', group: 'bgm'},
+  bgm_stage_stage2: { url: '/assets/audios/bgm_stage_stage2.mp3', group: 'bgm'},
   bgm_stage1: { url: '/assets/audios/bgm_stage1.mp3', group: 'bgm'},
   bgm_stage2: { url: '/assets/audios/bgm_stage2.mp3', group: 'bgm'},
   sfx_confirm: { url: '/assets/audios/sfx_confirm.mp3', group: 'sfx' },
