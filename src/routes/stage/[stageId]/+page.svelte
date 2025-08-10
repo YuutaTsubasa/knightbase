@@ -1,20 +1,20 @@
 <script lang="ts">
   import { page } from '$app/stores';
-  import { goto } from '$app/navigation';
   import { t } from "$lib/systems/LocalizationStore";
   import { StaticDataStore } from "$lib/systems/StaticDataStore";
   import { playerStore } from "$lib/systems/PlayerStore";
   import { imageAssets } from "$lib/assets/ImageAssets";
-  import { stageBackgroundImageKey } from "$lib/utils/KeyHelper";
+  import { characterPortraitImageKey, stageBackgroundImageKey } from "$lib/utils/KeyHelper";
   import Page from "$lib/components/Page.svelte";
   import Topbar from "$lib/components/Topbar.svelte";
-  import { wait, waitUntil } from "$lib/utils/Wait";
+  import { waitUntil } from "$lib/utils/Wait";
   import { get, writable, type Writable } from "svelte/store";
-  import { onMount } from "svelte";
-  import { Play, Trophy, Clock, Target, Lock } from "lucide-svelte";
+  import { Play, Trophy, Clock, Target, Lock, Zap } from "lucide-svelte";
   import { PopupStore, PopupResult } from "$lib/systems/PopupStore";
   import SpaceBetweenTextGroup from '$lib/components/SpaceBetweenTextGroup.svelte';
   import { FontAssets } from '$lib/assets/FontAssets';
+  import Button from '$lib/components/Button.svelte';
+    import { AudioManager } from '$lib/systems/AudioManager';
 
   let goToNextScene: Writable<string | null>;
   let topbarHeight = 0;
@@ -36,6 +36,10 @@
 
   $: playerData = $playerStore;
   $: levels = stageLevels[stageId || ''] || [];
+  
+  function goToCharacterPage() {
+    goToNextScene.set(`/character?stageId=${stageId}`);
+  }
 
   function formatTime(seconds: number): string {
     const minutes = Math.floor(seconds / 60);
@@ -52,7 +56,7 @@
   }
 
   async function playLevel(levelId: string, endless: boolean = false) {
-    // Show confirmation popup
+    AudioManager.play("sfx_confirm");
     const levelName = endless ? $t('endlessMode') : $t(levels.find(l => l.id === levelId)?.nameKey || levelId);
     let confirmed = false;
     
@@ -100,115 +104,159 @@
 </script>
 
 <Page mainProgress={main} 
-  contentStyle="box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 2rem; padding-top: var(--topbarHeight, 0px);">
-  
+  contentStyle={`box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 2rem; position: relative; margin-top: ${topbarHeight}px;`}>
   <!-- Layered background effects for page wrapper -->
   <div slot="outside" class="pageBackground" style="background-image: url({imageAssets[stageBackgroundImageKey(stageId)]});">
-  </div>
-  
-  <slot name="outside">
-    <Topbar 
+    <Topbar
       primaryTitle={$stageData?.nameKey ? $t($stageData.nameKey) : stageId} 
-      secondaryTitle={$stageData?.descriptionKey ? $t($stageData.descriptionKey) : ''}
+      secondaryTitle=''
       onHeightChange={(height) => topbarHeight = height}
       onBack={goBack} />
-  </slot>
+  </div>
 
-  <div class="levelsGrid" style={`--topbarHeight: ${topbarHeight}px;`}>
-    {#each levels as level}
-      {@const record = playerData.stageRecords[level.id] || null}
-      {@const isCompleted = record?.completed ?? false}
-      {@const isLocked = false} <!-- For now, no levels are locked -->
-      {@const levelName = level.nameKey ? $t(level.nameKey) : level.id}
+  <div class="pageContent">
+    <div class="stageActions">
+      <Button 
+        label={$t('changeCharacter')} 
+        onClick={() => goToCharacterPage()}
+        className="changeCharacterButton" />
+    </div>
+    <div class="levelsGrid">
+      {#each levels as level}
+        {@const record = playerData.stageRecords[level.id] || null}
+        {@const isCompleted = record?.completed ?? false}
+        {@const isLocked = false} <!-- For now, no levels are locked -->
+        {@const levelName = level.nameKey ? $t(level.nameKey) : level.id}
 
-      <div class="levelCard" class:completed={isCompleted} class:locked={isLocked}>
-        <div class="levelBorder">
-          <SpaceBetweenTextGroup 
-            content={levelName}
-            spacing="1em"
-            className="levelBorderText"/>
-        </div>
-        <div class="levelHeader">
-          <div class="levelTitle">
-            <h3 style={FontAssets.getCssStyle("titleBold")}>{levelName}</h3>
-            {#if level.endless}
-              <span class="endlessBadge">{$t('endlessMode')}</span>
-            {:else}
-              <div class="difficulty">
-                {#each Array(level.difficultyStars) as _, i}
-                  <span class="star">★</span>
-                {/each}
+        <div class="levelCard" class:completed={isCompleted} class:locked={isLocked}>
+          <div class="levelBorder">
+            <SpaceBetweenTextGroup 
+              content={levelName}
+              spacing="1em"
+              className="levelBorderText"/>
+          </div>
+          <div class="levelContent">
+            <div class="characterAvatar">
+              <div class="characterPortrait" style="background-image: url({imageAssets[characterPortraitImageKey($playerStore.selectedCharacter)]});"></div>
+            </div>
+            <div class="levelHeader">
+              <div class="levelTitle">
+                <h3 style={FontAssets.getCssStyle("titleBold")}>{levelName}</h3>
+                {#if level.endless}
+                  <span class="endlessBadge">{$t('endlessMode')}</span>
+                {:else}
+                  <span class="levelBadge">{$t('levelMode')}</span>
+                {/if}
+              </div>
+              
+              {#if isCompleted}
+                <Trophy class="completedIcon" />
+              {:else if isLocked}
+                <Lock class="lockedIcon" />
+              {/if}
+            </div>
+
+            {#if record && (isCompleted || level.endless)}
+              <div class="recordsSection">
+                <div class="records">
+                  <div class="record">
+                    <Clock size={16} />
+                    <span class="recordLabel">{$t('bestTime')}:</span>
+                    <span class="recordValue">{formatTime(record.bestTime)}</span>
+                  </div>
+                  <div class="record">
+                    <Target size={16} />
+                    <span class="recordLabel">{$t('bestScore')}:</span>
+                    <span class="recordValue">{formatNumber(record.bestScore)}</span>
+                  </div>
+                  <div class="record">
+                    <Zap size={16} />
+                    <span class="recordLabel">{$t('bestSpeed')}:</span>
+                    <span class="recordValue">{record.bestSpeed.toFixed(1)}x</span>
+                  </div>
+                </div>
+              </div>
+            {:else if !isLocked}
+              <div class="notCompleted">
+                <span>{level.endless ? $t('notPlayed') : $t('notCompleted')}</span>
               </div>
             {/if}
-          </div>
-          
-          {#if isCompleted}
-            <Trophy size={24} class="completedIcon" />
-          {:else if isLocked}
-            <Lock size={24} class="lockedIcon" />
-          {/if}
-        </div>
 
-        {#if record && (isCompleted || level.endless)}
-          <div class="recordsSection">
-            <h4>{$t('records')}</h4>
-            <div class="records">
-              <div class="record">
-                <Clock size={16} />
-                <span class="recordLabel">{$t('bestTime')}:</span>
-                <span class="recordValue">{formatTime(record.bestTime)}</span>
-              </div>
-              <div class="record">
-                <Target size={16} />
-                <span class="recordLabel">{$t('bestScore')}:</span>
-                <span class="recordValue">{formatNumber(record.bestScore)}</span>
-              </div>
-              <div class="record">
-                <span class="recordLabel">{$t('bestSpeed')}:</span>
-                <span class="recordValue">{record.bestSpeed.toFixed(1)}x</span>
-              </div>
+            <div class="levelActions">
+              {#if !isLocked}
+                <Button onClick={() => playLevel(level.id, level.endless)}>
+                  <Play size={16} style="margin-bottom: -2px;" />
+                  {$t('play')}
+                </Button>
+              {/if}
             </div>
           </div>
-        {:else if !isLocked}
-          <div class="notCompleted">
-            <span>{level.endless ? $t('notPlayed') : $t('notCompleted')}</span>
-          </div>
-        {/if}
-
-        <div class="levelActions">
-          {#if !isLocked}
-            <button class="playBtn" on:click={() => playLevel(level.id, level.endless)}>
-              <Play size={16} />
-              {$t('play')}
-            </button>
-          {/if}
         </div>
-      </div>
-    {/each}
+      {/each}
+    </div>
   </div>
 </Page>
 
 <style>
+  .pageContent {
+    width: 100%;
+    max-width: 1000px;
+  }
+
   .levelsGrid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     gap: 1.5rem;
-    width: 100%;
-    max-width: 1000px;
-    padding-top: var(--topbarHeight, 0px);
     margin-top: 1rem;
   }
 
   .levelCard {
-    --border-size: 1px;
-    /* background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9)); */
-    background: rgba(255, 255, 255, 0.5);
-    backdrop-filter: blur(10px);
-    border: var(--border-size) solid rgba(148, 163, 184, 0.3);
-    padding: calc(1.5rem + 12px) 1.5rem 1.5rem 1.5rem;
+    --border-size: 2px;
+    backdrop-filter: blur(3px);
     color: black;
     transition: all 0.3s ease;
     box-shadow: 0 4px 20px rgba(59, 130, 246, 0.1);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .levelContent {
+    width: 100%;
+    height: 100%;
+    border: var(--border-size) solid rgba(148, 163, 184, 0.3);
+    padding: calc(1.5rem + 12px) 1.5rem 1.5rem 1.5rem;
+  }
+
+  .levelCard::after {
+    content: "";
+    position: absolute;
+    top: -60%;
+    left: -60%;
+    width: 220%;
+    height: 220%;
+    pointer-events: none;
+    background: linear-gradient(120deg, rgba(255,255,255,0.0) 40%, rgba(255,255,255,0.25) 50%, rgba(255,255,255,0.0) 60%);
+    transform: rotate(0deg);
+    animation: levelCardShine 5s linear infinite;
+    z-index: 2;
+  }
+
+  @keyframes levelCardShine {
+    0% {
+      transform: translate(-60%, -60%) rotate(0deg);
+      opacity: 0;
+    }
+    10% {
+      opacity: 1;
+    }
+    50% {
+      transform: translate(60%, 60%) rotate(0deg);
+      opacity: 1;
+    }
+    100% {
+      transform: translate(120%, 120%) rotate(0deg);
+      opacity: 0;
+    }
   }
 
   .levelBorder {
@@ -219,6 +267,8 @@
     background: black;
     color: white;
     overflow: hidden;
+    box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.5);
+    z-index: 3;
   }
 
   .levelBorder :global(.levelBorderText) {
@@ -241,10 +291,13 @@
   .levelCard:hover, .levelCard:has(:global(.navFocused)) {
     transform: translateY(-2px);
     box-shadow: 0 8px 30px rgba(59, 130, 246, 0.2);
+  }
+
+  .levelCard:hover .levelContent, .levelCard:has(:global(.navFocused)) .levelContent {
     border-color: rgba(59, 130, 246, 0.5);
   }
 
-  .levelCard.completed {
+  .levelCard.completed .levelContent {
     border-color: rgba(34, 197, 94, 0.5);
   }
 
@@ -272,15 +325,15 @@
     color: #0021ff;
   }
 
-  .difficulty {
-    display: flex;
-    gap: 0.125rem;
+  .levelBadge {
+    background: linear-gradient(135deg, #5c88f6, #5560f7);
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.375rem;
+    font-size: 0.75rem;
+    font-weight: bold;
     margin-top: 0.25rem;
-  }
-
-  .star {
-    color: #fbbf24;
-    font-size: 0.875rem;
+    display: inline-block;
   }
 
   .endlessBadge {
@@ -295,48 +348,60 @@
   }
 
   .recordsSection {
+    position: relative;
+    left: 0;
+    top: 0;
+    padding: 0.5rem;
     margin-bottom: 1rem;
-  }
-
-  .recordsSection h4 {
-    margin: 0 0 0.5rem 0;
-    font-size: 1rem;
-    color: #fbbf24;
   }
 
   .records {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
+    transform: scaleY(0.8);
   }
 
   .record {
+    position: relative;
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    font-size: 0.875rem;
+    font-size: 1.2rem;
+    background: #ddff00;
+    color: black;
+    gap: 0.2rem;
+    padding: 0.1rem 0.1rem 0.1rem 1rem;
+    font-style: bold;
+  }
+
+  .record::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    width: 20%;
+    height: 100%;
+    border-top: 2px solid black;
   }
 
   .recordLabel {
-    color: rgba(255, 255, 255, 0.8);
+    color: black;
+    padding-bottom: 3px;
   }
 
   .recordValue {
-    color: #34d399;
+    color: black;
     font-weight: bold;
-    margin-left: auto;
   }
 
   .notCompleted {
     margin-bottom: 1rem;
-    /* color: rgba(255, 255, 255, 0.6); */
-    color: black;
-    font-style: italic;
+    color: white;
+    font-style: bold;
+    font-size: 1.8rem;
     text-align: center;
-    padding: 1rem;
-    /* border: 1px dashed rgba(255, 255, 255, 0.3); */
-    border: 1px dashed black;
-    border-radius: 0.5rem;
+    padding: 0.4rem;
+    background: black;
+    transform: scaleY(0.8);
   }
 
   .levelActions {
@@ -344,32 +409,17 @@
     justify-content: center;
   }
 
-  .playBtn {
-    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-    border: none;
-    color: white;
-    padding: 0.75rem 1.5rem;
-    border-radius: 0.5rem;
-    font-weight: bold;
-    cursor: pointer;
-    transition: all 0.3s;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-
-  .playBtn:hover {
-    background: linear-gradient(135deg, #2563eb, #1e40af);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-  }
-
   :global(.completedIcon) {
-    color: #34d399;
+    color: #0021ff;
+    padding-top: 0.5rem;
+    width: 2.5rem;
+    height: 2.5rem;
   }
 
   :global(.lockedIcon) {
     color: #6b7280;
+    width: 2rem;
+    height: 2rem;
   }
 
   /* Mobile responsiveness */
@@ -377,10 +427,6 @@
     .levelsGrid {
       grid-template-columns: 1fr;
       gap: 1rem;
-    }
-    
-    .levelCard {
-      padding: 1rem;
     }
   }
 
@@ -417,5 +463,61 @@
         rgba(255,255,255,0.2) 0 1px,
         transparent 1px 40px
       );
+  }
+
+  .stageActions {
+    all: unset;
+    width: calc(100% - 16px);
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+  }
+
+  .stageActions :global(.changeCharacterButton) {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    backdrop-filter: blur(5px);
+    text-wrap: nowrap;
+  }
+
+  .stageActions :global(.changeCharacterButton.navFocused),
+  .stageActions :global(.changeCharacterButton:hover),
+  .stageActions :global(.changeCharacterButton:active) {
+    background: rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.5);
+  }
+
+  .characterAvatar {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  .characterPortrait {
+    position: absolute;
+    top: 0;
+    right: -40%;
+    width: 140%;
+    height: 200%;
+    background-position: 50% 0%;
+    background-size: cover;
+    background-repeat: no-repeat;
+    z-index: -1;
+  }
+
+  .characterPortrait::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.5);
   }
 </style>

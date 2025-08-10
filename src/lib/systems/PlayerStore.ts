@@ -64,9 +64,9 @@ function load(): PlayerData {
   return DEFAULT_PLAYER_DATA;
 }
 
-function mergeDefaults<T>(defaults: T, actual: any): T {
+function mergeDefaults<T extends Record<string, any>>(defaults: T, actual: T): T {
   const result: any = { ...defaults };
-  for (const key in defaults) {
+  for (const key of Object.keys(actual)) {
     if (typeof defaults[key] === "object" && defaults[key] !== null) {
       result[key] = mergeDefaults(defaults[key], actual?.[key] ?? {});
     } else {
@@ -80,6 +80,7 @@ function save(data: PlayerData): void {
   const json = JSON.stringify(data);
   const base64 = btoa(json);
   localStorage.setItem(STORAGE_KEY, base64);
+  console.info(`Saved player data: ${json}`);
 }
 
 playerStore.subscribe((data) => {

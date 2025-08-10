@@ -27,61 +27,6 @@
     return backgroundMap[stageId] || imageAssets.stageBackground;
   }
 
-//   [
-//     {
-//       id: 1,
-//       nameKey: "stage1Name",
-//       iconSvg: `<svg style="color: #fff;" width="100" height="100" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-//   <!-- 盾牌（只有描邊） -->
-//   <path d="M50 5 C30 10, 15 30, 20 55 C25 80, 50 95, 50 95 C50 95, 75 80, 80 55 C85 30, 70 10, 50 5 Z" 
-//         stroke="currentColor" stroke-width="3" fill="none"/>
-
-//   <!-- 劍（實心） -->
-//   <rect x="47" y="25" width="6" height="35" fill="currentColor"/>
-//   <polygon points="44,25 50,10 56,25" fill="currentColor"/>
-//   <rect x="42" y="58" width="16" height="4" fill="currentColor"/>
-
-//   <!-- 星星（實心） -->
-//   <polygon points="50,35 52,40 57,40 53,43 55,48 50,45 45,48 47,43 43,40 48,40" fill="currentColor"/>
-// </svg>
-// `,
-//       description: $t("stage1Description"),
-//     },
-    // {
-    //   id: 2,
-    //   nameKey: "stage2Name", 
-    //   iconKey: "stageIcon2",
-    //   stars: 2,
-    //   description: $t("stage2Description"),
-    //   drops: [
-    //     { nameKey: "coinDrop", amount: "150-250" },
-    //     { nameKey: "gemDrop", amount: "1-3" }
-    //   ]
-    // },
-    // {
-    //   id: 3,
-    //   nameKey: "stage3Name",
-    //   iconKey: "stageIcon3", 
-    //   stars: 1,
-    //   description: $t("stage3Description"),
-    //   drops: [
-    //     { nameKey: "coinDrop", amount: "200-350" },
-    //     { nameKey: "rareMaterialDrop", amount: "1-2" }
-    //   ]
-    // },
-    // {
-    //   id: 4,
-    //   nameKey: "stage4Name",
-    //   iconKey: "stageIcon4",
-    //   stars: 0,
-    //   description: $t("stage4Description"),
-    //   drops: [
-    //     { nameKey: "coinDrop", amount: "300-500" },
-    //     { nameKey: "legendaryMaterialDrop", amount: "0-1" }
-    //   ]
-    // }
-  // ];
-
   let goToNextScene: Writable<string | null>;
   async function main() {
     goToNextScene = writable(null);

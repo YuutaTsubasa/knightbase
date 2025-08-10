@@ -395,8 +395,6 @@
     [...enemies, ...traps].forEach(entity => {
       if (player.checkCollision(entity) && player.takeDamage()) {
         gameStats.lives--;
-        // Note: hurt sound is now played inside player.takeDamage()
-        
         if (gameStats.lives <= 0) {
           handleGameOver();
         }
@@ -464,7 +462,6 @@
       const bgWidth = ctx.canvas.width;
       const bgHeight = ctx.canvas.height;
 
-      console.log(`${stageGroundOffsetY} ${get(StaticDataStore.getStageById(selectedStage))?.groundOffsetY ?? 0}`);
       // Background moved down, need to fill the top and draw extended background
       const backgroundYOffset = bgHeight + stageGroundOffsetY;
       const extendedHeight = bgHeight + backgroundYOffset;
@@ -583,6 +580,7 @@
   }
 
   async function handleLevelComplete() {
+    AudioManager.play("sfx_gameover");
     gameState = 'gameOver'; // Pause the game
     
     const result = await PopupStore.open({

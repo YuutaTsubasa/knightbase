@@ -11,6 +11,7 @@
   import { get, writable, type Writable } from "svelte/store";
   import { playerStore } from "$lib/systems/PlayerStore";
   import { characterPortraitImageKey } from "$lib/utils/KeyHelper";
+  import { page } from "$app/stores";
   $: topbarHeight = 0;
 
   // Character data from StaticDataStore
@@ -24,6 +25,8 @@
     descriptionKey: char.characterDescriptionKey,
   }));
 
+  $: stageId = $page.url.searchParams.get('stageId') || '';
+
   let goToNextScene: Writable<string | null>;
   async function main() {
     goToNextScene = writable(null);
@@ -36,7 +39,7 @@
   }
 
   function handleBack() {
-    goToNextScene.set("/stage");
+    goToNextScene.set(`/stage${stageId ? `/${stageId}` : ''}`);
   }
 </script>
 
