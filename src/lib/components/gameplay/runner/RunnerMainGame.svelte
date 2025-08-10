@@ -331,8 +331,12 @@
     if (gameMode === 'endless') {
       endlessGenerator = new EndlessGenerator();
     } else if (gameMode === 'level') {
+      // Determine if patterns should loop based on completion type
+      const shouldLoopPatterns = currentLevelData && 
+        currentLevelData.completionType !== 'reachGoal';
+      
       // Create LevelGenerator with loaded patterns
-      levelGenerator = new LevelGenerator(levelPatterns);
+      levelGenerator = new LevelGenerator(levelPatterns, shouldLoopPatterns);
     }
 
     // Start countdown
