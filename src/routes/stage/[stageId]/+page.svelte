@@ -247,7 +247,7 @@
     width: 100%;
     height: 100%;
     border: var(--border-size) solid rgba(148, 163, 184, 0.3);
-    padding: calc(1.5rem + 12px) 1.5rem 1.5rem 1.5rem;
+    padding: calc(1.5rem + 12px) 1.5rem calc(1.5rem + 50px) 1.5rem;
   }
 
   .levelCard::after {
@@ -286,7 +286,8 @@
     position: absolute;
     top: calc(-1 * var(--border-size));
     left: calc(-1 * var(--border-size));
-    width: calc(100% + 2 * var(--border-size));
+    min-width: calc(100% + 2 * var(--border-size));
+    text-wrap: nowrap;
     background: black;
     color: white;
     overflow: hidden;
@@ -394,11 +395,13 @@
   }
 
   .objectiveSection {
-    background: rgba(255, 255, 255, 0.95);
-    border: 2px solid #f59e0b;
-    border-radius: 0.5rem;
-    padding: 0.75rem;
+    backdrop-filter: blur(5px);
+    background-color: rgba(255, 255, 255, 0.5);
+    box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.5);
+    padding: 0.25rem;
     margin-bottom: 1rem;
+    font-size: 1.25rem;
+    transform: scaleY(0.8);
   }
 
   .objective {
@@ -406,22 +409,22 @@
     align-items: center;
     gap: 0.5rem;
     margin-bottom: 0.5rem;
+    color: rgb(222, 118, 0);
   }
 
   .objectiveText {
     font-weight: bold;
-    color: #d97706;
   }
 
   .timeLimit {
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    color: #cf0000;
   }
 
   .timeLimitText {
     font-weight: bold;
-    color: #dc2626;
   }
 
   .recordsSection {
@@ -482,6 +485,10 @@
   }
 
   .levelActions {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: 15px;
     display: flex;
     justify-content: center;
   }

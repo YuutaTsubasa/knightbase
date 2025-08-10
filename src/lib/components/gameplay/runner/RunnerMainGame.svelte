@@ -134,14 +134,6 @@
     return 8 + Math.floor(gameStats.survivalTime / 10) * 0.05;
   }
 
-  function getDisplayScrollSpeed(): number {
-    // Display speed starts at the level's initial speed but actual speed is still that speed
-    if (currentLevelData && gameMode === 'level') {
-      return getCurrentScrollSpeed() - currentLevelData.initialSpeed + 1.0;
-    }
-    return getCurrentScrollSpeed() - 7.0;
-  }
-
   function checkLevelCompletion(): boolean {
     if (!currentLevelData || gameMode !== 'level') return false;
     
@@ -176,17 +168,14 @@
     
     // Check if level is completed
     if (checkLevelCompletion()) {
-      gameState = 'gameOver';
-      // Handle level completion
-      AudioManager.play("sfx_complete");
+      saveToPlayerStore();
+      handleLevelComplete();
       return;
     }
     
     // Check if time limit exceeded (failure condition)
     if (checkTimeLimit()) {
-      gameState = 'gameOver';
-      // Handle time up failure
-      AudioManager.play("sfx_gameover");
+      handleGameOver();
       return;
     }
   }
@@ -196,7 +185,7 @@
     addResourcesToSaveData({ gold: gameStats.coins });
     
     // Update stage record if this is better than previous
-    const currentSpeed = getDisplayScrollSpeed();
+    const currentSpeed = getCurrentScrollSpeed();
     let recordKey = `${selectedStage}_endless`; // For endless mode use stageId_endless format
     
     // For level mode, use the specific level ID
@@ -469,9 +458,6 @@
       goals.forEach(goal => {
         if (!goal.reached && player.checkCollision(goal)) {
           goal.reach();
-          levelGenerator?.markGoalReached();
-          
-          // Show level completion popup
           saveToPlayerStore();
           handleLevelComplete();
         }
@@ -640,7 +626,7 @@
         </div>
         <div style="margin: 3px 0; display: flex; align-items: center; gap: 8px;">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13,2 3,14 12,14 11,22 21,10 12,10"/></svg>
-          <strong>${$t("finalSpeedLabel")}:</strong> ${getDisplayScrollSpeed().toFixed(1)}x
+          <strong>${$t("finalSpeedLabel")}:</strong> ${getCurrentScrollSpeed().toFixed(1)}x
         </div>
 
         <div style="margin-top: 5px; font-style: italic; color: #fbbf24;">
@@ -736,7 +722,7 @@
           </div>
           <div style="margin: 3px 0; display: flex; align-items: center; gap: 8px;">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13,2 3,14 12,14 11,22 21,10 12,10"/></svg>
-            <strong>${$t("currentSpeedLabel")}:</strong> ${getDisplayScrollSpeed().toFixed(1)}x
+            <strong>${$t("currentSpeedLabel")}:</strong> ${getCurrentScrollSpeed().toFixed(1)}x
           </div>
           
           <div style="margin-top: 5px; font-style: italic; color: #fbbf24;">
