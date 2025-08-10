@@ -38,6 +38,31 @@ export const textAssets: Record<string, TextAsset> = {
     path: '/assets/gameplay/runner/stage1_5.json',
     type: 'pattern'
   },
+  'stage2_1': {
+    id: 'stage2_1',
+    path: '/assets/gameplay/runner/stage2_1.json',
+    type: 'pattern'
+  },
+  'stage2_2': {
+    id: 'stage2_2', 
+    path: '/assets/gameplay/runner/stage2_2.json',
+    type: 'pattern'
+  },
+  'stage2_3': {
+    id: 'stage2_3',
+    path: '/assets/gameplay/runner/stage2_3.json', 
+    type: 'pattern'
+  },
+  'stage2_4': {
+    id: 'stage2_4',
+    path: '/assets/gameplay/runner/stage2_4.json',
+    type: 'pattern'
+  },
+  'stage2_5': {
+    id: 'stage2_5',
+    path: '/assets/gameplay/runner/stage2_5.json',
+    type: 'pattern'
+  },
   // Add more stages as needed
 };
 

@@ -1,0 +1,97 @@
+{
+  "id": "stage2_5",
+  "name": "Ultimate Hunter",
+  "patterns": [
+    {
+      "type": "enemyCoinCombo",
+      "params": {
+        "enemyCount": 3,
+        "coinCount": 2,
+        "spacing": 110
+      }
+    },
+    {
+      "type": "gap",
+      "params": {
+        "distance": 140
+      }
+    },
+    {
+      "type": "trapCombo",
+      "params": {
+        "trapCount": 2,
+        "spacing": 150
+      }
+    },
+    {
+      "type": "gap",
+      "params": {
+        "distance": 120
+      }
+    },
+    {
+      "type": "enemyCoinCombo",
+      "params": {
+        "enemyCount": 4,
+        "coinCount": 3,
+        "spacing": 90
+      }
+    },
+    {
+      "type": "gap",
+      "params": {
+        "distance": 160
+      }
+    },
+    {
+      "type": "coinArc",
+      "params": {
+        "coinCount": 6,
+        "arcHeight": 280,
+        "arcWidth": 480,
+        "startY": 200
+      }
+    },
+    {
+      "type": "gap",
+      "params": {
+        "distance": 100
+      }
+    },
+    {
+      "type": "enemyCoinCombo",
+      "params": {
+        "enemyCount": 5,
+        "coinCount": 4,
+        "spacing": 80
+      }
+    },
+    {
+      "type": "gap",
+      "params": {
+        "distance": 180
+      }
+    },
+    {
+      "type": "trapCombo",
+      "params": {
+        "trapCount": 4,
+        "spacing": 100
+      }
+    },
+    {
+      "type": "gap",
+      "params": {
+        "distance": 140
+      }
+    },
+    {
+      "type": "enemyCoinCombo",
+      "params": {
+        "enemyCount": 6,
+        "coinCount": 5,
+        "spacing": 70
+      }
+    }
+  ]
+}

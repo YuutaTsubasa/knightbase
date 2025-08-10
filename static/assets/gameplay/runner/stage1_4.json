@@ -47,10 +47,6 @@
         "spacing": 70,
         "height": 250
       }
-    },
-    {
-      "type": "goal",
-      "params": {}
     }
   ]
 }

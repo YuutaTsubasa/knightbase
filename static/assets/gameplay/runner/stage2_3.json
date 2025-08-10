@@ -1,0 +1,65 @@
+{
+  "id": "stage2_3",
+  "name": "Score Master",
+  "patterns": [
+    {
+      "type": "coinLine",
+      "params": {
+        "coinCount": 3,
+        "spacing": 110,
+        "height": 170
+      }
+    },
+    {
+      "type": "enemyCoinCombo",
+      "params": {
+        "enemyCount": 1,
+        "coinCount": 2,
+        "spacing": 130
+      }
+    },
+    {
+      "type": "gap",
+      "params": {
+        "distance": 160
+      }
+    },
+    {
+      "type": "coinArc",
+      "params": {
+        "coinCount": 7,
+        "arcHeight": 280,
+        "arcWidth": 500,
+        "startY": 200
+      }
+    },
+    {
+      "type": "gap",
+      "params": {
+        "distance": 140
+      }
+    },
+    {
+      "type": "enemyCoinCombo",
+      "params": {
+        "enemyCount": 2,
+        "coinCount": 4,
+        "spacing": 100
+      }
+    },
+    {
+      "type": "gap",
+      "params": {
+        "distance": 180
+      }
+    },
+    {
+      "type": "coinLine",
+      "params": {
+        "coinCount": 6,
+        "spacing": 70,
+        "height": 250
+      }
+    }
+  ]
+}

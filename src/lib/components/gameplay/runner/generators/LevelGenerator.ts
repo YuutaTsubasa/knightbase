@@ -12,10 +12,12 @@ export class LevelGenerator {
   private levelCompleted: boolean = false;
   private goalReached: boolean = false;
   private minPatternInterval: number = 1000; // Minimum 1 second between patterns
+  private shouldLoopPatterns: boolean = false; // Whether to loop patterns when reaching end
 
-  constructor(patterns: Pattern[]) {
+  constructor(patterns: Pattern[], shouldLoopPatterns: boolean = false) {
     this.patterns = patterns;
-    console.log(`Initialized level generator with ${this.patterns.length} patterns`);
+    this.shouldLoopPatterns = shouldLoopPatterns;
+    console.log(`Initialized level generator with ${this.patterns.length} patterns, looping: ${shouldLoopPatterns}`);
   }
 
   public update(playerDistanceTraveled: number): { enemies: Enemy[], coins: Coin[], traps: Trap[], goals: Goal[] } {
@@ -24,10 +26,16 @@ export class LevelGenerator {
     this.playerDistanceTraveled = playerDistanceTraveled;
 
     if (this.currentPatternIndex >= this.patterns.length) {
-      if (!this.levelCompleted) {
-        this.levelCompleted = true;
+      if (this.shouldLoopPatterns) {
+        // Reset to beginning for looping patterns (objective-based levels)
+        this.currentPatternIndex = 0;
+      } else {
+        // Mark level completed for goal-based levels
+        if (!this.levelCompleted) {
+          this.levelCompleted = true;
+        }
+        return result;
       }
-      return result;
     }
 
     const generationDistance = 800; 

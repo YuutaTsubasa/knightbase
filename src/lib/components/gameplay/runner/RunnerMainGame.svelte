@@ -9,7 +9,7 @@
   import { PopupStore, PopupResult } from "$lib/systems/PopupStore";
   import { t } from "$lib/systems/LocalizationStore";
   import { isPortrait } from "$lib/systems/Orientation";
-  import { Play, Pause, Heart, Keyboard, Smartphone, Gamepad2, ArrowUpFromLine, Sword } from "lucide-svelte";
+  import { Play, Pause, Heart, Keyboard, Smartphone, Gamepad2, ArrowUpFromLine, SwordIcon, Coins, Target, Timer, Clock } from "lucide-svelte";
   
   // Layer imports
   import { Layer } from "./Layer";
@@ -59,6 +59,22 @@
 
   // Background state (moved from BackgroundLayer)
   let backgroundOffset: number = 0;
+
+  // Level data
+  let currentLevelData: any = null;
+  let levelProgress = {
+    coins: 0,
+    enemies: 0,
+    score: 0
+  };
+  let levelStartTime = 0;
+  
+  $: levelDataStore = StaticDataStore.getLevelById(levelId);
+  $: {
+    if ($levelDataStore) {
+      currentLevelData = $levelDataStore;
+    }
+  }
 
   // Game state
   let gameState: GameState = 'playing';
@@ -111,12 +127,57 @@
   }
 
   function getCurrentScrollSpeed(): number {
+    // Use level's initial speed if available, otherwise default calculation
+    if (currentLevelData && gameMode === 'level') {
+      return currentLevelData.initialSpeed + Math.floor(gameStats.survivalTime / 10) * 0.05;
+    }
     return 8 + Math.floor(gameStats.survivalTime / 10) * 0.05;
   }
 
-  function getDisplayScrollSpeed(): number {
-    // Display speed starts at 1.0x but actual speed is still 8.0x
-    return getCurrentScrollSpeed() - 7.0;
+  function checkLevelCompletion(): boolean {
+    if (!currentLevelData || gameMode !== 'level') return false;
+    
+    switch (currentLevelData.completionType) {
+      case 'collectCoins':
+        return levelProgress.coins >= currentLevelData.targetValue;
+      case 'defeatEnemies':
+        return levelProgress.enemies >= currentLevelData.targetValue;
+      case 'reachScore':
+        return levelProgress.score >= currentLevelData.targetValue;
+      case 'reachGoal':
+        // This would be handled by the goal entity collision
+        return false;
+      default:
+        return false;
+    }
+  }
+
+  function checkTimeLimit(): boolean {
+    if (!currentLevelData || gameMode !== 'level') return false;
+    if (currentLevelData.timeLimit <= 0) return false;
+    
+    return gameStats.survivalTime >= currentLevelData.timeLimit;
+  }
+
+  function updateLevelProgress() {
+    if (!currentLevelData || gameMode !== 'level') return;
+    
+    levelProgress.coins = gameStats.coins;
+    levelProgress.enemies = gameStats.score; // Assuming score represents enemies defeated for now
+    levelProgress.score = gameStats.score;
+    
+    // Check if level is completed
+    if (checkLevelCompletion()) {
+      saveToPlayerStore();
+      handleLevelComplete();
+      return;
+    }
+    
+    // Check if time limit exceeded (failure condition)
+    if (checkTimeLimit()) {
+      handleGameOver();
+      return;
+    }
   }
 
   function saveToPlayerStore() {
@@ -124,7 +185,7 @@
     addResourcesToSaveData({ gold: gameStats.coins });
     
     // Update stage record if this is better than previous
-    const currentSpeed = getDisplayScrollSpeed();
+    const currentSpeed = getCurrentScrollSpeed();
     let recordKey = `${selectedStage}_endless`; // For endless mode use stageId_endless format
     
     // For level mode, use the specific level ID
@@ -223,6 +284,14 @@
     };
     lastSurvivalSecond = 0;
     playerDistanceTraveled = 0;
+    levelStartTime = Date.now();
+    
+    // Reset level progress
+    levelProgress = {
+      coins: 0,
+      enemies: 0,
+      score: 0
+    };
 
     // Initialize layers
     backgroundLayer = new Layer('background');
@@ -251,8 +320,12 @@
     if (gameMode === 'endless') {
       endlessGenerator = new EndlessGenerator();
     } else if (gameMode === 'level') {
+      // Determine if patterns should loop based on completion type
+      const shouldLoopPatterns = currentLevelData && 
+        currentLevelData.completionType !== 'reachGoal';
+      
       // Create LevelGenerator with loaded patterns
-      levelGenerator = new LevelGenerator(levelPatterns);
+      levelGenerator = new LevelGenerator(levelPatterns, shouldLoopPatterns);
     }
 
     // Start countdown
@@ -330,6 +403,9 @@
       lastSurvivalSecond = currentSecond;
     }
 
+    // Update level progress for objective-based levels
+    updateLevelProgress();
+
     // Update distance traveled for level pattern generation
     playerDistanceTraveled += currentScrollSpeed; // Convert to pixels per frame equivalent
 
@@ -382,9 +458,6 @@
       goals.forEach(goal => {
         if (!goal.reached && player.checkCollision(goal)) {
           goal.reach();
-          levelGenerator?.markGoalReached();
-          
-          // Show level completion popup
           saveToPlayerStore();
           handleLevelComplete();
         }
@@ -553,7 +626,7 @@
         </div>
         <div style="margin: 3px 0; display: flex; align-items: center; gap: 8px;">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13,2 3,14 12,14 11,22 21,10 12,10"/></svg>
-          <strong>${$t("finalSpeedLabel")}:</strong> ${getDisplayScrollSpeed().toFixed(1)}x
+          <strong>${$t("finalSpeedLabel")}:</strong> ${getCurrentScrollSpeed().toFixed(1)}x
         </div>
 
         <div style="margin-top: 5px; font-style: italic; color: #fbbf24;">
@@ -649,7 +722,7 @@
           </div>
           <div style="margin: 3px 0; display: flex; align-items: center; gap: 8px;">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13,2 3,14 12,14 11,22 21,10 12,10"/></svg>
-            <strong>${$t("currentSpeedLabel")}:</strong> ${getDisplayScrollSpeed().toFixed(1)}x
+            <strong>${$t("currentSpeedLabel")}:</strong> ${getCurrentScrollSpeed().toFixed(1)}x
           </div>
           
           <div style="margin-top: 5px; font-style: italic; color: #fbbf24;">
@@ -813,6 +886,45 @@
             {/each}
           </span>
         </div>
+        
+        <!-- Level objective progress indicators -->
+        {#if currentLevelData && gameMode === 'level' && !currentLevelData.endless}
+          {#if currentLevelData.completionType === 'collectCoins'}
+            <div class="statItem objectiveProgress">
+              <span class="statLabel">{$t("coinsProgress")}:</span>
+              <span class="statValue">
+                <Coins size={16} />
+                {levelProgress.coins}/{currentLevelData.targetValue}
+              </span>
+            </div>
+          {:else if currentLevelData.completionType === 'defeatEnemies'}
+            <div class="statItem objectiveProgress">
+              <span class="statLabel">{$t("enemiesProgress")}:</span>
+              <span class="statValue">
+                <SwordIcon size={16} />
+                {levelProgress.enemies}/{currentLevelData.targetValue}
+              </span>
+            </div>
+          {:else if currentLevelData.completionType === 'reachScore'}
+            <div class="statItem objectiveProgress">
+              <span class="statLabel">{$t("scoreProgress")}:</span>
+              <span class="statValue">
+                <Target size={16} />
+                {levelProgress.score}/{currentLevelData.targetValue}
+              </span>
+            </div>
+          {/if}
+          
+          {#if currentLevelData.timeLimit > 0}
+            <div class="statItem timeLimit">
+              <span class="statLabel">{$t("timeRemaining")}:</span>
+              <span class="statValue {checkTimeLimit() ? 'timeWarning' : ''}">
+                <Timer size={16} />
+                {formatTime(Math.max(0, currentLevelData.timeLimit - gameStats.survivalTime))}
+              </span>
+            </div>
+          {/if}
+        {/if}
       </div>
       <button class="pauseBtn" on:click={togglePauseClick}>
         {#if isPaused}
@@ -861,7 +973,7 @@
         </span>
       </div>
       <div class="controlGroup">
-        <Sword size={16} />
+        <SwordIcon size={16} />
         <span class="actionLabel">Attack:</span>
         <span class="controls">
           <Keyboard size={12} />: Enter/X/Z/D/→ | 
@@ -951,6 +1063,24 @@
 
   .statValue :global(.heartIcon) {
     color: #ef4444;
+  }
+
+  .objectiveProgress .statValue {
+    color: #10b981;
+  }
+
+  .timeLimit .statValue {
+    color: #f59e0b;
+  }
+
+  .timeWarning {
+    color: #ef4444 !important;
+    animation: pulse 1s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
   }
 
   .pauseBtn {

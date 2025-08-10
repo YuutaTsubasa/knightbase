@@ -9,33 +9,22 @@
   import Topbar from "$lib/components/Topbar.svelte";
   import { waitUntil } from "$lib/utils/Wait";
   import { get, writable, type Writable } from "svelte/store";
-  import { Play, Trophy, Clock, Target, Lock, Zap } from "lucide-svelte";
+  import { Play, Trophy, Clock, Target, Lock, Zap, Coins, SwordIcon, Timer } from "lucide-svelte";
   import { PopupStore, PopupResult } from "$lib/systems/PopupStore";
   import SpaceBetweenTextGroup from '$lib/components/SpaceBetweenTextGroup.svelte';
   import { FontAssets } from '$lib/assets/FontAssets';
   import Button from '$lib/components/Button.svelte';
-    import { AudioManager } from '$lib/systems/AudioManager';
+  import { AudioManager } from '$lib/systems/AudioManager';
 
   let goToNextScene: Writable<string | null>;
   let topbarHeight = 0;
   
   $: stageId = $page.params.stageId as string;
   $: stageData = StaticDataStore.getStageById(stageId);
+  $: levelData = StaticDataStore.getLevelsByStageId(stageId);
   
-  // Level definitions for each stage
-  const stageLevels: Record<string, any[]> = {
-    'stage1': [
-      { id: 'stage1_1', nameKey: 'level1Name', difficultyStars: 1 },
-      { id: 'stage1_2', nameKey: 'level2Name', difficultyStars: 2 },
-      { id: 'stage1_3', nameKey: 'level3Name', difficultyStars: 3 },
-      { id: 'stage1_4', nameKey: 'level4Name', difficultyStars: 4 },
-      { id: 'stage1_5', nameKey: 'level5Name', difficultyStars: 5 },
-      { id: 'stage1_endless', nameKey: 'endlessMode', difficultyStars: 0, endless: true }
-    ]
-  };
-
   $: playerData = $playerStore;
-  $: levels = stageLevels[stageId || ''] || [];
+  $: levels = $levelData || [];
   
   function goToCharacterPage() {
     goToNextScene.set(`/character?stageId=${stageId}`);
@@ -57,7 +46,10 @@
 
   async function playLevel(levelId: string, endless: boolean = false) {
     AudioManager.play("sfx_confirm");
-    const levelName = endless ? $t('endlessMode') : $t(levels.find(l => l.id === levelId)?.nameKey || levelId);
+    const level = levels.find(l => l.levelId === levelId);
+    if (!level) return;
+    
+    const levelName = $t(level.nameKey);
     let confirmed = false;
     
     const result = await PopupStore.open({
@@ -123,10 +115,10 @@
     </div>
     <div class="levelsGrid">
       {#each levels as level}
-        {@const record = playerData.stageRecords[level.id] || null}
+        {@const record = playerData.stageRecords[level.levelId] || null}
         {@const isCompleted = record?.completed ?? false}
-        {@const isLocked = false} <!-- For now, no levels are locked -->
-        {@const levelName = level.nameKey ? $t(level.nameKey) : level.id}
+        {@const isLocked = !level.unlocked}
+        {@const levelName = $t(level.nameKey)}
 
         <div class="levelCard" class:completed={isCompleted} class:locked={isLocked}>
           <div class="levelBorder">
@@ -144,9 +136,16 @@
                 <h3 style={FontAssets.getCssStyle("titleBold")}>{levelName}</h3>
                 {#if level.endless}
                   <span class="endlessBadge">{$t('endlessMode')}</span>
+                {:else if level.completionType === 'collectCoins'}
+                  <span class="objectiveBadge">{$t('collectCoins')}</span>
+                {:else if level.completionType === 'defeatEnemies'}
+                  <span class="objectiveBadge">{$t('defeatEnemies')}</span>
+                {:else if level.completionType === 'reachScore'}
+                  <span class="objectiveBadge">{$t('reachScore')}</span>
                 {:else}
                   <span class="levelBadge">{$t('levelMode')}</span>
                 {/if}
+                <span class="speedBadge">{level.initialSpeed}x</span>
               </div>
               
               {#if isCompleted}
@@ -155,6 +154,30 @@
                 <Lock class="lockedIcon" />
               {/if}
             </div>
+
+            <!-- Level objective display -->
+            {#if !level.endless && level.completionType !== 'reachGoal'}
+              <div class="objectiveSection">
+                <div class="objective">
+                  {#if level.completionType === 'collectCoins'}
+                    <Coins size={16} />
+                    <span class="objectiveText">{$t('collectCoins')}: {level.targetValue}</span>
+                  {:else if level.completionType === 'defeatEnemies'}
+                    <SwordIcon size={16} />
+                    <span class="objectiveText">{$t('defeatEnemies')}: {level.targetValue}</span>
+                  {:else if level.completionType === 'reachScore'}
+                    <Target size={16} />
+                    <span class="objectiveText">{$t('reachScore')}: {formatNumber(level.targetValue)}</span>
+                  {/if}
+                </div>
+                {#if level.timeLimit > 0}
+                  <div class="timeLimit">
+                    <Timer size={16} />
+                    <span class="timeLimitText">{$t('timeRemaining')}: {formatTime(level.timeLimit)}</span>
+                  </div>
+                {/if}
+              </div>
+            {/if}
 
             {#if record && (isCompleted || level.endless)}
               <div class="recordsSection">
@@ -184,7 +207,7 @@
 
             <div class="levelActions">
               {#if !isLocked}
-                <Button onClick={() => playLevel(level.id, level.endless)}>
+                <Button onClick={() => playLevel(level.levelId, level.endless)}>
                   <Play size={16} style="margin-bottom: -2px;" />
                   {$t('play')}
                 </Button>
@@ -224,7 +247,7 @@
     width: 100%;
     height: 100%;
     border: var(--border-size) solid rgba(148, 163, 184, 0.3);
-    padding: calc(1.5rem + 12px) 1.5rem 1.5rem 1.5rem;
+    padding: calc(1.5rem + 12px) 1.5rem calc(1.5rem + 50px) 1.5rem;
   }
 
   .levelCard::after {
@@ -263,7 +286,8 @@
     position: absolute;
     top: calc(-1 * var(--border-size));
     left: calc(-1 * var(--border-size));
-    width: calc(100% + 2 * var(--border-size));
+    min-width: calc(100% + 2 * var(--border-size));
+    text-wrap: nowrap;
     background: black;
     color: white;
     overflow: hidden;
@@ -347,6 +371,62 @@
     display: inline-block;
   }
 
+  .objectiveBadge {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.375rem;
+    font-size: 0.75rem;
+    font-weight: bold;
+    margin-top: 0.25rem;
+    display: inline-block;
+  }
+
+  .speedBadge {
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.375rem;
+    font-size: 0.75rem;
+    font-weight: bold;
+    margin-top: 0.25rem;
+    margin-left: 0.5rem;
+    display: inline-block;
+  }
+
+  .objectiveSection {
+    backdrop-filter: blur(5px);
+    background-color: rgba(255, 255, 255, 0.5);
+    box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.5);
+    padding: 0.25rem;
+    margin-bottom: 1rem;
+    font-size: 1.25rem;
+    transform: scaleY(0.8);
+  }
+
+  .objective {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+    color: rgb(222, 118, 0);
+  }
+
+  .objectiveText {
+    font-weight: bold;
+  }
+
+  .timeLimit {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #cf0000;
+  }
+
+  .timeLimitText {
+    font-weight: bold;
+  }
+
   .recordsSection {
     position: relative;
     left: 0;
@@ -405,6 +485,10 @@
   }
 
   .levelActions {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: 15px;
     display: flex;
     justify-content: center;
   }

@@ -1,0 +1,58 @@
+{
+  "id": "stage2_1",
+  "name": "Coin Collector",
+  "patterns": [
+    {
+      "type": "coinLine",
+      "params": {
+        "coinCount": 4,
+        "spacing": 100,
+        "height": 160
+      }
+    },
+    {
+      "type": "gap",
+      "params": {
+        "distance": 180
+      }
+    },
+    {
+      "type": "coinArc",
+      "params": {
+        "coinCount": 6,
+        "arcHeight": 220,
+        "arcWidth": 450,
+        "startY": 280
+      }
+    },
+    {
+      "type": "gap",
+      "params": {
+        "distance": 150
+      }
+    },
+    {
+      "type": "coinLine",
+      "params": {
+        "coinCount": 5,
+        "spacing": 80,
+        "height": 200
+      }
+    },
+    {
+      "type": "gap",
+      "params": {
+        "distance": 200
+      }
+    },
+    {
+      "type": "coinArc",
+      "params": {
+        "coinCount": 8,
+        "arcHeight": 300,
+        "arcWidth": 600,
+        "startY": 150
+      }
+    }
+  ]
+}
