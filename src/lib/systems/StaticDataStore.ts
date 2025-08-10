@@ -80,6 +80,21 @@ export type StageData = {
   groundOffsetY: number;
 };
 
+export interface LevelData {
+  levelId: string;
+  stageId: string;
+  levelNumber: number;
+  nameKey: string;
+  descriptionKey: string;
+  difficultyStars: number;
+  initialSpeed: number;
+  completionType: 'reachGoal' | 'collectCoins' | 'defeatEnemies' | 'reachScore' | 'survival';
+  targetValue: number;
+  timeLimit: number; // 0 means no time limit
+  endless: boolean;
+  unlocked: boolean;
+}
+
 // Main StaticDataStore class
 export class StaticDataStore {
   private static basePath = "/assets/staticData/";
@@ -94,6 +109,7 @@ export class StaticDataStore {
   static shopData: Writable<ShopData[]> = writable([]);
   static missionData: Writable<MissionData[]> = writable([]);
   static stageData: Writable<StageData[]> = writable([]);
+  static levelData: Writable<LevelData[]> = writable([]);
 
   private static loadedFiles: Set<string> = new Set();
 
@@ -112,6 +128,7 @@ export class StaticDataStore {
       this.loadShopData(),
       this.loadMissionData(),
       this.loadStageData(),
+      this.loadLevelData(),
     ];
 
     try {
@@ -187,6 +204,11 @@ export class StaticDataStore {
     this.stageData.set(data);
   }
 
+  static async loadLevelData() {
+    const data = await this.loadCsvFile<LevelData>('level.csv');
+    this.levelData.set(data);
+  }
+
   // Utility methods to get data by ID
   static getCharacterById = (id: string) =>
     derived(this.characterData, (characterData) =>
@@ -226,5 +248,15 @@ export class StaticDataStore {
   static getStageById = (id: string) =>
     derived(this.stageData, (stageData) =>
       stageData.find((stage) => stage.id === id)
+    );
+
+  static getLevelsByStageId = (stageId: string) =>
+    derived(this.levelData, (levelData) =>
+      levelData.filter((level) => level.stageId === stageId)
+    );
+
+  static getLevelById = (levelId: string) =>
+    derived(this.levelData, (levelData) =>
+      levelData.find((level) => level.levelId === levelId)
     );
 }

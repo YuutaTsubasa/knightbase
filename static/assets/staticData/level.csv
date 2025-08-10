@@ -1,0 +1,13 @@
+levelId,stageId,levelNumber,nameKey,descriptionKey,difficultyStars,initialSpeed,completionType,targetValue,timeLimit,endless,unlocked
+stage1_1,stage1,1,level1Name,level1Description,1,12,reachGoal,0,0,false,true
+stage1_2,stage1,2,level2Name,level2Description,2,12,reachGoal,0,0,false,true
+stage1_3,stage1,3,level3Name,level3Description,3,12,reachGoal,0,0,false,true
+stage1_4,stage1,4,level4Name,level4Description,4,8,collectCoins,50,120,false,true
+stage1_5,stage1,5,level5Name,level5Description,5,8,defeatEnemies,20,180,false,true
+stage1_endless,stage1,6,endlessMode,endlessDescription,0,8,survival,0,0,true,true
+stage2_1,stage2,1,level1Name,level1Description,1,8,collectCoins,30,90,false,true
+stage2_2,stage2,2,level2Name,level2Description,2,8,defeatEnemies,15,120,false,true
+stage2_3,stage2,3,level3Name,level3Description,3,8,reachScore,1000,150,false,true
+stage2_4,stage2,4,level4Name,level4Description,4,8,collectCoins,75,180,false,true
+stage2_5,stage2,5,level5Name,level5Description,5,8,defeatEnemies,25,200,false,true
+stage2_endless,stage2,6,endlessMode,endlessDescription,0,8,survival,0,0,true,true
