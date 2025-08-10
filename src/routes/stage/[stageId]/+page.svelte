@@ -13,6 +13,8 @@
   import { onMount } from "svelte";
   import { Play, Trophy, Clock, Target, Lock } from "lucide-svelte";
   import { PopupStore, PopupResult } from "$lib/systems/PopupStore";
+  import SpaceBetweenTextGroup from '$lib/components/SpaceBetweenTextGroup.svelte';
+  import { FontAssets } from '$lib/assets/FontAssets';
 
   let goToNextScene: Writable<string | null>;
   let topbarHeight = 0;
@@ -117,11 +119,18 @@
       {@const record = playerData.stageRecords[level.id] || null}
       {@const isCompleted = record?.completed ?? false}
       {@const isLocked = false} <!-- For now, no levels are locked -->
-      
+      {@const levelName = level.nameKey ? $t(level.nameKey) : level.id}
+
       <div class="levelCard" class:completed={isCompleted} class:locked={isLocked}>
+        <div class="levelBorder">
+          <SpaceBetweenTextGroup 
+            content={levelName}
+            spacing="1em"
+            className="levelBorderText"/>
+        </div>
         <div class="levelHeader">
           <div class="levelTitle">
-            <h3>{level.nameKey ? $t(level.nameKey) : level.id}</h3>
+            <h3 style={FontAssets.getCssStyle("titleBold")}>{levelName}</h3>
             {#if level.endless}
               <span class="endlessBadge">{$t('endlessMode')}</span>
             {:else}
@@ -191,17 +200,45 @@
   }
 
   .levelCard {
-    background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9));
+    --border-size: 1px;
+    /* background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9)); */
+    background: rgba(255, 255, 255, 0.5);
     backdrop-filter: blur(10px);
-    border: 1px solid rgba(148, 163, 184, 0.3);
-    border-radius: 1rem;
-    padding: 1.5rem;
-    color: white;
+    border: var(--border-size) solid rgba(148, 163, 184, 0.3);
+    padding: calc(1.5rem + 12px) 1.5rem 1.5rem 1.5rem;
+    color: black;
     transition: all 0.3s ease;
     box-shadow: 0 4px 20px rgba(59, 130, 246, 0.1);
   }
 
-  .levelCard:hover {
+  .levelBorder {
+    position: absolute;
+    top: calc(-1 * var(--border-size));
+    left: calc(-1 * var(--border-size));
+    width: calc(100% + 2 * var(--border-size));
+    background: black;
+    color: white;
+    overflow: hidden;
+  }
+
+  .levelBorder :global(.levelBorderText) {
+    font-weight: bold;
+    font-size: 1.1rem;
+    transform: translateX(0);
+    text-align: center;
+    animation: marquee 10s linear infinite;
+  }
+
+  @keyframes marquee {
+    from {
+      transform: translateX(100%);
+    }
+    to {
+      transform: translateX(-100%);
+    }
+  }
+
+  .levelCard:hover, .levelCard:has(:global(.navFocused)) {
     transform: translateY(-2px);
     box-shadow: 0 8px 30px rgba(59, 130, 246, 0.2);
     border-color: rgba(59, 130, 246, 0.5);
@@ -224,9 +261,15 @@
   }
 
   .levelTitle h3 {
+    position: relative;
     margin: 0;
-    font-size: 1.25rem;
+    top: 0;
+    left: -1.6rem;
+    font-size: 2rem;
     font-weight: bold;
+    border-left: 8px solid #0021ff;
+    padding-left: 1rem;
+    color: #0021ff;
   }
 
   .difficulty {
@@ -286,11 +329,13 @@
 
   .notCompleted {
     margin-bottom: 1rem;
-    color: rgba(255, 255, 255, 0.6);
+    /* color: rgba(255, 255, 255, 0.6); */
+    color: black;
     font-style: italic;
     text-align: center;
     padding: 1rem;
-    border: 1px dashed rgba(255, 255, 255, 0.3);
+    /* border: 1px dashed rgba(255, 255, 255, 0.3); */
+    border: 1px dashed black;
     border-radius: 0.5rem;
   }
 
