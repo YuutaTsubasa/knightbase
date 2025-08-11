@@ -118,13 +118,17 @@
         className="changeCharacterButton" />
     </div>
     <div class="levelsGrid">
-      {#each levels as level}
+      {#each levels as level, index}
         {@const record = playerData.stageRecords[level.levelId] || null}
         {@const isCompleted = record?.completed ?? false}
         {@const isLocked = !level.unlocked}
         {@const levelName = $t(level.nameKey)}
 
-        <div class="levelCard" class:completed={isCompleted} class:locked={isLocked}>
+        <div class="levelCard enterFade" 
+             class:completed={isCompleted} 
+             class:locked={isLocked}
+             style="--duration: 0.6s; --delay: {index * 0.15}s; --level-index: {index}; animation-delay: var(--delay);"
+             data-level-index={index}>
           <div class="levelBorder">
             <SpaceBetweenTextGroup 
               content={levelName}
@@ -265,6 +269,7 @@
     background: linear-gradient(120deg, rgba(255,255,255,0.0) 40%, rgba(255,255,255,0.25) 50%, rgba(255,255,255,0.0) 60%);
     transform: rotate(0deg);
     animation: levelCardShine 5s linear infinite;
+    animation-delay: calc(var(--delay, 0s) + (var(--level-index, 0) * 1.2s));
     z-index: 2;
   }
 
@@ -305,6 +310,7 @@
     transform: translateX(0);
     text-align: center;
     animation: marquee 10s linear infinite;
+    animation-delay: calc(var(--delay, 0s) + (var(--level-index, 0) * 0.7s));
   }
 
   @keyframes marquee {
