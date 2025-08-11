@@ -168,7 +168,6 @@
     
     // Check if level is completed
     if (checkLevelCompletion()) {
-      saveToPlayerStore();
       handleLevelComplete();
       return;
     }
@@ -180,7 +179,7 @@
     }
   }
 
-  function saveToPlayerStore() {
+  function saveToPlayerStore(isCompleted: boolean): boolean {
     // Add collected coins as gold to player resources
     addResourcesToSaveData({ gold: gameStats.coins });
     
@@ -193,7 +192,11 @@
       recordKey = levelId;
     }
     
-    const isNewRecord = updateStageRecordToSaveData(recordKey, {
+    if (!isCompleted){
+      return false;
+    }
+    
+    return updateStageRecordToSaveData(recordKey, {
       time: gameStats.survivalTime,
       score: gameStats.score,
       speed: currentSpeed
@@ -458,7 +461,6 @@
       goals.forEach(goal => {
         if (!goal.reached && player.checkCollision(goal)) {
           goal.reach();
-          saveToPlayerStore();
           handleLevelComplete();
         }
       });
@@ -605,33 +607,39 @@
   async function handleGameOver() {
     AudioManager.play("sfx_gameover");
     gameState = 'gameOver';
-    
-    // Save progress to player store
-    saveToPlayerStore();
-    
+
+    const isCompleted = gameMode === 'endless';
+    const isNewRecord = saveToPlayerStore(isCompleted);
+
     const result = await PopupStore.open({
       title: $t("gameOver"),
-      content: `<div style="background: rgba(0,0,0,0.8); color: white; padding: 20px; border-radius: 10px; text-align: left; line-height: 1.2; font-size: 1rem;">
-        <div style="margin: 3px 0; display: flex; align-items: center; gap: 8px;">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
-          <strong>${$t("survivalTimeLabel")}:</strong> ${formatTime(gameStats.survivalTime)}
-        </div>
-        <div style="margin: 3px 0; display: flex; align-items: center; gap: 8px;">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 18V6"/></svg>
-          <strong>${$t("coinsCollectedLabel")}:</strong> ${gameStats.coins}
-        </div>
-        <div style="margin: 3px 0; display: flex; align-items: center; gap: 8px;">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="2"/></svg>
-          <strong>${$t("finalScoreLabel")}:</strong> ${gameStats.score}
-        </div>
-        <div style="margin: 3px 0; display: flex; align-items: center; gap: 8px;">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13,2 3,14 12,14 11,22 21,10 12,10"/></svg>
-          <strong>${$t("finalSpeedLabel")}:</strong> ${getCurrentScrollSpeed().toFixed(1)}x
-        </div>
-
-        <div style="margin-top: 5px; font-style: italic; color: #fbbf24;">
-          ${$t("encouragementMessage")}
-        </div>
+      content: `
+      ${isCompleted 
+        ? `<div style="background: rgba(0,0,0,0.8); color: white; padding: 0.2rem; text-align: left; line-height: 1.2; font-size: 1rem;">
+            <div style="margin: 3px 0; font-style: italic; color: #ff5555;">
+              ${isNewRecord 
+                ? $t("newRecord") 
+                : ""
+              } <span style="margin-top: 5px; font-style: italic; color: #fbbf24;">${$t("encouragementMessage")}</span>
+            </div>
+          </div>` 
+        : ''
+      }
+      <div style="margin: 3px 0; display: flex; align-items: center; gap: 8px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
+        <strong>${$t("survivalTimeLabel")}:</strong> ${formatTime(gameStats.survivalTime)}
+      </div>
+      <div style="margin: 3px 0; display: flex; align-items: center; gap: 8px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 18V6"/></svg>
+        <strong>${$t("coinsCollectedLabel")}:</strong> ${gameStats.coins}
+      </div>
+      <div style="margin: 3px 0; display: flex; align-items: center; gap: 8px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="2"/></svg>
+        <strong>${$t("finalScoreLabel")}:</strong> ${gameStats.score}
+      </div>
+      <div style="margin: 3px 0; display: flex; align-items: center; gap: 8px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13,2 3,14 12,14 11,22 21,10 12,10"/></svg>
+        <strong>${$t("finalSpeedLabel")}:</strong> ${getCurrentScrollSpeed().toFixed(1)}x
       </div>`,
       buttons: [
         {
@@ -654,27 +662,30 @@
 
   async function handleLevelComplete() {
     AudioManager.play("sfx_gameover");
-    gameState = 'gameOver'; // Pause the game
+    gameState = 'gameOver';
+    const isNewRecord = saveToPlayerStore(true);
     
     const result = await PopupStore.open({
       title: $t("levelCompleted"),
-      content: `<div style="background: rgba(0,0,0,0.8); color: white; padding: 20px; border-radius: 10px; text-align: left; line-height: 1.2; font-size: 1rem;">
-        <div style="margin: 3px 0; display: flex; align-items: center; gap: 8px;">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
-          <strong>${$t("completionTime")}:</strong> ${formatTime(gameStats.survivalTime)}
+      content: `
+      <div style="background: rgba(0,0,0,0.8); padding: 0.2rem; color: white; text-align: left; line-height: 1.2; font-size: 1rem;">
+        <div style="margin: 3px 0; font-weight: bold; color: #ff5555; text-align: center;">
+          ${isNewRecord ? $t("newRecord") : ''}<span style="font-weight: bold; color: #34d399;">
+            ${$t("congratulations")}
+          </span>
         </div>
-        <div style="margin: 3px 0; display: flex; align-items: center; gap: 8px;">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 18V6"/></svg>
-          <strong>${$t("coinsCollectedLabel")}:</strong> ${gameStats.coins}
-        </div>
-        <div style="margin: 3px 0; display: flex; align-items: center; gap: 8px;">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="2"/></svg>
-          <strong>${$t("finalScoreLabel")}:</strong> ${gameStats.score}
-        </div>
-
-        <div style="margin-top: 10px; font-weight: bold; color: #34d399; text-align: center;">
-          ${$t("congratulations")}
-        </div>
+      </div>
+      <div style="margin: 3px 0; display: flex; align-items: center; gap: 8px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
+        <strong>${$t("completionTime")}:</strong> ${formatTime(gameStats.survivalTime)}
+      </div>
+      <div style="margin: 3px 0; display: flex; align-items: center; gap: 8px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 18V6"/></svg>
+        <strong>${$t("coinsCollectedLabel")}:</strong> ${gameStats.coins}
+      </div>
+      <div style="margin: 3px 0; display: flex; align-items: center; gap: 8px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="2"/></svg>
+        <strong>${$t("finalScoreLabel")}:</strong> ${gameStats.score}
       </div>`,
       buttons: [
         {
@@ -703,7 +714,7 @@
       
       const result = await PopupStore.open({
         title: $t("gamePaused"),
-        content: `<div style="background: rgba(0,0,0,0.8); color: white; padding: 20px; border-radius: 10px; text-align: left; line-height: 1.2; font-size: 1rem;">
+        content: `<div style="background: rgba(0,0,0,0.8); padding: 0.2rem; color: white; padding: 20px; border-radius: 10px; text-align: left; line-height: 1.2; font-size: 1rem;">
           <div style="margin: 3px 0; display: flex; align-items: center; gap: 8px;">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
             <strong>${$t("pauseTimeLabel")}:</strong> ${formatTime(gameStats.survivalTime)}
