@@ -15,7 +15,6 @@ export interface PlayerResources {
 
 export interface PlayerData {
   name: string;
-  level: number;
   experience: number;
   selectedTitle: string;
   selectedCharacter: string;
@@ -30,7 +29,6 @@ export interface PlayerData {
 
 const DEFAULT_PLAYER_DATA : PlayerData = {
     name: "Player00000",
-    level: 1,
     experience: 0,
     selectedTitle: "playerTitle1",
     selectedCharacter: "yuuta",
@@ -56,9 +54,6 @@ function load(): PlayerData {
       const json = atob(base64);
       const parsed = JSON.parse(json);
       const merged = mergeDefaults(DEFAULT_PLAYER_DATA, parsed);
-      
-      // Ensure level is calculated correctly based on experience
-      merged.level = calculateLevel(merged.experience);
       
       return merged;
     } catch {
@@ -176,9 +171,6 @@ export function addExperienceToSaveData(experience: number): { leveledUp: boolea
     currentData.experience += experience;
     const newLevel = calculateLevel(currentData.experience);
     
-    // Update the level in the data
-    currentData.level = newLevel;
-    
     levelUpData = {
       leveledUp: newLevel > previousLevel,
       previousLevel,
@@ -193,4 +185,17 @@ export function addExperienceToSaveData(experience: number): { leveledUp: boolea
 
 export function calculateLevel(experience: number): number {
   return Math.floor(experience / 10000) + 1;
+}
+
+export function getPlayerLevel(): number {
+  const currentData = get(playerStore);
+  return calculateLevel(currentData.experience);
+}
+
+export function getExperiencePercentForCurrentLevel(): number {
+  const currentData = get(playerStore);
+  const currentLevel = calculateLevel(currentData.experience);
+  const experienceForCurrentLevel = (currentLevel - 1) * 10000;
+  const experienceInCurrentLevel = currentData.experience - experienceForCurrentLevel;
+  return experienceInCurrentLevel / 10000;
 }

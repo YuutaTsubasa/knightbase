@@ -7,7 +7,7 @@
   import ResourceBar from "$lib/components/mainmenu/ResourceBar.svelte";
   import BannerCarousel from "$lib/components/mainmenu/BannerCarousel.svelte";
   import MainMenuButtonGroup from "$lib/components/mainmenu/MainMenuButtonGroup.svelte";
-  import { playerStore } from "$lib/systems/PlayerStore";
+  import { playerStore, getPlayerLevel, getExperiencePercentForCurrentLevel } from "$lib/systems/PlayerStore";
   import { page } from "$app/state";
   import { AudioManager } from "$lib/systems/AudioManager";
   import { t } from "$lib/systems/LocalizationStore";
@@ -20,9 +20,9 @@
   let playerData = $playerStore;
 
   $: playerName = playerData.name;
-  $: playerLevel = playerData.level;
+  $: playerLevel = getPlayerLevel();
   $: playerTitle = playerData.selectedTitle;
-  $: playerExperience = playerData.experience;
+  $: playerExperiencePercent = getExperiencePercentForCurrentLevel();
   $: selectedCharacter = playerData.selectedCharacter;
   $: playerResources = playerData.resources;
 
@@ -41,7 +41,7 @@
 
   <div class="mainMenuLayout" class:portrait={$isPortrait} class:landscape={!$isPortrait}>
     <div class="playerInfoContainer">
-      <PlayerInfoBox level={playerLevel} expPercent={playerExperience} name={playerName} title={$t(playerTitle)} />
+      <PlayerInfoBox level={playerLevel} expPercent={playerExperiencePercent} name={playerName} title={$t(playerTitle)} />
     </div>
     <div class="resourceContainer">
       <ResourceBar
