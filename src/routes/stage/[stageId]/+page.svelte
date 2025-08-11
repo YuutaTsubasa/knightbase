@@ -25,6 +25,13 @@
   
   $: playerData = $playerStore;
   $: levels = $levelData || [];
+
+  // Generate pseudo-random offsets for animation timing
+  function getRandomOffset(index: number, seed: number): number {
+    // Simple pseudo-random number generator based on index and seed
+    const x = Math.sin(index * seed + seed) * 10000;
+    return (x - Math.floor(x)) * 0.1 - 0.05; // Random between -0.05 and 0.05
+  }
   
   function goToCharacterPage() {
     goToNextScene.set(`/character?stageId=${stageId}`);
@@ -123,11 +130,17 @@
         {@const isCompleted = record?.completed ?? false}
         {@const isLocked = !level.unlocked}
         {@const levelName = $t(level.nameKey)}
+        {@const enterDelayOffset = getRandomOffset(index, 12.34)}
+        {@const marqueeDelayOffset = getRandomOffset(index, 56.78)}
+        {@const shineDelayOffset = getRandomOffset(index, 90.12)}
+        {@const baseEnterDelay = index * 0.15 + enterDelayOffset}
+        {@const baseMarqueeDelay = index * 0.7 + marqueeDelayOffset}
+        {@const baseShineDelay = index * 1.2 + shineDelayOffset}
 
         <div class="levelCard enterFade" 
              class:completed={isCompleted} 
              class:locked={isLocked}
-             style="--duration: 0.6s; --delay: {index * 0.15}s; --level-index: {index}; animation-delay: var(--delay);"
+             style="--duration: 0.6s; --delay: {baseEnterDelay}s; --marquee-delay: {baseMarqueeDelay}s; --shine-delay: {baseShineDelay}s; --level-index: {index}; animation-delay: var(--delay);"
              data-level-index={index}>
           <div class="levelBorder">
             <SpaceBetweenTextGroup 
@@ -269,7 +282,7 @@
     background: linear-gradient(120deg, rgba(255,255,255,0.0) 40%, rgba(255,255,255,0.25) 50%, rgba(255,255,255,0.0) 60%);
     transform: rotate(0deg);
     animation: levelCardShine 5s linear infinite;
-    animation-delay: calc(var(--delay, 0s) + (var(--level-index, 0) * 1.2s));
+    animation-delay: var(--shine-delay, 0s);
     z-index: 2;
   }
 
@@ -310,7 +323,7 @@
     transform: translateX(0);
     text-align: center;
     animation: marquee 10s linear infinite;
-    animation-delay: calc(var(--delay, 0s) + (var(--level-index, 0) * 0.7s));
+    animation-delay: var(--marquee-delay, 0s);
   }
 
   @keyframes marquee {
