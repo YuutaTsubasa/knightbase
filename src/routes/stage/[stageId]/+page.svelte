@@ -286,7 +286,8 @@
     height: 220%;
     pointer-events: none;
     background: linear-gradient(120deg, rgba(255,255,255,0.0) 40%, rgba(255,255,255,0.25) 50%, rgba(255,255,255,0.0) 60%);
-    transform: rotate(0deg);
+    transform: translate(-60%, -60%) rotate(0deg);
+    opacity: 0;
     animation: levelCardShine 5s linear infinite;
     animation-delay: var(--shine-delay, 0s);
     z-index: 4;
