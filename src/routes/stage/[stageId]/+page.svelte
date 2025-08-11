@@ -37,7 +37,7 @@
   function getRandomDelay(index: number, seed: number): number {
     // Generate random delay between 0.1s and 1s for cyclic animations
     const x = Math.sin(index * seed + seed) * 10000;
-    return 0.1 + (x - Math.floor(x)) * 0.9; // Random between 0.1 and 1.0
+    return 0.1 + (x - Math.floor(x)) * 3.0; // Random between 0.1 and 1.0
   }
   
   function goToCharacterPage() {
@@ -288,7 +288,7 @@
     transform: rotate(0deg);
     animation: levelCardShine 5s linear infinite;
     animation-delay: var(--shine-delay, 0s);
-    z-index: 2;
+    z-index: 4;
   }
 
   @keyframes levelCardShine {
@@ -319,7 +319,7 @@
     color: white;
     overflow: hidden;
     box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.5);
-    z-index: 3;
+    z-index: 30;
   }
 
   .levelBorder :global(.levelBorderText) {
@@ -555,7 +555,7 @@
     width: 100vw;
     background-size: repeat;
     background-position: center;
-    z-index: 0;
+    z-index: 1;
   }
 
   .pageBackground::before {
