@@ -267,6 +267,7 @@
     box-shadow: 0 4px 20px rgba(59, 130, 246, 0.1);
     position: relative;
     overflow: hidden;
+    z-index: 1;
   }
 
   .levelContent {
@@ -555,7 +556,7 @@
     width: 100vw;
     background-size: repeat;
     background-position: center;
-    z-index: 1;
+    z-index: 0;
   }
 
   .pageBackground::before {
