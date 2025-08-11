@@ -17,7 +17,6 @@ export class LevelGenerator {
   constructor(patterns: Pattern[], shouldLoopPatterns: boolean = false) {
     this.patterns = patterns;
     this.shouldLoopPatterns = shouldLoopPatterns;
-    console.log(`Initialized level generator with ${this.patterns.length} patterns, looping: ${shouldLoopPatterns}`);
   }
 
   public update(playerDistanceTraveled: number): { enemies: Enemy[], coins: Coin[], traps: Trap[], goals: Goal[] } {

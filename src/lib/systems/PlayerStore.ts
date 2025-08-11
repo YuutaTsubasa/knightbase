@@ -80,7 +80,6 @@ function save(data: PlayerData): void {
   const json = JSON.stringify(data);
   const base64 = btoa(json);
   localStorage.setItem(STORAGE_KEY, base64);
-  console.info(`Saved player data: ${json}`);
 }
 
 playerStore.subscribe((data) => {
