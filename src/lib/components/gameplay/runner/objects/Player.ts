@@ -45,8 +45,8 @@ export class Player extends SpriteAnimationObject {
 
   public update(deltaTime: number, scrollSpeed: number): void {
     // Apply gravity
-    this.velocityY += this.gravity;
-    this.y += this.velocityY;
+    this.velocityY += this.gravity * 60 * (deltaTime / 1000);
+    this.y += this.velocityY * 60 * (deltaTime / 1000);
 
     // Ground collision
     if (this.y < 0) {
@@ -113,7 +113,7 @@ export class Player extends SpriteAnimationObject {
 
   public jump(): void {
     if (this.onGround) {
-      this.velocityY = this.jumpForce;
+      this.velocityY = this.jumpForce; // Correctly set jump force
       this.onGround = false;
       this.setAnimation('jump');
     }

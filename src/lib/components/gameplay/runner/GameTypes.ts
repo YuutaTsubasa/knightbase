@@ -35,7 +35,7 @@ export interface GameSettings {
 export interface GameEntity extends Position, Size, CollisionBox {
   update(deltaTime: number, scrollSpeed: number): void;
   render(ctx: CanvasRenderingContext2D, images: Record<string, HTMLImageElement>, renderGroundY?: number): void;
-  isOffScreen(): boolean;
+  isOffScreen(includingRight: boolean): boolean;
 }
 
 export interface AnimatedEntity extends GameEntity {
@@ -50,4 +50,5 @@ export interface GameStats {
   coins: number;
   lives: number;
   score: number;
+  defeatedEnemies: number;
 }

@@ -82,7 +82,8 @@
     survivalTime: 0,
     coins: 0,
     lives: 3,
-    score: 0
+    score: 0,
+    defeatedEnemies: 0,
   };
   let lastSurvivalSecond = 0;
   let playerDistanceTraveled = 0; // Track total distance traveled
@@ -163,7 +164,7 @@
     if (!currentLevelData || gameMode !== 'level') return;
     
     levelProgress.coins = gameStats.coins;
-    levelProgress.enemies = gameStats.score; // Assuming score represents enemies defeated for now
+    levelProgress.enemies = gameStats.defeatedEnemies;
     levelProgress.score = gameStats.score;
     
     // Check if level is completed
@@ -283,7 +284,8 @@
       survivalTime: 0,
       coins: 0,
       lives: 3,
-      score: 0
+      score: 0,
+      defeatedEnemies: 0
     };
     lastSurvivalSecond = 0;
     playerDistanceTraveled = 0;
@@ -355,24 +357,26 @@
   function updateGame(deltaTime: number) {
     if (gameState !== 'playing' || !assetsLoaded) return;
 
-    const currentScrollSpeed = getCurrentScrollSpeed();
+    let currentScrollSpeed = getCurrentScrollSpeed();
+    currentScrollSpeed *= 60 * (deltaTime / 1000); // Apply frame-independent multiplier
+
     if (!isStop) {
-      // Update background offset
-      backgroundOffset -= currentScrollSpeed;
-      
-      // Update all layers
-      backgroundLayer.update(deltaTime, currentScrollSpeed);
-      characterLayer.update(deltaTime, currentScrollSpeed);
-      trapEnemyLayer.update(deltaTime, currentScrollSpeed);
-      effectLayer.update(deltaTime, currentScrollSpeed);
-      
-      // Remove finished explosions from effect layer
-      effectLayer.removeEntitiesWhere(entity => {
-        if (entity instanceof Explosion) {
-          return entity.finished;
-        }
-        return false;
-      });
+        // Update background offset
+        backgroundOffset -= currentScrollSpeed;
+        
+        // Update all layers
+        backgroundLayer.update(deltaTime, currentScrollSpeed);
+        characterLayer.update(deltaTime, currentScrollSpeed);
+        trapEnemyLayer.update(deltaTime, currentScrollSpeed);
+        effectLayer.update(deltaTime, currentScrollSpeed);
+        
+        // Remove finished explosions from effect layer
+        effectLayer.removeEntitiesWhere(entity => {
+            if (entity instanceof Explosion) {
+                return entity.finished;
+            }
+            return false;
+        });
     }
 
     if (waitForCountdown) return;
@@ -491,6 +495,7 @@
           );
           effectLayer.addEntity(explosion);
           
+          gameStats.defeatedEnemies++;
           gameStats.score += 10;
         }
       });

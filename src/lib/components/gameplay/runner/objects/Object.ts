@@ -55,7 +55,7 @@ export abstract class Object implements GameEntity {
   }
 
   // Check if object is off-screen (for cleanup)
-  public isOffScreen(): boolean {
-    return this.x < -this.width;
+  public isOffScreen(includingRight: boolean): boolean {
+    return includingRight ? this.x < -this.width && this.x > this.width : this.x < -this.width;
   }
 }

@@ -1,4 +1,5 @@
 import type { GameEntity } from './GameTypes';
+import { Projectile } from './objects/Projectile';
 
 export class Layer {
   protected entities: GameEntity[] = [];
@@ -43,7 +44,7 @@ export class Layer {
     this.entities.forEach(entity => entity.update(deltaTime, scrollSpeed));
     
     // Remove off-screen entities
-    this.entities = this.entities.filter(entity => !entity.isOffScreen()); // Canvas width
+    this.entities = this.entities.filter(entity => !entity.isOffScreen(false) && !(entity instanceof Projectile && entity.isMarkedForRemoval));
   }
 
   // Render all entities in this layer

@@ -1,9 +1,11 @@
 import { SpriteAnimationObject } from './SpriteAnimationObject';
 import type { Position, Size } from '../GameTypes';
 import { characterAttackEffectImageKey } from '$lib/utils/KeyHelper';
+import { TruckElectric } from 'lucide-svelte';
 
 export class Projectile extends SpriteAnimationObject {
   public velocityX: number = 8;
+  public isMarkedForRemoval: boolean = false;
 
   constructor(position: Position, size: Size, characterKey: string) {
     super(
@@ -15,8 +17,14 @@ export class Projectile extends SpriteAnimationObject {
     );
   }
 
-  public update(deltaTime: number, scrollSpeed: number): void {
-    this.x += this.velocityX;
+  public update(deltaTime: number): void {
+    // Move projectile based on its speed and adjust for deltaTime
+    this.x += this.velocityX * 60 * (deltaTime / 1000);
+
+    // Check if projectile is off-screen
+    if (this.isOffScreen(true)) {
+      this.isMarkedForRemoval = true;
+    }
   }
 
   protected renderFallback(ctx: CanvasRenderingContext2D, renderGroundY?: number): void {
