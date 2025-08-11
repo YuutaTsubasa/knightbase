@@ -25,6 +25,20 @@
   
   $: playerData = $playerStore;
   $: levels = $levelData || [];
+
+  // Generate pseudo-random offset for entrance animation timing
+  function getEntranceRandomOffset(index: number): number {
+    // Small random offset for entrance animation to add natural variation
+    const x = Math.sin(index * 12.34 + 12.34) * 10000;
+    return (x - Math.floor(x)) * 0.1 - 0.05; // Random between -0.05 and 0.05
+  }
+
+  // Generate random delay for cyclic animations (0.1s to 1s)
+  function getRandomDelay(index: number, seed: number): number {
+    // Generate random delay between 0.1s and 1s for cyclic animations
+    const x = Math.sin(index * seed + seed) * 10000;
+    return 0.1 + (x - Math.floor(x)) * 0.9; // Random between 0.1 and 1.0
+  }
   
   function goToCharacterPage() {
     goToNextScene.set(`/character?stageId=${stageId}`);
@@ -118,13 +132,21 @@
         className="changeCharacterButton" />
     </div>
     <div class="levelsGrid">
-      {#each levels as level}
+      {#each levels as level, index}
         {@const record = playerData.stageRecords[level.levelId] || null}
         {@const isCompleted = record?.completed ?? false}
         {@const isLocked = !level.unlocked}
         {@const levelName = $t(level.nameKey)}
+        {@const enterDelayOffset = getEntranceRandomOffset(index)}
+        {@const marqueeDelay = getRandomDelay(index, 56.78)}
+        {@const shineDelay = getRandomDelay(index, 90.12)}
+        {@const baseEnterDelay = index * 0.15 + enterDelayOffset}
 
-        <div class="levelCard" class:completed={isCompleted} class:locked={isLocked}>
+        <div class="levelCard enterFade" 
+             class:completed={isCompleted} 
+             class:locked={isLocked}
+             style="--duration: 0.6s; --delay: {baseEnterDelay}s; --marquee-delay: {marqueeDelay}s; --shine-delay: {shineDelay}s; --level-index: {index}; animation-delay: var(--delay);"
+             data-level-index={index}>
           <div class="levelBorder">
             <SpaceBetweenTextGroup 
               content={levelName}
@@ -265,6 +287,7 @@
     background: linear-gradient(120deg, rgba(255,255,255,0.0) 40%, rgba(255,255,255,0.25) 50%, rgba(255,255,255,0.0) 60%);
     transform: rotate(0deg);
     animation: levelCardShine 5s linear infinite;
+    animation-delay: var(--shine-delay, 0s);
     z-index: 2;
   }
 
@@ -302,9 +325,10 @@
   .levelBorder :global(.levelBorderText) {
     font-weight: bold;
     font-size: 1.1rem;
-    transform: translateX(0);
+    transform: translateX(100%); /* Start from right side to match animation initial state */
     text-align: center;
     animation: marquee 10s linear infinite;
+    animation-delay: var(--marquee-delay, 0s);
   }
 
   @keyframes marquee {
