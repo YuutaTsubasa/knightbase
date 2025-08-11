@@ -2,7 +2,7 @@
   import { onMount, onDestroy } from "svelte";
   import { AudioManager } from "$lib/systems/AudioManager";
   import { StaticDataStore } from "$lib/systems/StaticDataStore";
-  import { addResourcesToSaveData, playerStore, updateStageRecordToSaveData } from "$lib/systems/PlayerStore";
+  import { addResourcesToSaveData, playerStore, updateStageRecordToSaveData, addExperienceToSaveData } from "$lib/systems/PlayerStore";
   import { characterAttackImageKey, characterJumpImageKey, characterRunImageKey, characterAttackEffectImageKey, stageBackgroundImageKey, stageBgmAudioKey, characterWalkAudioKey, characterAttackAudioKey } from "$lib/utils/KeyHelper";
   import { imageAssets } from "$lib/assets/ImageAssets";
   import { FontAssets } from "$lib/assets/FontAssets";
@@ -183,6 +183,9 @@
   function saveToPlayerStore(isCompleted: boolean): boolean {
     // Add collected coins as gold to player resources
     addResourcesToSaveData({ gold: gameStats.coins });
+    
+    // Add score as experience points
+    const levelUpData = addExperienceToSaveData(gameStats.score);
     
     // Update stage record if this is better than previous
     const currentSpeed = getCurrentScrollSpeed();
