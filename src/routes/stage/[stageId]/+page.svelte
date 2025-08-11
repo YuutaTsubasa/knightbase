@@ -238,7 +238,7 @@
   }
 
   .levelCard {
-    --border-size: 2px;
+    --border-size: 3px;
     backdrop-filter: blur(3px);
     color: black;
     transition: all 0.3s ease;
@@ -325,8 +325,15 @@
     border-color: rgba(59, 130, 246, 0.5);
   }
 
-  .levelCard.completed .levelContent {
-    border-color: rgba(34, 197, 94, 0.5);
+  .levelCard.completed {
+    background: linear-gradient(135deg,
+      #ff000080 0%,    /* 紅 */
+      #ff990080 16%,   /* 橙 */
+      #ffee0080 33%,   /* 黃 */
+      #33ff0080 50%,   /* 綠 */
+      #00c3ff80 66%,   /* 藍 */
+      #6600ff80 83%,   /* 靛 */
+      #ff00cc80 100%   /* 紫 */);
   }
 
   .levelCard.locked {
