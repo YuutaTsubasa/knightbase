@@ -99,12 +99,16 @@
   contentStyle={`box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 2rem; position: relative; margin-top: ${topbarHeight}px;`}>
   <!-- Layered background effects for page wrapper -->
   <div slot="outside" class="pageBackground" style="background-image: url({imageAssets[stageBackgroundImageKey(stageId)]});">
+    <!-- outside background -->
+  </div>
+
+  <slot name="outside">
     <Topbar
       primaryTitle={$stageData?.nameKey ? $t($stageData.nameKey) : stageId} 
       secondaryTitle=''
       onHeightChange={(height) => topbarHeight = height}
       onBack={goBack} />
-  </div>
+  </slot>
 
   <div class="pageContent">
     <div class="stageActions">
