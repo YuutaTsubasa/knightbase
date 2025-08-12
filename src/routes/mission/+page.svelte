@@ -149,27 +149,27 @@
   </slot>
   
   <div class="missionPage" style={`--topbarHeight: ${topbarHeight}px;`}>
-    <div class="missionSidebar">
+    <div class="missionTabs">
       <button 
-        class="missionTypeTab {activeMissionType === 'daily' ? 'active' : ''}"
+        class="missionTab {activeMissionType === 'daily' ? 'active' : ''}"
         on:click={() => setActiveMissionType('daily')}>
         <svelte:component this={Calendar} size={20} />
         <span>{$t('daily')}</span>
       </button>
       <button 
-        class="missionTypeTab {activeMissionType === 'weekly' ? 'active' : ''}"
+        class="missionTab {activeMissionType === 'weekly' ? 'active' : ''}"
         on:click={() => setActiveMissionType('weekly')}>
         <svelte:component this={CalendarDays} size={20} />
         <span>{$t('weekly')}</span>
       </button>
       <button 
-        class="missionTypeTab {activeMissionType === 'monthly' ? 'active' : ''}"
+        class="missionTab {activeMissionType === 'monthly' ? 'active' : ''}"
         on:click={() => setActiveMissionType('monthly')}>
         <svelte:component this={CalendarCheck2} size={20} />
         <span>{$t('monthly')}</span>
       </button>
       <button 
-        class="missionTypeTab {activeMissionType === 'achievement' ? 'active' : ''}"
+        class="missionTab {activeMissionType === 'achievement' ? 'active' : ''}"
         on:click={() => setActiveMissionType('achievement')}>
         <svelte:component this={Trophy} size={20} />
         <span>{$t('achievement')}</span>
@@ -256,46 +256,42 @@
 <style>
   .missionPage {
     display: flex;
+    flex-direction: column;
     height: 100%;
     padding-top: var(--topbarHeight, 0px);
     box-sizing: border-box;
   }
 
-  .missionSidebar {
-    width: 200px;
-    background: rgba(255, 255, 255, 0.9);
-    border-right: 2px solid #e2e8f0;
+  .missionTabs {
     display: flex;
-    flex-direction: column;
-    padding: 1rem 0;
-    flex-shrink: 0;
+    background: rgba(255, 255, 255, 0.9);
+    border-bottom: 2px solid #e2e8f0;
+    padding: 0 1rem;
   }
 
-  .missionTypeTab {
+  .missionTab {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: 0.5rem;
     padding: 1rem 1.5rem;
     background: none;
     border: none;
     cursor: pointer;
-    font-size: 0.9rem;
+    font-size: 1rem;
     color: #64748b;
     transition: all 0.2s ease;
-    text-align: left;
-    border-left: 3px solid transparent;
+    border-bottom: 3px solid transparent;
   }
 
-  .missionTypeTab:global(.navFocused),
-  .missionTypeTab:hover {
+  .missionTab:global(.navFocused),
+  .missionTab:hover {
     color: #1e293b;
     background: rgba(0, 0, 0, 0.05);
   }
 
-  .missionTypeTab.active {
+  .missionTab.active {
     color: #1e293b;
-    background: rgba(59, 130, 246, 0.1);
-    border-left-color: #3b82f6;
+    border-bottom-color: #3b82f6;
     font-weight: bold;
   }
 

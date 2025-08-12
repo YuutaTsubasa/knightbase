@@ -15,7 +15,6 @@ export interface PlayerResources {
 
 export interface PlayerData {
   name: string;
-  level: number;
   experience: number;
   selectedTitle: string;
   selectedCharacter: string;
@@ -30,7 +29,6 @@ export interface PlayerData {
 
 const DEFAULT_PLAYER_DATA : PlayerData = {
     name: "Player00000",
-    level: 0,
     experience: 0,
     selectedTitle: "playerTitle1",
     selectedCharacter: "yuuta",
@@ -55,7 +53,9 @@ function load(): PlayerData {
     try {
       const json = atob(base64);
       const parsed = JSON.parse(json);
-      return mergeDefaults(DEFAULT_PLAYER_DATA, parsed);
+      const merged = mergeDefaults(DEFAULT_PLAYER_DATA, parsed);
+      
+      return merged;
     } catch {
       return DEFAULT_PLAYER_DATA;
     }
@@ -161,4 +161,41 @@ export function updateStageRecordToSaveData(stageId: string, stats: { time: numb
     return currentData;
   });
   return isNewRecord;
+}
+
+export function addExperienceToSaveData(experience: number): { leveledUp: boolean; previousLevel: number; newLevel: number } {
+  let levelUpData = { leveledUp: false, previousLevel: 0, newLevel: 0 };
+  
+  playerStore.update((currentData) => {
+    const previousLevel = calculateLevel(currentData.experience);
+    currentData.experience += experience;
+    const newLevel = calculateLevel(currentData.experience);
+    
+    levelUpData = {
+      leveledUp: newLevel > previousLevel,
+      previousLevel,
+      newLevel
+    };
+    
+    return currentData;
+  });
+  
+  return levelUpData;
+}
+
+export function calculateLevel(experience: number): number {
+  return Math.floor(experience / 10000) + 1;
+}
+
+export function getPlayerLevel(): number {
+  const currentData = get(playerStore);
+  return calculateLevel(currentData.experience);
+}
+
+export function getExperiencePercentForCurrentLevel(): number {
+  const currentData = get(playerStore);
+  const currentLevel = calculateLevel(currentData.experience);
+  const experienceForCurrentLevel = (currentLevel - 1) * 10000;
+  const experienceInCurrentLevel = currentData.experience - experienceForCurrentLevel;
+  return experienceInCurrentLevel / 10000;
 }
