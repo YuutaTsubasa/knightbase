@@ -15,6 +15,7 @@
   import { FontAssets } from '$lib/assets/FontAssets';
   import Button from '$lib/components/Button.svelte';
   import { AudioManager } from '$lib/systems/AudioManager';
+  import { ENTRANCE_ANIMATION_RANDOM_SEED, PSEUDO_RANDOM_MULTIPLIER, MARQUEE_ANIMATION_SEED, SHINE_ANIMATION_SEED } from '$lib/utils/Constant';
 
   let goToNextScene: Writable<string | null>;
   let topbarHeight = 0;
@@ -29,14 +30,14 @@
   // Generate pseudo-random offset for entrance animation timing
   function getEntranceRandomOffset(index: number): number {
     // Small random offset for entrance animation to add natural variation
-    const x = Math.sin(index * 12.34 + 12.34) * 10000;
+    const x = Math.sin(index * ENTRANCE_ANIMATION_RANDOM_SEED + ENTRANCE_ANIMATION_RANDOM_SEED) * PSEUDO_RANDOM_MULTIPLIER;
     return (x - Math.floor(x)) * 0.1 - 0.05; // Random between -0.05 and 0.05
   }
 
   // Generate random delay for cyclic animations (0.1s to 1s)
   function getRandomDelay(index: number, seed: number): number {
     // Generate random delay between 0.1s and 1s for cyclic animations
-    const x = Math.sin(index * seed + seed) * 10000;
+    const x = Math.sin(index * seed + seed) * PSEUDO_RANDOM_MULTIPLIER;
     return 0.1 + (x - Math.floor(x)) * 3.0; // Random between 0.1 and 1.0
   }
   
@@ -138,8 +139,8 @@
         {@const isLocked = !level.unlocked}
         {@const levelName = $t(level.nameKey)}
         {@const enterDelayOffset = getEntranceRandomOffset(index)}
-        {@const marqueeDelay = getRandomDelay(index, 56.78)}
-        {@const shineDelay = getRandomDelay(index, 90.12)}
+        {@const marqueeDelay = getRandomDelay(index, MARQUEE_ANIMATION_SEED)}
+        {@const shineDelay = getRandomDelay(index, SHINE_ANIMATION_SEED)}
         {@const baseEnterDelay = index * 0.15 + enterDelayOffset}
 
         <div class="levelCard enterFade" 
