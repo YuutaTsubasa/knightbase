@@ -8,8 +8,9 @@
   import { FontAssets } from "$lib/assets/FontAssets";
   import { PopupStore, PopupResult } from "$lib/systems/PopupStore";
   import { t } from "$lib/systems/LocalizationStore";
+  import { format } from "$lib/utils/StringUtils";
   import { isPortrait } from "$lib/systems/Orientation";
-  import { Play, Pause, Heart, Keyboard, Smartphone, Gamepad2, ArrowUpFromLine, SwordIcon, Coins, Target, Timer, Clock } from "lucide-svelte";
+  import { Play, Pause, Heart, Keyboard, Smartphone, Gamepad2, ArrowUpFromLine, SwordIcon, Coins, Target, Timer, Clock, Star, TrendingUp } from "lucide-svelte";
   
   // Layer imports
   import { Layer } from "./Layer";
@@ -180,7 +181,7 @@
     }
   }
 
-  function saveToPlayerStore(isCompleted: boolean): boolean {
+  function saveToPlayerStore(isCompleted: boolean): { isNewRecord: boolean; experienceGained: number; levelUpData: { leveledUp: boolean; previousLevel: number; newLevel: number } } {
     // Add collected coins as gold to player resources
     addResourcesToSaveData({ gold: gameStats.coins });
     
@@ -196,15 +197,20 @@
       recordKey = levelId;
     }
     
-    if (!isCompleted){
-      return false;
+    let isNewRecord = false;
+    if (isCompleted) {
+      isNewRecord = updateStageRecordToSaveData(recordKey, {
+        time: gameStats.survivalTime,
+        score: gameStats.score,
+        speed: currentSpeed
+      });
     }
     
-    return updateStageRecordToSaveData(recordKey, {
-      time: gameStats.survivalTime,
-      score: gameStats.score,
-      speed: currentSpeed
-    });
+    return {
+      isNewRecord,
+      experienceGained: gameStats.score,
+      levelUpData
+    };
   }
 
   async function loadAssets() {
@@ -617,7 +623,8 @@
     gameState = 'gameOver';
 
     const isCompleted = gameMode === 'endless';
-    const isNewRecord = saveToPlayerStore(isCompleted);
+    const saveResult = saveToPlayerStore(isCompleted);
+    const { isNewRecord, experienceGained, levelUpData } = saveResult;
 
     const result = await PopupStore.open({
       title: $t("gameOver"),
@@ -648,7 +655,18 @@
       <div style="margin: 3px 0; display: flex; align-items: center; gap: 8px;">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13,2 3,14 12,14 11,22 21,10 12,10"/></svg>
         <strong>${$t("finalSpeedLabel")}:</strong> ${getCurrentScrollSpeed().toFixed(1)}x
-      </div>`,
+      </div>
+      <div style="margin: 3px 0; display: flex; align-items: center; gap: 8px; color: #0021ff;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12,2 22,8.5 17,9 18,14 12,12 6,14 7,9 2,8.5"/></svg>
+        <strong>${$t("experienceGained")}:</strong> ${experienceGained}
+      </div>
+      ${levelUpData.leveledUp 
+        ? `<div style="margin: 3px 0; display: flex; align-items: center; gap: 8px; color: #ff0000;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23,6 13.5,15.5 8.5,10.5 1,18"/><polyline points="17,6 23,6 23,12"/></svg>
+            <strong>${format($t("levelUp"), levelUpData.previousLevel, levelUpData.newLevel)}</strong>
+          </div>` 
+        : ''
+      }`,
       buttons: [
         {
           text: $t("playAgain"),
@@ -671,7 +689,8 @@
   async function handleLevelComplete() {
     AudioManager.play("sfx_gameover");
     gameState = 'gameOver';
-    const isNewRecord = saveToPlayerStore(true);
+    const saveResult = saveToPlayerStore(true);
+    const { isNewRecord, experienceGained, levelUpData } = saveResult;
     
     const result = await PopupStore.open({
       title: $t("levelCompleted"),
@@ -694,7 +713,18 @@
       <div style="margin: 3px 0; display: flex; align-items: center; gap: 8px;">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="2"/></svg>
         <strong>${$t("finalScoreLabel")}:</strong> ${gameStats.score}
-      </div>`,
+      </div>
+      <div style="margin: 3px 0; display: flex; align-items: center; gap: 8px; color: #0021ff;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12,2 22,8.5 17,9 18,14 12,12 6,14 7,9 2,8.5"/></svg>
+        <strong>${$t("experienceGained")}:</strong> ${experienceGained}
+      </div>
+      ${levelUpData.leveledUp 
+        ? `<div style="margin: 3px 0; display: flex; align-items: center; gap: 8px; color: #ff0000;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23,6 13.5,15.5 8.5,10.5 1,18"/><polyline points="17,6 23,6 23,12"/></svg>
+            <strong>${format($t("levelUp"), levelUpData.previousLevel, levelUpData.newLevel)}</strong>
+          </div>` 
+        : ''
+      }`,
       buttons: [
         {
           text: $t("playAgain"),
