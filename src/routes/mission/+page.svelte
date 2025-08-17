@@ -16,7 +16,7 @@
   $: topbarHeight = 0;
   let activeMissionType: MissionType = 'daily';
 
-  // Mission data from MissionStore
+  // Mission data from MissionStore - make reactive
   $: missions = {
     daily: MissionStore.getMissionsByType('daily'),
     weekly: MissionStore.getMissionsByType('weekly'),
@@ -71,17 +71,17 @@
 
   function showRewardPopup(rewards: { type: string; amount: number }[]) {
     const rewardsHtml = rewards.map(reward => {
-      const iconName = getIconName(getRewardIcon(reward.type));
       const color = getRewardColor(reward.type);
+      const svgPath = getIconSvgPath(reward.type);
       return `
-        <div style="display: flex; align-items: center; gap: 0.5rem; margin: 0.25rem 0;">
+        <div style="display: flex; align-items: center; gap: 0.75rem; margin: 0.5rem 0; padding: 0.5rem; background: rgba(0, 0, 0, 0.05); border-radius: 0.5rem;">
           <div style="color: ${color}; display: flex; align-items: center;">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              ${getIconSvgPath(reward.type)}
+              ${svgPath}
             </svg>
           </div>
-          <span style="color: ${color}; font-weight: bold; font-size: 1.1rem;">+${reward.amount}</span>
-          <span style="color: #374151;">${getRewardTypeName(reward.type)}</span>
+          <span style="color: ${color}; font-weight: bold; font-size: 1.1rem; min-width: 4rem;">+${reward.amount}</span>
+          <span style="color: #374151; font-size: 1rem;">${getRewardTypeName(reward.type)}</span>
         </div>
       `;
     }).join('');
@@ -89,7 +89,6 @@
     const content = `
       <div style="text-align: center; padding: 1rem;">
         <div style="margin-bottom: 1rem;">
-          <h3 style="margin: 0 0 1rem 0; color: #1e293b;">${$t('rewards')}</h3>
           <div style="display: flex; flex-direction: column; gap: 0.5rem;">
             ${rewardsHtml}
           </div>
@@ -98,12 +97,12 @@
     `;
 
     PopupStore.open({
-      title: $t('claim'),
+      title: $t('rewards'),
       content,
       buttons: [
         {
           text: $t('confirm'),
-          onClick: () => PopupResult.Close  // Return PopupResult.Close to properly close popup
+          onClick: () => PopupResult.Close
         }
       ]
     });
@@ -137,10 +136,6 @@
       case 'ruby': return 'Ruby';
       default: return 'Reward';
     }
-  }
-
-  function getIconName(iconComponent: any): string {
-    return iconComponent.name || 'unknown';
   }
 
   function getRewardIcon(type: string) {
@@ -183,7 +178,7 @@
     }
   }
 
-  $: activeMissions = get(missions[activeMissionType]) || [];
+  $: activeMissions = $missions[activeMissionType] || [];
   $: claimableMissions = activeMissions.filter(m => m.completed && !m.claimed);
   $: hasClaimableMissions = claimableMissions.length > 0;
 </script>
