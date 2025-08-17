@@ -10,7 +10,7 @@
   import { BACK_PATH } from "$lib/utils/Constant";
   import { waitUntil } from "$lib/utils/Wait";
   import { get, writable, type Writable } from "svelte/store";
-  import { Calendar, CalendarDays, Trophy, Gift, Coins, Diamond, Gem } from "lucide-svelte";
+  import { Calendar, CalendarDays, Trophy, Gift, Coins, Diamond, Gem, User, GamepadIcon, Zap, Swords } from "lucide-svelte";
 
   $: topbarHeight = 0;
   let activeMissionType: MissionType = 'daily';
@@ -76,9 +76,20 @@
     }
   }
 
+  function getMissionIcon(iconKey: string) {
+    switch (iconKey) {
+      case 'loginIcon': return User;
+      case 'levelIcon': return GamepadIcon;
+      case 'jumpIcon': return Zap;
+      case 'attackIcon': return Swords;
+      case 'loginStreakIcon': return User;
+      default: return GamepadIcon;
+    }
+  }
+
   $: activeMissions = get(missions[activeMissionType]) || [];
-  $: completedMissions = activeMissions.filter(m => m.completed);
-  $: hasClaimableMissions = completedMissions.length > 0;
+  $: claimableMissions = activeMissions.filter(m => m.completed && !m.claimed);
+  $: hasClaimableMissions = claimableMissions.length > 0;
 </script>
 
 <Page mainProgress={main} 
@@ -129,9 +140,9 @@
       
       <div class="missionList">
         {#each activeMissions as mission (mission.id)}
-          <div class="missionItem {mission.completed ? 'completed' : ''}">
+          <div class="missionItem {mission.claimed ? 'claimed' : mission.completed ? 'claimable' : ''}">
             <div class="missionIcon">
-              <Image key={mission.iconKey} alt={$t(mission.nameKey)} className="missionIconImage" />
+              <svelte:component this={getMissionIcon(mission.iconKey)} size={28} color="white" />
             </div>
             
             <div class="missionInfo">
@@ -173,7 +184,11 @@
             </div>
             
             <div class="missionActions">
-              {#if mission.completed}
+              {#if mission.claimed}
+                <div class="claimedIndicator">
+                  {$t('claimed')}
+                </div>
+              {:else if mission.completed}
                 <Button 
                   label={$t('claim')} 
                   onClick={() => claimReward(mission.id)}
@@ -278,6 +293,7 @@
     padding: 1rem;
     gap: 1rem;
     align-items: center;
+    min-height: 120px; /* Fixed min-height to prevent content compression */
   }
 
   .missionItem:global(.navFocused),
@@ -286,15 +302,20 @@
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
   }
 
-  .missionItem.completed {
+  .missionItem.claimable {
     background: rgba(34, 197, 94, 0.1);
     border: 1px solid rgba(34, 197, 94, 0.3);
+  }
+
+  .missionItem.claimed {
+    background: rgba(156, 163, 175, 0.1);
+    border: 1px solid rgba(156, 163, 175, 0.3);
   }
 
   .missionIcon {
     width: 60px;
     height: 60px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: #0021ff; /* Changed background color as requested */
     border-radius: 0.5rem;
     display: flex;
     align-items: center;
@@ -393,6 +414,14 @@
   .inProgressIndicator {
     padding: 0.5rem 1rem;
     background: #f3f4f6;
+    color: #6b7280;
+    border-radius: 0.5rem;
+    font-size: 0.9rem;
+  }
+
+  .claimedIndicator {
+    padding: 0.5rem 1rem;
+    background: #e5e7eb;
     color: #6b7280;
     border-radius: 0.5rem;
     font-size: 0.9rem;

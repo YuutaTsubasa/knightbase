@@ -22,6 +22,25 @@ export interface PlayerStatistics {
   totalAttacks: number;
 }
 
+export interface DailyCounters {
+  login: number;
+  levelPlays: number;
+  jumps: number;
+  attacks: number;
+}
+
+export interface WeeklyCounters {
+  loginDays: number;
+  levelPlays: number;
+  jumps: number;
+  attacks: number;
+}
+
+export interface ConditionCounters {
+  dailyCounters: Record<string, DailyCounters>; // "YYYY-MM-DD" -> counters
+  weeklyCounters: Record<string, WeeklyCounters>; // "YYYY-MM-DD" (Monday) -> counters
+}
+
 export interface MissionProgress {
   dailyMissions: Record<string, number[]>; // "YYYY-MM-DD" -> [missionId1, missionId2, ...]
   weeklyMissions: Record<string, number[]>; // "YYYY-MM-DD" (Monday) -> [missionId1, missionId2, ...]
@@ -42,6 +61,7 @@ export interface PlayerData {
   stageRecords: Record<string, StageRecord>; // stageId -> record
   statistics: PlayerStatistics;
   missionProgress: MissionProgress;
+  conditionCounters: ConditionCounters;
 }
 
 const DEFAULT_PLAYER_DATA : PlayerData = {
@@ -72,6 +92,10 @@ const DEFAULT_PLAYER_DATA : PlayerData = {
       dailyMissions: {},
       weeklyMissions: {},
       achievementMissions: []
+    },
+    conditionCounters: {
+      dailyCounters: {},
+      weeklyCounters: {}
     }
 }
 const STORAGE_KEY = "playerData";
@@ -252,6 +276,10 @@ export function recordLogin(): void {
       }
       
       currentData.statistics.lastLoginDate = today;
+      
+      // Update condition counters
+      updateDailyCounter(currentData, today, 'login', 1);
+      updateWeeklyCounter(currentData, today, 'loginDays', 1);
     }
     
     return currentData;
@@ -261,6 +289,11 @@ export function recordLogin(): void {
 export function recordLevelPlay(): void {
   playerStore.update((currentData) => {
     currentData.statistics.totalLevelPlays++;
+    
+    const today = new Date().toISOString().slice(0, 10);
+    updateDailyCounter(currentData, today, 'levelPlays', 1);
+    updateWeeklyCounter(currentData, today, 'levelPlays', 1);
+    
     return currentData;
   });
 }
@@ -268,6 +301,11 @@ export function recordLevelPlay(): void {
 export function recordJump(): void {
   playerStore.update((currentData) => {
     currentData.statistics.totalJumps++;
+    
+    const today = new Date().toISOString().slice(0, 10);
+    updateDailyCounter(currentData, today, 'jumps', 1);
+    updateWeeklyCounter(currentData, today, 'jumps', 1);
+    
     return currentData;
   });
 }
@@ -275,6 +313,11 @@ export function recordJump(): void {
 export function recordAttack(): void {
   playerStore.update((currentData) => {
     currentData.statistics.totalAttacks++;
+    
+    const today = new Date().toISOString().slice(0, 10);
+    updateDailyCounter(currentData, today, 'attacks', 1);
+    updateWeeklyCounter(currentData, today, 'attacks', 1);
+    
     return currentData;
   });
 }
@@ -345,4 +388,71 @@ export function isMissionCompleted(missionId: number, missionType: 'daily' | 'we
 export function getPlayerStatistics(): PlayerStatistics {
   const currentData = get(playerStore);
   return currentData.statistics;
+}
+
+// Helper functions for condition counters
+function updateDailyCounter(playerData: PlayerData, date: string, counterType: keyof DailyCounters, increment: number): void {
+  if (!playerData.conditionCounters.dailyCounters[date]) {
+    playerData.conditionCounters.dailyCounters[date] = {
+      login: 0,
+      levelPlays: 0,
+      jumps: 0,
+      attacks: 0
+    };
+  }
+  
+  playerData.conditionCounters.dailyCounters[date][counterType] += increment;
+}
+
+function updateWeeklyCounter(playerData: PlayerData, date: string, counterType: keyof WeeklyCounters, increment: number): void {
+  const mondayStr = getMondayOfWeek(new Date(date)).toISOString().slice(0, 10);
+  
+  if (!playerData.conditionCounters.weeklyCounters[mondayStr]) {
+    playerData.conditionCounters.weeklyCounters[mondayStr] = {
+      loginDays: 0,
+      levelPlays: 0,
+      jumps: 0,
+      attacks: 0
+    };
+  }
+  
+  // For loginDays, only increment if it's a new day for this week
+  if (counterType === 'loginDays') {
+    const currentWeekDates = getWeekDates(new Date(mondayStr));
+    const loginDaysThisWeek = currentWeekDates.filter(weekDate => 
+      playerData.conditionCounters.dailyCounters[weekDate.toISOString().slice(0, 10)]?.login > 0
+    ).length;
+    playerData.conditionCounters.weeklyCounters[mondayStr][counterType] = loginDaysThisWeek;
+  } else {
+    playerData.conditionCounters.weeklyCounters[mondayStr][counterType] += increment;
+  }
+}
+
+function getMondayOfWeek(date: Date): Date {
+  const monday = new Date(date);
+  monday.setDate(date.getDate() - date.getDay() + (date.getDay() === 0 ? -6 : 1));
+  return monday;
+}
+
+function getWeekDates(mondayDate: Date): Date[] {
+  const dates = [];
+  for (let i = 0; i < 7; i++) {
+    const date = new Date(mondayDate);
+    date.setDate(mondayDate.getDate() + i);
+    dates.push(date);
+  }
+  return dates;
+}
+
+export function getDailyConditionCounter(counterType: keyof DailyCounters, date?: string): number {
+  const currentData = get(playerStore);
+  const targetDate = date || new Date().toISOString().slice(0, 10);
+  return currentData.conditionCounters.dailyCounters[targetDate]?.[counterType] || 0;
+}
+
+export function getWeeklyConditionCounter(counterType: keyof WeeklyCounters, date?: string): number {
+  const currentData = get(playerStore);
+  const targetDate = date || new Date().toISOString().slice(0, 10);
+  const mondayStr = getMondayOfWeek(new Date(targetDate)).toISOString().slice(0, 10);
+  return currentData.conditionCounters.weeklyCounters[mondayStr]?.[counterType] || 0;
 }

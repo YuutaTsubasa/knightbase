@@ -1,6 +1,6 @@
 import { derived, get, writable, type Readable } from 'svelte/store';
 import { StaticDataStore, type MissionData } from './StaticDataStore';
-import { playerStore, addResourcesToSaveData, addExperienceToSaveData, completeMission, isMissionCompleted, getPlayerStatistics, type PlayerStatistics } from './PlayerStore';
+import { playerStore, addResourcesToSaveData, addExperienceToSaveData, completeMission, isMissionCompleted, getPlayerStatistics, getDailyConditionCounter, getWeeklyConditionCounter, type PlayerStatistics } from './PlayerStore';
 
 export interface MissionReward {
   type: 'exp' | 'gold';
@@ -15,7 +15,8 @@ export interface ProcessedMissionData {
   conditions: string;
   categoryId: number;
   rewards: MissionReward[];
-  completed: boolean;
+  completed: boolean;  // Whether conditions are met
+  claimed: boolean;    // Whether reward has been claimed
   progress: {
     current: number;
     max: number;
@@ -116,45 +117,31 @@ class MissionStoreClass {
   }
 
   private getTodayLevelPlays(): number {
-    // For now, return a simple check based on total plays
-    // In a real implementation, this would track daily activity
-    return Math.min(1, getPlayerStatistics().totalLevelPlays);
+    return getDailyConditionCounter('levelPlays');
   }
 
   private getWeeklyLevelPlays(): number {
-    // For now, return a simple approximation
-    // In a real implementation, this would track weekly activity
-    return Math.min(10, getPlayerStatistics().totalLevelPlays);
+    return getWeeklyConditionCounter('levelPlays');
   }
 
   private getWeeklyLoginDays(): number {
-    // For now, return a simple approximation
-    // In a real implementation, this would track unique days logged in this week
-    return Math.min(5, getPlayerStatistics().totalLoginDays);
+    return getWeeklyConditionCounter('loginDays');
   }
 
   private getTodayJumps(): number {
-    // For now, return a simple check
-    // In a real implementation, this would track daily activity
-    return Math.min(3, getPlayerStatistics().totalJumps);
+    return getDailyConditionCounter('jumps');
   }
 
   private getWeeklyJumps(): number {
-    // For now, return a simple approximation
-    // In a real implementation, this would track weekly activity
-    return Math.min(30, getPlayerStatistics().totalJumps);
+    return getWeeklyConditionCounter('jumps');
   }
 
   private getTodayAttacks(): number {
-    // For now, return a simple check
-    // In a real implementation, this would track daily activity
-    return Math.min(3, getPlayerStatistics().totalAttacks);
+    return getDailyConditionCounter('attacks');
   }
 
   private getWeeklyAttacks(): number {
-    // For now, return a simple approximation
-    // In a real implementation, this would track weekly activity
-    return Math.min(30, getPlayerStatistics().totalAttacks);
+    return getWeeklyConditionCounter('attacks');
   }
 
   getMissionsByType(missionType: MissionType): Readable<ProcessedMissionData[]> {
@@ -168,7 +155,8 @@ class MissionStoreClass {
           .filter(mission => mission.missionCategoryId === categoryId)
           .map(mission => {
             const progress = this.checkMissionProgress(mission, statistics);
-            const completed = isMissionCompleted(mission.missionId, missionType) || progress.current >= progress.max;
+            const completed = progress.current >= progress.max;
+            const claimed = isMissionCompleted(mission.missionId, missionType);
 
             return {
               id: mission.missionId,
@@ -179,6 +167,7 @@ class MissionStoreClass {
               categoryId: mission.missionCategoryId,
               rewards: this.getMissionRewards(mission.missionId, mission.missionCategoryId),
               completed,
+              claimed,
               progress
             };
           });
@@ -194,8 +183,8 @@ class MissionStoreClass {
     const missions = get(this.getMissionsByType(missionType));
     const mission = missions.find(m => m.id === missionId);
     
-    if (!mission || !mission.completed) {
-      return false; // Mission not found or not completed
+    if (!mission || !mission.completed || mission.claimed) {
+      return false; // Mission not found, not completed, or already claimed
     }
 
     // Award rewards
@@ -207,7 +196,7 @@ class MissionStoreClass {
       }
     }
 
-    // Mark mission as completed
+    // Mark mission as completed (claimed)
     completeMission(missionId, missionType);
     
     return true;
@@ -218,7 +207,7 @@ class MissionStoreClass {
     let claimedCount = 0;
 
     for (const mission of missions) {
-      if (mission.completed && !isMissionCompleted(mission.id, missionType)) {
+      if (mission.completed && !mission.claimed) {
         if (this.claimMissionReward(mission.id, missionType)) {
           claimedCount++;
         }
