@@ -10,7 +10,8 @@
   import { BACK_PATH } from "$lib/utils/Constant";
   import { waitUntil } from "$lib/utils/Wait";
   import { get, writable, type Writable } from "svelte/store";
-  import { Calendar, CalendarDays, Trophy, Gift, Coins, Diamond, Gem, User, GamepadIcon, Zap, Swords } from "lucide-svelte";
+  import { Calendar, CalendarDays, Trophy, Gift, Coins, Diamond, Gem, User, GamepadIcon, Zap, Swords, Star } from "lucide-svelte";
+  import { PopupStore } from "$lib/systems/PopupStore";
 
   $: topbarHeight = 0;
   let activeMissionType: MissionType = 'daily';
@@ -36,6 +37,11 @@
   function claimReward(missionId: number) {
     const success = MissionStore.claimMissionReward(missionId, activeMissionType);
     if (success) {
+      // Find the mission to show its rewards in popup
+      const mission = activeMissions.find(m => m.id === missionId);
+      if (mission) {
+        showRewardPopup(mission.rewards);
+      }
       console.log(`Successfully claimed reward for mission ${missionId}`);
     } else {
       console.log(`Failed to claim reward for mission ${missionId} - already claimed or not completed`);
@@ -43,14 +49,104 @@
   }
 
   function claimAllRewards() {
+    const claimedMissions = activeMissions.filter(m => m.completed && !m.claimed);
     const claimedCount = MissionStore.claimAllRewards(activeMissionType);
+    if (claimedCount > 0) {
+      // Collect all rewards from claimed missions
+      const allRewards: { type: string; amount: number }[] = [];
+      claimedMissions.slice(0, claimedCount).forEach(mission => {
+        mission.rewards.forEach(reward => {
+          const existing = allRewards.find(r => r.type === reward.type);
+          if (existing) {
+            existing.amount += reward.amount;
+          } else {
+            allRewards.push({ ...reward });
+          }
+        });
+      });
+      showRewardPopup(allRewards);
+    }
     console.log(`Successfully claimed ${claimedCount} mission rewards`);
+  }
+
+  function showRewardPopup(rewards: { type: string; amount: number }[]) {
+    const rewardsHtml = rewards.map(reward => {
+      const iconName = getIconName(getRewardIcon(reward.type));
+      const color = getRewardColor(reward.type);
+      return `
+        <div style="display: flex; align-items: center; gap: 0.5rem; margin: 0.25rem 0;">
+          <div style="color: ${color}; display: flex; align-items: center;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              ${getIconSvgPath(reward.type)}
+            </svg>
+          </div>
+          <span style="color: ${color}; font-weight: bold; font-size: 1.1rem;">+${reward.amount}</span>
+          <span style="color: #374151;">${getRewardTypeName(reward.type)}</span>
+        </div>
+      `;
+    }).join('');
+
+    const content = `
+      <div style="text-align: center; padding: 1rem;">
+        <div style="margin-bottom: 1rem;">
+          <h3 style="margin: 0 0 1rem 0; color: #1e293b;">${$t('rewards')}</h3>
+          <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+            ${rewardsHtml}
+          </div>
+        </div>
+      </div>
+    `;
+
+    PopupStore.open({
+      title: $t('claim'),
+      content,
+      buttons: [
+        {
+          text: $t('confirm'),
+          onClick: () => { return 0; }  // Close popup
+        }
+      ]
+    });
+  }
+
+  function getIconSvgPath(rewardType: string): string {
+    switch (rewardType) {
+      case 'gold':
+        // Coins icon path
+        return '<circle cx="8" cy="8" r="6"/><path d="m14.5 9-5 5"/><path d="m14.5 14-5-5"/>';
+      case 'exp':
+        // Star icon path
+        return '<polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/>';
+      case 'diamond':
+        // Diamond icon path  
+        return '<path d="M2.7 10.3a2.41 2.41 0 0 0 0 3.41l7.59 7.59a2.41 2.41 0 0 0 3.41 0l7.59-7.59a2.41 2.41 0 0 0 0-3.41L13.7 2.7a2.41 2.41 0 0 0-3.41 0Z"/>';
+      case 'ruby':
+        // Gem icon path
+        return '<path d="m6 2 3 6 5-6"/><path d="M5 21a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2"/><path d="m6 2 5 6"/><path d="m13 8 5-6"/>';
+      default:
+        // Gift icon path
+        return '<rect x="3" y="8" width="18" height="4" rx="1"/><path d="m12 8 0-4"/><path d="m8 12-2 8"/><path d="m16 12 2 8"/>';
+    }
+  }
+
+  function getRewardTypeName(type: string): string {
+    switch (type) {
+      case 'gold': return 'Gold';
+      case 'exp': return 'EXP';
+      case 'diamond': return 'Diamond';
+      case 'ruby': return 'Ruby';
+      default: return 'Reward';
+    }
+  }
+
+  function getIconName(iconComponent: any): string {
+    return iconComponent.name || 'unknown';
   }
 
   function getRewardIcon(type: string) {
     switch (type) {
       case 'gold': return Coins;
-      case 'exp': return Diamond;  // Using diamond icon for experience
+      case 'exp': return Star;  // Using star icon for experience
       case 'diamond': return Diamond;
       case 'ruby': return Gem;
       default: return Gift;
@@ -60,7 +156,7 @@
   function getRewardColor(type: string) {
     switch (type) {
       case 'gold': return '#fbbf24';
-      case 'exp': return '#10b981';  // Green for experience
+      case 'exp': return '#f59e0b';  // Orange/amber for experience
       case 'diamond': return '#3b82f6';
       case 'ruby': return '#ef4444';
       default: return '#64748b';
