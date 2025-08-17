@@ -11,7 +11,7 @@
   import { waitUntil } from "$lib/utils/Wait";
   import { get, writable, type Writable } from "svelte/store";
   import { Calendar, CalendarDays, Trophy, Gift, Coins, Diamond, Gem, User, GamepadIcon, Zap, Swords, Star } from "lucide-svelte";
-  import { PopupStore } from "$lib/systems/PopupStore";
+  import { PopupStore, PopupResult } from "$lib/systems/PopupStore";
 
   $: topbarHeight = 0;
   let activeMissionType: MissionType = 'daily';
@@ -103,7 +103,7 @@
       buttons: [
         {
           text: $t('confirm'),
-          onClick: () => { return 0; }  // Close popup
+          onClick: () => PopupResult.Close  // Return PopupResult.Close to properly close popup
         }
       ]
     });
