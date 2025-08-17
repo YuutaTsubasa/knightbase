@@ -2,7 +2,7 @@
   import { FontAssets } from "$lib/assets/FontAssets";
   import { imageAssets } from "$lib/assets/ImageAssets";
   import { t } from "$lib/systems/LocalizationStore";
-  import { StaticDataStore } from "$lib/systems/StaticDataStore";
+  import { MissionStore, type MissionType } from "$lib/systems/MissionStore";
   import Image from "$lib/components/Image.svelte";
   import Page from "$lib/components/Page.svelte";
   import Button from "$lib/components/Button.svelte";
@@ -10,75 +10,18 @@
   import { BACK_PATH } from "$lib/utils/Constant";
   import { waitUntil } from "$lib/utils/Wait";
   import { get, writable, type Writable } from "svelte/store";
-  import { Calendar, CalendarDays, CalendarCheck2, Trophy, Gift, Coins, Diamond, Gem } from "lucide-svelte";
+  import { Calendar, CalendarDays, Trophy, Gift, Coins, Diamond, Gem } from "lucide-svelte";
 
   $: topbarHeight = 0;
-  let activeMissionType: 'daily' | 'weekly' | 'monthly' | 'achievement' = 'daily';
+  let activeMissionType: MissionType = 'daily';
 
-  // Mission data from StaticDataStore
-  const { missionData } = StaticDataStore;
-  $: missionDataValues = $missionData;
-
-  // Map mission categories: 1=daily, 2=weekly, 3=monthly, 4=achievement
+  // Mission data from MissionStore
   $: missions = {
-    daily: missionDataValues.filter(mission => mission.missionCategoryId === 1).map(mission => ({
-      id: mission.missionId,
-      nameKey: mission.missionTitleKey,
-      descriptionKey: mission.missionDescriptionKey,
-      iconKey: mission.missionIconKey,
-      rewards: getMissionRewards(mission.missionId),
-      completed: false, // Reduced mock data - only use actual player progress
-      progress: { current: 0, max: getMissionMaxProgress(mission.missionConditions) }
-    })),
-    weekly: missionDataValues.filter(mission => mission.missionCategoryId === 2).map(mission => ({
-      id: mission.missionId,
-      nameKey: mission.missionTitleKey,
-      descriptionKey: mission.missionDescriptionKey,
-      iconKey: mission.missionIconKey,
-      rewards: getMissionRewards(mission.missionId),
-      completed: false,
-      progress: { current: 0, max: getMissionMaxProgress(mission.missionConditions) }
-    })),
-    monthly: missionDataValues.filter(mission => mission.missionCategoryId === 3).map(mission => ({
-      id: mission.missionId,
-      nameKey: mission.missionTitleKey,
-      descriptionKey: mission.missionDescriptionKey,
-      iconKey: mission.missionIconKey,
-      rewards: getMissionRewards(mission.missionId),
-      completed: false,
-      progress: { current: 0, max: getMissionMaxProgress(mission.missionConditions) }
-    })),
-    achievement: missionDataValues.filter(mission => mission.missionCategoryId === 4).map(mission => ({
-      id: mission.missionId,
-      nameKey: mission.missionTitleKey,
-      descriptionKey: mission.missionDescriptionKey,
-      iconKey: mission.missionIconKey,
-      rewards: getMissionRewards(mission.missionId),
-      completed: false,
-      progress: { current: 0, max: getMissionMaxProgress(mission.missionConditions) }
-    }))
+    daily: MissionStore.getMissionsByType('daily'),
+    weekly: MissionStore.getMissionsByType('weekly'),
+    achievement: MissionStore.getMissionsByType('achievement')
   };
 
-  // Helper functions for mission data
-  function getMissionRewards(missionId: number): Array<{type: string, amount: number}> {
-    const rewardMap: Record<number, Array<{type: string, amount: number}>> = {
-      1: [{ type: "coin", amount: 100 }],
-      2: [{ type: "coin", amount: 200 }, { type: "exp", amount: 50 }],
-      3: [{ type: "diamond", amount: 5 }],
-      4: [{ type: "coin", amount: 500 }, { type: "exp", amount: 100 }],
-      5: [{ type: "coin", amount: 300 }, { type: "diamond", amount: 10 }],
-      6: [{ type: "ruby", amount: 2 }],
-      7: [{ type: "coin", amount: 50 }],
-      8: [{ type: "diamond", amount: 50 }, { type: "ruby", amount: 5 }]
-    };
-    return rewardMap[missionId] || [{ type: "coin", amount: 10 }];
-  }
-
-  function getMissionMaxProgress(conditions: string): number {
-    // Parse conditions like "login:1", "battle_win:3", etc.
-    const [, maxStr] = conditions.split(':');
-    return parseInt(maxStr) || 1;
-  }
   let goToNextScene: Writable<string | null>;
   async function main() {
     goToNextScene = writable(null);
@@ -86,28 +29,28 @@
     return get(goToNextScene) ?? "/mainmenu";
   }
 
-  function setActiveMissionType(type: 'daily' | 'weekly' | 'monthly' | 'achievement') {
+  function setActiveMissionType(type: MissionType) {
     activeMissionType = type;
   }
 
   function claimReward(missionId: number) {
-    const currentMissions = missions[activeMissionType];
-    const mission = currentMissions.find(m => m.id === missionId);
-    if (mission && mission.completed) {
-      console.log(`Claimed reward for mission ${missionId}`);
-      // Here you would update the mission state
+    const success = MissionStore.claimMissionReward(missionId, activeMissionType);
+    if (success) {
+      console.log(`Successfully claimed reward for mission ${missionId}`);
+    } else {
+      console.log(`Failed to claim reward for mission ${missionId} - already claimed or not completed`);
     }
   }
 
   function claimAllRewards() {
-    const completedMissions = missions[activeMissionType].filter(m => m.completed);
-    console.log(`Claiming all rewards for ${completedMissions.length} completed missions`);
-    // Here you would claim all completed mission rewards
+    const claimedCount = MissionStore.claimAllRewards(activeMissionType);
+    console.log(`Successfully claimed ${claimedCount} mission rewards`);
   }
 
   function getRewardIcon(type: string) {
     switch (type) {
-      case 'coin': return Coins;
+      case 'gold': return Coins;
+      case 'exp': return Diamond;  // Using diamond icon for experience
       case 'diamond': return Diamond;
       case 'ruby': return Gem;
       default: return Gift;
@@ -116,7 +59,8 @@
 
   function getRewardColor(type: string) {
     switch (type) {
-      case 'coin': return '#fbbf24';
+      case 'gold': return '#fbbf24';
+      case 'exp': return '#10b981';  // Green for experience
       case 'diamond': return '#3b82f6';
       case 'ruby': return '#ef4444';
       default: return '#64748b';
@@ -127,14 +71,14 @@
     switch (type) {
       case 'daily': return Calendar;
       case 'weekly': return CalendarDays;
-      case 'monthly': return CalendarCheck2;
       case 'achievement': return Trophy;
       default: return Calendar;
     }
   }
 
-  $: completedMissions = missions[activeMissionType].filter(m => m.completed);
-  $: hasCompletedMissions = completedMissions.length > 0;
+  $: activeMissions = get(missions[activeMissionType]) || [];
+  $: completedMissions = activeMissions.filter(m => m.completed);
+  $: hasClaimableMissions = completedMissions.length > 0;
 </script>
 
 <Page mainProgress={main} 
@@ -163,12 +107,6 @@
         <span>{$t('weekly')}</span>
       </button>
       <button 
-        class="missionTab {activeMissionType === 'monthly' ? 'active' : ''}"
-        on:click={() => setActiveMissionType('monthly')}>
-        <svelte:component this={CalendarCheck2} size={20} />
-        <span>{$t('monthly')}</span>
-      </button>
-      <button 
         class="missionTab {activeMissionType === 'achievement' ? 'active' : ''}"
         on:click={() => setActiveMissionType('achievement')}>
         <svelte:component this={Trophy} size={20} />
@@ -181,7 +119,7 @@
         <h2 style={FontAssets.getCssStyle("titleBold")}>
           {$t(activeMissionType + 'Missions')}
         </h2>
-        {#if hasCompletedMissions}
+        {#if hasClaimableMissions}
           <Button 
             label={$t('claimAll')} 
             onClick={claimAllRewards}
@@ -190,7 +128,7 @@
       </div>
       
       <div class="missionList">
-        {#each missions[activeMissionType] as mission (mission.id)}
+        {#each activeMissions as mission (mission.id)}
           <div class="missionItem {mission.completed ? 'completed' : ''}">
             <div class="missionIcon">
               <Image key={mission.iconKey} alt={$t(mission.nameKey)} className="missionIconImage" />

@@ -13,6 +13,21 @@ export interface PlayerResources {
   gem: number;
 }
 
+export interface PlayerStatistics {
+  totalLoginDays: number;
+  lastLoginDate: string; // YYYY-MM-DD format
+  currentLoginStreak: number;
+  totalLevelPlays: number;
+  totalJumps: number;
+  totalAttacks: number;
+}
+
+export interface MissionProgress {
+  dailyMissions: Record<string, number[]>; // "YYYY-MM-DD" -> [missionId1, missionId2, ...]
+  weeklyMissions: Record<string, number[]>; // "YYYY-MM-DD" (Monday) -> [missionId1, missionId2, ...]
+  achievementMissions: number[]; // [missionId1, missionId2, ...]
+}
+
 export interface PlayerData {
   name: string;
   experience: number;
@@ -25,6 +40,8 @@ export interface PlayerData {
   locale?: string,
   resources: PlayerResources;
   stageRecords: Record<string, StageRecord>; // stageId -> record
+  statistics: PlayerStatistics;
+  missionProgress: MissionProgress;
 }
 
 const DEFAULT_PLAYER_DATA : PlayerData = {
@@ -42,7 +59,20 @@ const DEFAULT_PLAYER_DATA : PlayerData = {
       diamond: 0,
       gem: 0
     },
-    stageRecords: {}
+    stageRecords: {},
+    statistics: {
+      totalLoginDays: 0,
+      lastLoginDate: "",
+      currentLoginStreak: 0,
+      totalLevelPlays: 0,
+      totalJumps: 0,
+      totalAttacks: 0
+    },
+    missionProgress: {
+      dailyMissions: {},
+      weeklyMissions: {},
+      achievementMissions: []
+    }
 }
 const STORAGE_KEY = "playerData";
 export const playerStore: Writable<PlayerData> = writable(load());
@@ -198,4 +228,121 @@ export function getExperiencePercentForCurrentLevel(): number {
   const experienceForCurrentLevel = (currentLevel - 1) * 10000;
   const experienceInCurrentLevel = currentData.experience - experienceForCurrentLevel;
   return experienceInCurrentLevel / 10000;
+}
+
+// Mission and statistics tracking functions
+
+export function recordLogin(): void {
+  playerStore.update((currentData) => {
+    const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+    
+    // Update login statistics
+    if (currentData.statistics.lastLoginDate !== today) {
+      currentData.statistics.totalLoginDays++;
+      
+      // Calculate login streak
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayStr = yesterday.toISOString().slice(0, 10);
+      
+      if (currentData.statistics.lastLoginDate === yesterdayStr) {
+        currentData.statistics.currentLoginStreak++;
+      } else {
+        currentData.statistics.currentLoginStreak = 1;
+      }
+      
+      currentData.statistics.lastLoginDate = today;
+    }
+    
+    return currentData;
+  });
+}
+
+export function recordLevelPlay(): void {
+  playerStore.update((currentData) => {
+    currentData.statistics.totalLevelPlays++;
+    return currentData;
+  });
+}
+
+export function recordJump(): void {
+  playerStore.update((currentData) => {
+    currentData.statistics.totalJumps++;
+    return currentData;
+  });
+}
+
+export function recordAttack(): void {
+  playerStore.update((currentData) => {
+    currentData.statistics.totalAttacks++;
+    return currentData;
+  });
+}
+
+export function completeMission(missionId: number, missionType: 'daily' | 'weekly' | 'achievement'): void {
+  playerStore.update((currentData) => {
+    switch (missionType) {
+      case 'daily': {
+        const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+        if (!currentData.missionProgress.dailyMissions[today]) {
+          currentData.missionProgress.dailyMissions[today] = [];
+        }
+        if (!currentData.missionProgress.dailyMissions[today].includes(missionId)) {
+          currentData.missionProgress.dailyMissions[today].push(missionId);
+        }
+        break;
+      }
+      case 'weekly': {
+        // Get Monday of current week
+        const now = new Date();
+        const monday = new Date(now);
+        monday.setDate(now.getDate() - now.getDay() + (now.getDay() === 0 ? -6 : 1));
+        const mondayStr = monday.toISOString().slice(0, 10);
+        
+        if (!currentData.missionProgress.weeklyMissions[mondayStr]) {
+          currentData.missionProgress.weeklyMissions[mondayStr] = [];
+        }
+        if (!currentData.missionProgress.weeklyMissions[mondayStr].includes(missionId)) {
+          currentData.missionProgress.weeklyMissions[mondayStr].push(missionId);
+        }
+        break;
+      }
+      case 'achievement': {
+        if (!currentData.missionProgress.achievementMissions.includes(missionId)) {
+          currentData.missionProgress.achievementMissions.push(missionId);
+        }
+        break;
+      }
+    }
+    
+    return currentData;
+  });
+}
+
+export function isMissionCompleted(missionId: number, missionType: 'daily' | 'weekly' | 'achievement'): boolean {
+  const currentData = get(playerStore);
+  
+  switch (missionType) {
+    case 'daily': {
+      const today = new Date().toISOString().slice(0, 10);
+      return currentData.missionProgress.dailyMissions[today]?.includes(missionId) ?? false;
+    }
+    case 'weekly': {
+      // Get Monday of current week
+      const now = new Date();
+      const monday = new Date(now);
+      monday.setDate(now.getDate() - now.getDay() + (now.getDay() === 0 ? -6 : 1));
+      const mondayStr = monday.toISOString().slice(0, 10);
+      
+      return currentData.missionProgress.weeklyMissions[mondayStr]?.includes(missionId) ?? false;
+    }
+    case 'achievement': {
+      return currentData.missionProgress.achievementMissions.includes(missionId);
+    }
+  }
+}
+
+export function getPlayerStatistics(): PlayerStatistics {
+  const currentData = get(playerStore);
+  return currentData.statistics;
 }

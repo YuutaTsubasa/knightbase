@@ -7,6 +7,7 @@
   import { AudioManager } from '$lib/systems/AudioManager';
   import { LocalizationStore } from '$lib/systems/LocalizationStore';
   import { StaticDataStore } from '$lib/systems/StaticDataStore';
+  import { recordLogin } from '$lib/systems/PlayerStore';
   let { children } = $props();
 
   let navigationManager: UniversalNavigationManager | null = null;
@@ -18,6 +19,9 @@
     LocalizationStore.initialize();
     StaticDataStore.initialize();
     navigationManager = UniversalNavigationManager.getInstance();
+    
+    // Record login for mission tracking
+    recordLogin();
   });
 
   onDestroy(() => {
