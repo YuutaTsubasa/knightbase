@@ -3,7 +3,7 @@ import { StaticDataStore, type MissionData } from './StaticDataStore';
 import { playerStore, addResourcesToSaveData, addExperienceToSaveData, completeMission, isMissionCompleted, getPlayerStatistics, getDailyConditionCounter, getWeeklyConditionCounter, type PlayerStatistics } from './PlayerStore';
 
 export interface MissionReward {
-  type: 'exp' | 'gold';
+  type: 'exp' | 'gold' | 'diamond' | 'ruby';
   amount: number;
 }
 

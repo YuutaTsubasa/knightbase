@@ -422,7 +422,13 @@ function updateWeeklyCounter(playerData: PlayerData, date: string, counterType: 
     const loginDaysThisWeek = currentWeekDates.filter(weekDate => 
       playerData.conditionCounters.dailyCounters[weekDate.toISOString().slice(0, 10)]?.login > 0
     ).length;
-    playerData.conditionCounters.weeklyCounters[mondayStr][counterType] = loginDaysThisWeek;
+    // Only increment if this date has not already been counted for this week
+    const dateStr = date;
+    if (
+      playerData.conditionCounters.dailyCounters[dateStr]?.login === 1 // first login for this day
+    ) {
+      playerData.conditionCounters.weeklyCounters[mondayStr][counterType] += 1;
+    }
   } else {
     playerData.conditionCounters.weeklyCounters[mondayStr][counterType] += increment;
   }
