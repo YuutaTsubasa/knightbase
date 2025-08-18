@@ -8,14 +8,16 @@
   import Button from "$lib/components/Button.svelte";
   import Topbar from "$lib/components/Topbar.svelte";
   import RewardIcon from "$lib/components/RewardIcon.svelte";
+  import RewardPopup from "$lib/components/popup/RewardPopup.svelte";
   import { BACK_PATH } from "$lib/utils/Constant";
   import { waitUntil } from "$lib/utils/Wait";
   import { get, writable, type Writable } from "svelte/store";
   import { Calendar, CalendarDays, Trophy, Gift, User, GamepadIcon, Zap, Swords } from "lucide-svelte";
-  import { PopupStore, PopupResult } from "$lib/systems/PopupStore";
 
   $: topbarHeight = 0;
   let activeMissionType: MissionType = 'daily';
+  let showRewardPopupComponent = false;
+  let currentRewards: { type: string; amount: number }[] = [];
 
   // Mission data from MissionStore - make reactive
   const dailyMissions = MissionStore.getMissionsByType('daily');
@@ -68,64 +70,14 @@
     console.log(`Successfully claimed ${claimedCount} mission rewards`);
   }
 
-  function getRewardIconSvg(type: string, color: string, size: number = 24): string {
-    const svgPaths: Record<string, string> = {
-      gold: '<circle cx="8.5" cy="8.5" r="7.5"/><path d="m10.5 16.5 2-2-2-2"/>',  // Coins icon path
-      exp: '<polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/>',  // Star icon path
-      diamond: '<path d="M6 3h12l4 6-10 13L2 9Z"/>',  // Diamond icon path
-      ruby: '<path d="M6 3h12l4 6-10 13L2 9Z"/>'  // Gem icon path (same as diamond)
-    };
-    
-    const path = svgPaths[type] || svgPaths.gold;
-    return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${path}</svg>`;
-  }
-
   function showRewardPopup(rewards: { type: string; amount: number }[]) {
-    const rewardElements = rewards.map(reward => {
-      const color = getRewardColor(reward.type);
-      const iconSvg = getRewardIconSvg(reward.type, color, 24);
-      
-      return `
-        <div style="display: flex; align-items: center; gap: 0.75rem; margin: 0.5rem 0; padding: 0.5rem; background: rgba(0, 0, 0, 0.05); border-radius: 0.5rem;">
-          <div style="color: ${color}; display: flex; align-items: center;">
-            ${iconSvg}
-          </div>
-          <span style="color: ${color}; font-weight: bold; font-size: 1.1rem; min-width: 4rem;">+${reward.amount}</span>
-          <span style="color: #374151; font-size: 1rem;">${getRewardTypeName(reward.type)}</span>
-        </div>
-      `;
-    }).join('');
-
-    const content = `
-      <div style="text-align: center; padding: 1rem;">
-        <div style="margin-bottom: 1rem;">
-          <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-            ${rewardElements}
-          </div>
-        </div>
-      </div>
-    `;
-
-    PopupStore.open({
-      title: $t('rewards'),
-      content,
-      buttons: [
-        {
-          text: $t('confirm'),
-          onClick: () => PopupResult.Close
-        }
-      ]
-    });
+    currentRewards = rewards;
+    showRewardPopupComponent = true;
   }
 
-  function getRewardTypeName(type: string): string {
-    switch (type) {
-      case 'gold': return 'Gold';
-      case 'exp': return 'EXP';
-      case 'diamond': return 'Diamond';
-      case 'ruby': return 'Ruby';
-      default: return 'Reward';
-    }
+  function closeRewardPopup() {
+    showRewardPopupComponent = false;
+    currentRewards = [];
   }
 
   function getRewardColor(type: string) {
@@ -163,6 +115,12 @@
   $: claimableMissions = activeMissions.filter(m => m.completed && !m.claimed);
   $: hasClaimableMissions = claimableMissions.length > 0;
 </script>
+
+{#if showRewardPopupComponent}
+  <RewardPopup 
+    rewards={currentRewards} 
+    on:close={closeRewardPopup} />
+{/if}
 
 <Page mainProgress={main} 
   wrapperStyle="background-image: url({imageAssets["backgroundWhite"]}); background-size: cover; background-position: center; background-color: white;"
