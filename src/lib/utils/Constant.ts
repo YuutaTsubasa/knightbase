@@ -20,3 +20,19 @@ export const SHINE_ANIMATION_SEED = 90.12;
 export enum ButtonVariant {
   Default
 }
+
+// Mission Category Constants
+export const MISSION_CATEGORY = {
+  DAILY: 'daily',
+  WEEKLY: 'weekly', 
+  ACHIEVEMENT: 'achievement'
+} as const;
+
+export type MissionCategory = typeof MISSION_CATEGORY[keyof typeof MISSION_CATEGORY];
+
+// Mission Category ID mapping for backward compatibility with CSV data
+export const MISSION_CATEGORY_ID = {
+  [MISSION_CATEGORY.DAILY]: 1,
+  [MISSION_CATEGORY.WEEKLY]: 2,
+  [MISSION_CATEGORY.ACHIEVEMENT]: 4
+} as const;

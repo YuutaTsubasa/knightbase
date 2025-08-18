@@ -2,83 +2,28 @@
   import { FontAssets } from "$lib/assets/FontAssets";
   import { imageAssets } from "$lib/assets/ImageAssets";
   import { t } from "$lib/systems/LocalizationStore";
-  import { StaticDataStore } from "$lib/systems/StaticDataStore";
+  import { MissionStore, type MissionType } from "$lib/systems/MissionStore";
   import Image from "$lib/components/Image.svelte";
   import Page from "$lib/components/Page.svelte";
   import Button from "$lib/components/Button.svelte";
   import Topbar from "$lib/components/Topbar.svelte";
+  import RewardIcon from "$lib/components/RewardIcon.svelte";
+  import RewardPopup from "$lib/components/popup/RewardPopup.svelte";
   import { BACK_PATH } from "$lib/utils/Constant";
   import { waitUntil } from "$lib/utils/Wait";
   import { get, writable, type Writable } from "svelte/store";
-  import { Calendar, CalendarDays, CalendarCheck2, Trophy, Gift, Coins, Diamond, Gem } from "lucide-svelte";
+  import { Calendar, CalendarDays, Trophy, Gift, User, GamepadIcon, Zap, Swords } from "lucide-svelte";
 
   $: topbarHeight = 0;
-  let activeMissionType: 'daily' | 'weekly' | 'monthly' | 'achievement' = 'daily';
+  let activeMissionType: MissionType = 'daily';
+  let showRewardPopupComponent = false;
+  let currentRewards: { type: string; amount: number }[] = [];
 
-  // Mission data from StaticDataStore
-  const { missionData } = StaticDataStore;
-  $: missionDataValues = $missionData;
+  // Mission data from MissionStore - make reactive
+  const dailyMissions = MissionStore.getMissionsByType('daily');
+  const weeklyMissions = MissionStore.getMissionsByType('weekly');
+  const achievementMissions = MissionStore.getMissionsByType('achievement');
 
-  // Map mission categories: 1=daily, 2=weekly, 3=monthly, 4=achievement
-  $: missions = {
-    daily: missionDataValues.filter(mission => mission.missionCategoryId === 1).map(mission => ({
-      id: mission.missionId,
-      nameKey: mission.missionTitleKey,
-      descriptionKey: mission.missionDescriptionKey,
-      iconKey: mission.missionIconKey,
-      rewards: getMissionRewards(mission.missionId),
-      completed: false, // Reduced mock data - only use actual player progress
-      progress: { current: 0, max: getMissionMaxProgress(mission.missionConditions) }
-    })),
-    weekly: missionDataValues.filter(mission => mission.missionCategoryId === 2).map(mission => ({
-      id: mission.missionId,
-      nameKey: mission.missionTitleKey,
-      descriptionKey: mission.missionDescriptionKey,
-      iconKey: mission.missionIconKey,
-      rewards: getMissionRewards(mission.missionId),
-      completed: false,
-      progress: { current: 0, max: getMissionMaxProgress(mission.missionConditions) }
-    })),
-    monthly: missionDataValues.filter(mission => mission.missionCategoryId === 3).map(mission => ({
-      id: mission.missionId,
-      nameKey: mission.missionTitleKey,
-      descriptionKey: mission.missionDescriptionKey,
-      iconKey: mission.missionIconKey,
-      rewards: getMissionRewards(mission.missionId),
-      completed: false,
-      progress: { current: 0, max: getMissionMaxProgress(mission.missionConditions) }
-    })),
-    achievement: missionDataValues.filter(mission => mission.missionCategoryId === 4).map(mission => ({
-      id: mission.missionId,
-      nameKey: mission.missionTitleKey,
-      descriptionKey: mission.missionDescriptionKey,
-      iconKey: mission.missionIconKey,
-      rewards: getMissionRewards(mission.missionId),
-      completed: false,
-      progress: { current: 0, max: getMissionMaxProgress(mission.missionConditions) }
-    }))
-  };
-
-  // Helper functions for mission data
-  function getMissionRewards(missionId: number): Array<{type: string, amount: number}> {
-    const rewardMap: Record<number, Array<{type: string, amount: number}>> = {
-      1: [{ type: "coin", amount: 100 }],
-      2: [{ type: "coin", amount: 200 }, { type: "exp", amount: 50 }],
-      3: [{ type: "diamond", amount: 5 }],
-      4: [{ type: "coin", amount: 500 }, { type: "exp", amount: 100 }],
-      5: [{ type: "coin", amount: 300 }, { type: "diamond", amount: 10 }],
-      6: [{ type: "ruby", amount: 2 }],
-      7: [{ type: "coin", amount: 50 }],
-      8: [{ type: "diamond", amount: 50 }, { type: "ruby", amount: 5 }]
-    };
-    return rewardMap[missionId] || [{ type: "coin", amount: 10 }];
-  }
-
-  function getMissionMaxProgress(conditions: string): number {
-    // Parse conditions like "login:1", "battle_win:3", etc.
-    const [, maxStr] = conditions.split(':');
-    return parseInt(maxStr) || 1;
-  }
   let goToNextScene: Writable<string | null>;
   async function main() {
     goToNextScene = writable(null);
@@ -86,37 +31,59 @@
     return get(goToNextScene) ?? "/mainmenu";
   }
 
-  function setActiveMissionType(type: 'daily' | 'weekly' | 'monthly' | 'achievement') {
+  function setActiveMissionType(type: MissionType) {
     activeMissionType = type;
   }
 
   function claimReward(missionId: number) {
-    const currentMissions = missions[activeMissionType];
-    const mission = currentMissions.find(m => m.id === missionId);
-    if (mission && mission.completed) {
-      console.log(`Claimed reward for mission ${missionId}`);
-      // Here you would update the mission state
+    const success = MissionStore.claimMissionReward(missionId, activeMissionType);
+    if (success) {
+      // Find the mission to show its rewards in popup
+      const mission = activeMissions.find(m => m.id === missionId);
+      if (mission) {
+        showRewardPopup(mission.rewards);
+      }
+      console.log(`Successfully claimed reward for mission ${missionId}`);
+    } else {
+      console.log(`Failed to claim reward for mission ${missionId} - already claimed or not completed`);
     }
   }
 
   function claimAllRewards() {
-    const completedMissions = missions[activeMissionType].filter(m => m.completed);
-    console.log(`Claiming all rewards for ${completedMissions.length} completed missions`);
-    // Here you would claim all completed mission rewards
+    const claimedMissions = activeMissions.filter(m => m.completed && !m.claimed);
+    const claimedCount = MissionStore.claimAllRewards(activeMissionType);
+    if (claimedCount > 0) {
+      // Collect all rewards from claimed missions
+      const allRewards: { type: string; amount: number }[] = [];
+      claimedMissions.slice(0, claimedCount).forEach(mission => {
+        mission.rewards.forEach(reward => {
+          const existing = allRewards.find(r => r.type === reward.type);
+          if (existing) {
+            existing.amount += reward.amount;
+          } else {
+            allRewards.push({ ...reward });
+          }
+        });
+      });
+      showRewardPopup(allRewards);
+    }
+    console.log(`Successfully claimed ${claimedCount} mission rewards`);
   }
 
-  function getRewardIcon(type: string) {
-    switch (type) {
-      case 'coin': return Coins;
-      case 'diamond': return Diamond;
-      case 'ruby': return Gem;
-      default: return Gift;
-    }
+  function showRewardPopup(rewards: { type: string; amount: number }[]) {
+    currentRewards = rewards;
+    showRewardPopupComponent = true;
+  }
+
+  function closeRewardPopup() {
+    showRewardPopupComponent = false;
+    currentRewards = [];
   }
 
   function getRewardColor(type: string) {
     switch (type) {
-      case 'coin': return '#fbbf24';
+      case 'gold': return '#fbbf24';
+      case 'exp': return '#f59e0b';  // Orange/amber for experience
       case 'diamond': return '#3b82f6';
       case 'ruby': return '#ef4444';
       default: return '#64748b';
@@ -127,15 +94,33 @@
     switch (type) {
       case 'daily': return Calendar;
       case 'weekly': return CalendarDays;
-      case 'monthly': return CalendarCheck2;
       case 'achievement': return Trophy;
       default: return Calendar;
     }
   }
 
-  $: completedMissions = missions[activeMissionType].filter(m => m.completed);
-  $: hasCompletedMissions = completedMissions.length > 0;
+  function getMissionIcon(iconKey: string) {
+    switch (iconKey) {
+      case 'loginIcon': return User;
+      case 'levelIcon': return GamepadIcon;
+      case 'jumpIcon': return Zap;
+      case 'attackIcon': return Swords;
+      case 'loginStreakIcon': return User;
+      default: return GamepadIcon;
+    }
+  }
+
+  $: activeMissions = activeMissionType === 'daily' ? $dailyMissions : 
+                      activeMissionType === 'weekly' ? $weeklyMissions : $achievementMissions;
+  $: claimableMissions = activeMissions.filter(m => m.completed && !m.claimed);
+  $: hasClaimableMissions = claimableMissions.length > 0;
 </script>
+
+{#if showRewardPopupComponent}
+  <RewardPopup 
+    rewards={currentRewards} 
+    on:close={closeRewardPopup} />
+{/if}
 
 <Page mainProgress={main} 
   wrapperStyle="background-image: url({imageAssets["backgroundWhite"]}); background-size: cover; background-position: center; background-color: white;"
@@ -163,12 +148,6 @@
         <span>{$t('weekly')}</span>
       </button>
       <button 
-        class="missionTab {activeMissionType === 'monthly' ? 'active' : ''}"
-        on:click={() => setActiveMissionType('monthly')}>
-        <svelte:component this={CalendarCheck2} size={20} />
-        <span>{$t('monthly')}</span>
-      </button>
-      <button 
         class="missionTab {activeMissionType === 'achievement' ? 'active' : ''}"
         on:click={() => setActiveMissionType('achievement')}>
         <svelte:component this={Trophy} size={20} />
@@ -181,7 +160,7 @@
         <h2 style={FontAssets.getCssStyle("titleBold")}>
           {$t(activeMissionType + 'Missions')}
         </h2>
-        {#if hasCompletedMissions}
+        {#if hasClaimableMissions}
           <Button 
             label={$t('claimAll')} 
             onClick={claimAllRewards}
@@ -190,10 +169,10 @@
       </div>
       
       <div class="missionList">
-        {#each missions[activeMissionType] as mission (mission.id)}
-          <div class="missionItem {mission.completed ? 'completed' : ''}">
+        {#each activeMissions as mission (mission.id)}
+          <div class="missionItem {mission.claimed ? 'claimed' : mission.completed ? 'claimable' : ''}">
             <div class="missionIcon">
-              <Image key={mission.iconKey} alt={$t(mission.nameKey)} className="missionIconImage" />
+              <svelte:component this={getMissionIcon(mission.iconKey)} size={28} color="white" />
             </div>
             
             <div class="missionInfo">
@@ -221,10 +200,10 @@
                 <div class="rewardsList">
                   {#each mission.rewards as reward}
                     <div class="rewardItem">
-                      <svelte:component 
-                        this={getRewardIcon(reward.type)} 
+                      <RewardIcon 
+                        rewardType={reward.type}
                         size={16} 
-                        style="color: {getRewardColor(reward.type)}" />
+                        color={getRewardColor(reward.type)} />
                       <span style="color: {getRewardColor(reward.type)}">
                         {reward.amount}
                       </span>
@@ -235,7 +214,11 @@
             </div>
             
             <div class="missionActions">
-              {#if mission.completed}
+              {#if mission.claimed}
+                <div class="claimedIndicator">
+                  {$t('claimed')}
+                </div>
+              {:else if mission.completed}
                 <Button 
                   label={$t('claim')} 
                   onClick={() => claimReward(mission.id)}
@@ -340,6 +323,7 @@
     padding: 1rem;
     gap: 1rem;
     align-items: center;
+    min-height: 120px; /* Fixed min-height to prevent content compression */
   }
 
   .missionItem:global(.navFocused),
@@ -348,15 +332,20 @@
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
   }
 
-  .missionItem.completed {
+  .missionItem.claimable {
     background: rgba(34, 197, 94, 0.1);
     border: 1px solid rgba(34, 197, 94, 0.3);
+  }
+
+  .missionItem.claimed {
+    background: rgba(156, 163, 175, 0.1);
+    border: 1px solid rgba(156, 163, 175, 0.3);
   }
 
   .missionIcon {
     width: 60px;
     height: 60px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: #0021ff; /* Changed background color as requested */
     border-radius: 0.5rem;
     display: flex;
     align-items: center;
@@ -455,6 +444,14 @@
   .inProgressIndicator {
     padding: 0.5rem 1rem;
     background: #f3f4f6;
+    color: #6b7280;
+    border-radius: 0.5rem;
+    font-size: 0.9rem;
+  }
+
+  .claimedIndicator {
+    padding: 0.5rem 1rem;
+    background: #e5e7eb;
     color: #6b7280;
     border-radius: 0.5rem;
     font-size: 0.9rem;

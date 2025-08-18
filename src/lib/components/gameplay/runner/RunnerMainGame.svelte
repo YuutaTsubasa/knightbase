@@ -2,7 +2,7 @@
   import { onMount, onDestroy } from "svelte";
   import { AudioManager } from "$lib/systems/AudioManager";
   import { StaticDataStore } from "$lib/systems/StaticDataStore";
-  import { addResourcesToSaveData, playerStore, updateStageRecordToSaveData, addExperienceToSaveData } from "$lib/systems/PlayerStore";
+  import { addResourcesToSaveData, playerStore, updateStageRecordToSaveData, addExperienceToSaveData, recordJump, recordAttack, recordLevelPlay } from "$lib/systems/PlayerStore";
   import { characterAttackImageKey, characterJumpImageKey, characterRunImageKey, characterAttackEffectImageKey, stageBackgroundImageKey, stageBgmAudioKey, characterWalkAudioKey, characterAttackAudioKey } from "$lib/utils/KeyHelper";
   import { imageAssets } from "$lib/assets/ImageAssets";
   import { FontAssets } from "$lib/assets/FontAssets";
@@ -296,6 +296,9 @@
       score: 0,
       defeatedEnemies: 0
     };
+    
+    // Record level play for missions
+    recordLevelPlay();
     lastSurvivalSecond = 0;
     playerDistanceTraveled = 0;
     levelStartTime = Date.now();
@@ -843,6 +846,7 @@
   function jump() {
     if (player && gameState === 'playing') {
       player.jump();
+      recordJump(); // Track jump for missions
     }
   }
   
@@ -851,6 +855,7 @@
       const projectile = player.attack();
       if (projectile) {
         characterLayer.addEntity(projectile);
+        recordAttack(); // Track attack for missions
       }
     }
   }

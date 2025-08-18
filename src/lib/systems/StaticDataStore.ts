@@ -70,6 +70,10 @@ export interface MissionData {
   missionDescriptionKey: string;
   missionIconKey: string;
   missionConditions: string;
+  rewardExp: number;
+  rewardGold: number;
+  rewardDiamond: number;
+  rewardRuby: number;
 }
 
 export type StageData = {
