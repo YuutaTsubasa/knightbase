@@ -226,22 +226,6 @@ class MissionStoreClass {
     return claimedCount;
   }
 
-  // Check if missions need to be refreshed (for daily/weekly)
-  shouldRefreshMissions(): boolean {
-    const now = new Date();
-    const currentGameDate = getGameDate(now);
-    const currentGameWeek = getGameWeekMonday(now);
-    
-    // For a complete implementation, we would check:
-    // 1. If daily missions need refresh (new game day started)
-    // 2. If weekly missions need refresh (new game week started)
-    // 3. Compare with last refresh timestamps stored in player data
-    
-    // This is a simplified check - in practice you'd want to store
-    // last refresh dates in player data and compare
-    const hour = now.getHours();
-    return hour === 5 && now.getMinutes() === 0; // Refresh at exactly 5:00 AM
-  }
 }
 
 export const MissionStore = MissionStoreClass.getInstance();

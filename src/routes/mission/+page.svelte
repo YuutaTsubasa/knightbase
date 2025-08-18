@@ -68,34 +68,27 @@
     console.log(`Successfully claimed ${claimedCount} mission rewards`);
   }
 
+  function getRewardIconSvg(type: string, color: string, size: number = 24): string {
+    const svgPaths: Record<string, string> = {
+      gold: '<circle cx="8.5" cy="8.5" r="7.5"/><path d="m10.5 16.5 2-2-2-2"/>',  // Coins icon path
+      exp: '<polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/>',  // Star icon path
+      diamond: '<path d="M6 3h12l4 6-10 13L2 9Z"/>',  // Diamond icon path
+      ruby: '<path d="M6 3h12l4 6-10 13L2 9Z"/>'  // Gem icon path (same as diamond)
+    };
+    
+    const path = svgPaths[type] || svgPaths.gold;
+    return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${path}</svg>`;
+  }
+
   function showRewardPopup(rewards: { type: string; amount: number }[]) {
-    // Create reward elements dynamically using proper Svelte components
     const rewardElements = rewards.map(reward => {
       const color = getRewardColor(reward.type);
-      
-      // Create a temporary container for rendering the Svelte component
-      const tempDiv = document.createElement('div');
-      tempDiv.style.display = 'inline-block';
-      
-      // Create the reward icon component
-      const iconComponent = new RewardIcon({
-        target: tempDiv,
-        props: {
-          rewardType: reward.type,
-          size: 24,
-          color: color
-        }
-      });
-      
-      const iconHTML = tempDiv.innerHTML;
-      
-      // Clean up the component
-      iconComponent.$destroy();
+      const iconSvg = getRewardIconSvg(reward.type, color, 24);
       
       return `
         <div style="display: flex; align-items: center; gap: 0.75rem; margin: 0.5rem 0; padding: 0.5rem; background: rgba(0, 0, 0, 0.05); border-radius: 0.5rem;">
           <div style="color: ${color}; display: flex; align-items: center;">
-            ${iconHTML}
+            ${iconSvg}
           </div>
           <span style="color: ${color}; font-weight: bold; font-size: 1.1rem; min-width: 4rem;">+${reward.amount}</span>
           <span style="color: #374151; font-size: 1rem;">${getRewardTypeName(reward.type)}</span>
