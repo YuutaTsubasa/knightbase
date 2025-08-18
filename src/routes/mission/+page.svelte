@@ -17,11 +17,9 @@
   let activeMissionType: MissionType = 'daily';
 
   // Mission data from MissionStore - make reactive
-  $: missions = {
-    daily: MissionStore.getMissionsByType('daily'),
-    weekly: MissionStore.getMissionsByType('weekly'),
-    achievement: MissionStore.getMissionsByType('achievement')
-  };
+  const dailyMissions = MissionStore.getMissionsByType('daily');
+  const weeklyMissions = MissionStore.getMissionsByType('weekly');
+  const achievementMissions = MissionStore.getMissionsByType('achievement');
 
   let goToNextScene: Writable<string | null>;
   async function main() {
@@ -70,14 +68,40 @@
   }
 
   function showRewardPopup(rewards: { type: string; amount: number }[]) {
+    // For now, let's use hardcoded Lucide SVG paths since dynamic component instantiation 
+    // doesn't work well in this context. This matches the exact Lucide component paths.
     const rewardsHtml = rewards.map(reward => {
       const color = getRewardColor(reward.type);
-      const svgPath = getIconSvgPath(reward.type);
+      let iconPath = '';
+      
+      // Get proper Lucide SVG paths
+      switch (reward.type) {
+        case 'gold':
+          // Coins icon from Lucide
+          iconPath = '<circle cx="8" cy="8" r="6"/><path d="m14.5 9-5 5"/><path d="m14.5 14-5-5"/>';
+          break;
+        case 'exp':
+          // Star icon from Lucide  
+          iconPath = '<polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/>';
+          break;
+        case 'diamond':
+          // Diamond icon from Lucide
+          iconPath = '<path d="M2.7 10.3a2.41 2.41 0 0 0 0 3.41l7.59 7.59a2.41 2.41 0 0 0 3.41 0l7.59-7.59a2.41 2.41 0 0 0 0-3.41L13.7 2.7a2.41 2.41 0 0 0-3.41 0Z"/>';
+          break;
+        case 'ruby':
+          // Gem icon from Lucide
+          iconPath = '<path d="m6 2 3 6 5-6"/><path d="M5 21a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2"/><path d="m6 2 5 6"/><path d="m13 8 5-6"/>';
+          break;
+        default:
+          // Gift icon from Lucide  
+          iconPath = '<rect x="3" y="8" width="18" height="4" rx="1"/><path d="m12 8 0-4"/><path d="m8 12-2 8"/><path d="m16 12 2 8"/>';
+      }
+      
       return `
         <div style="display: flex; align-items: center; gap: 0.75rem; margin: 0.5rem 0; padding: 0.5rem; background: rgba(0, 0, 0, 0.05); border-radius: 0.5rem;">
           <div style="color: ${color}; display: flex; align-items: center;">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              ${svgPath}
+              ${iconPath}
             </svg>
           </div>
           <span style="color: ${color}; font-weight: bold; font-size: 1.1rem; min-width: 4rem;">+${reward.amount}</span>
@@ -108,23 +132,13 @@
     });
   }
 
-  function getIconSvgPath(rewardType: string): string {
+  function getRewardComponent(rewardType: string) {
     switch (rewardType) {
-      case 'gold':
-        // Coins icon path
-        return '<circle cx="8" cy="8" r="6"/><path d="m14.5 9-5 5"/><path d="m14.5 14-5-5"/>';
-      case 'exp':
-        // Star icon path
-        return '<polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/>';
-      case 'diamond':
-        // Diamond icon path  
-        return '<path d="M2.7 10.3a2.41 2.41 0 0 0 0 3.41l7.59 7.59a2.41 2.41 0 0 0 3.41 0l7.59-7.59a2.41 2.41 0 0 0 0-3.41L13.7 2.7a2.41 2.41 0 0 0-3.41 0Z"/>';
-      case 'ruby':
-        // Gem icon path
-        return '<path d="m6 2 3 6 5-6"/><path d="M5 21a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2"/><path d="m6 2 5 6"/><path d="m13 8 5-6"/>';
-      default:
-        // Gift icon path
-        return '<rect x="3" y="8" width="18" height="4" rx="1"/><path d="m12 8 0-4"/><path d="m8 12-2 8"/><path d="m16 12 2 8"/>';
+      case 'gold': return Coins;
+      case 'exp': return Star;
+      case 'diamond': return Diamond;
+      case 'ruby': return Gem;
+      default: return Gift;
     }
   }
 
@@ -178,7 +192,8 @@
     }
   }
 
-  $: activeMissions = $missions[activeMissionType] || [];
+  $: activeMissions = activeMissionType === 'daily' ? $dailyMissions : 
+                      activeMissionType === 'weekly' ? $weeklyMissions : $achievementMissions;
   $: claimableMissions = activeMissions.filter(m => m.completed && !m.claimed);
   $: hasClaimableMissions = claimableMissions.length > 0;
 </script>

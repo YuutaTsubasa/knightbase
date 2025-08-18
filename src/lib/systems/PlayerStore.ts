@@ -351,6 +351,10 @@ export function completeMission(missionId: number, missionType: 'daily' | 'weekl
         break;
       }
       case 'achievement': {
+        // Handle case where achievementMissions might not be initialized (legacy save data)
+        if (!Array.isArray(currentData.missionProgress.achievementMissions)) {
+          currentData.missionProgress.achievementMissions = [];
+        }
         if (!currentData.missionProgress.achievementMissions.includes(missionId)) {
           currentData.missionProgress.achievementMissions.push(missionId);
         }
@@ -380,6 +384,10 @@ export function isMissionCompleted(missionId: number, missionType: 'daily' | 'we
       return currentData.missionProgress.weeklyMissions[mondayStr]?.includes(missionId) ?? false;
     }
     case 'achievement': {
+      // Handle case where achievementMissions might not be initialized (legacy save data)
+      if (!Array.isArray(currentData.missionProgress.achievementMissions)) {
+        currentData.missionProgress.achievementMissions = [];
+      }
       return currentData.missionProgress.achievementMissions.includes(missionId);
     }
   }
