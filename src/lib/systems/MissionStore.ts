@@ -30,53 +30,6 @@ export type MissionType = 'daily' | 'weekly' | 'achievement';
 class MissionStoreClass {
   private static instance: MissionStoreClass;
 
-  // Prerequisite mapping for achievement missions
-  private readonly missionPrerequisites: Record<number, number> = {
-    // Login progression: 7→14→21→28→35→42→49→56→63→70 days
-    102: 101, // login14 requires login7
-    103: 102, // login21 requires login14
-    104: 103, // login28 requires login21
-    105: 104, // login35 requires login28
-    106: 105, // login42 requires login35
-    107: 106, // login49 requires login42
-    108: 107, // login56 requires login49
-    109: 108, // login63 requires login56
-    110: 109, // login70 requires login63
-
-    // Level play progression: 5→10→15→20→25→30→35→40→45→50 plays
-    202: 201, // totalPlays10 requires totalPlays5
-    203: 202, // totalPlays15 requires totalPlays10
-    204: 203, // totalPlays20 requires totalPlays15
-    205: 204, // totalPlays25 requires totalPlays20
-    206: 205, // totalPlays30 requires totalPlays25
-    207: 206, // totalPlays35 requires totalPlays30
-    208: 207, // totalPlays40 requires totalPlays35
-    209: 208, // totalPlays45 requires totalPlays40
-    210: 209, // totalPlays50 requires totalPlays45
-
-    // Jump progression: 50→100→150→200→250→300→350→400→450→500 jumps
-    302: 301, // totalJumps100 requires totalJumps50
-    303: 302, // totalJumps150 requires totalJumps100
-    304: 303, // totalJumps200 requires totalJumps150
-    305: 304, // totalJumps250 requires totalJumps200
-    306: 305, // totalJumps300 requires totalJumps250
-    307: 306, // totalJumps350 requires totalJumps300
-    308: 307, // totalJumps400 requires totalJumps350
-    309: 308, // totalJumps450 requires totalJumps400
-    310: 309, // totalJumps500 requires totalJumps450
-
-    // Attack progression: 50→100→150→200→250→300→350→400→450→500 attacks
-    402: 401, // totalAttacks100 requires totalAttacks50
-    403: 402, // totalAttacks150 requires totalAttacks100
-    404: 403, // totalAttacks200 requires totalAttacks150
-    405: 404, // totalAttacks250 requires totalAttacks200
-    406: 405, // totalAttacks300 requires totalAttacks250
-    407: 406, // totalAttacks350 requires totalAttacks300
-    408: 407, // totalAttacks400 requires totalAttacks350
-    409: 408, // totalAttacks450 requires totalAttacks400
-    410: 409, // totalAttacks500 requires totalAttacks450
-  };
-
   static getInstance(): MissionStoreClass {
     if (!MissionStoreClass.instance) {
       MissionStoreClass.instance = new MissionStoreClass();
@@ -86,17 +39,17 @@ class MissionStoreClass {
 
   /**
    * Check if a mission's prerequisites are satisfied
-   * @param missionId The mission ID to check
+   * @param mission The mission data object
    * @param missionType The mission type
    * @returns true if all prerequisites are claimed, false otherwise
    */
-  private isMissionUnlocked(missionId: number, missionType: MissionType): boolean {
+  private isMissionUnlocked(mission: MissionData, missionType: MissionType): boolean {
     // Daily and weekly missions don't have prerequisites
     if (missionType !== 'achievement') {
       return true;
     }
 
-    const prerequisiteId = this.missionPrerequisites[missionId];
+    const prerequisiteId = mission.prerequisiteMissionId;
     if (!prerequisiteId) {
       // No prerequisite, mission is unlocked
       return true;
@@ -242,11 +195,14 @@ class MissionStoreClass {
               rewards: this.getMissionRewards(mission),
               completed,
               claimed,
-              progress
+              progress,
+              rawMission: mission // Keep reference for prerequisite checking
             };
           })
           // Filter missions based on prerequisites (only for achievement missions)
-          .filter(mission => this.isMissionUnlocked(mission.id, missionType))
+          .filter(processedMission => this.isMissionUnlocked(processedMission.rawMission, missionType))
+          // Remove the rawMission reference before returning
+          .map(({ rawMission, ...processedMission }) => processedMission)
           // Sort missions: unclaimed first, then claimed at the end
           .sort((a, b) => {
             // Primary sort: claimed missions go to end
