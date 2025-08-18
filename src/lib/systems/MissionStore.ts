@@ -1,6 +1,8 @@
 import { derived, get, writable, type Readable } from 'svelte/store';
 import { StaticDataStore, type MissionData } from './StaticDataStore';
 import { playerStore, addResourcesToSaveData, addExperienceToSaveData, completeMission, isMissionCompleted, getPlayerStatistics, getDailyConditionCounter, getWeeklyConditionCounter, type PlayerStatistics } from './PlayerStore';
+import { MISSION_CATEGORY, MISSION_CATEGORY_ID, type MissionCategory } from '../utils/Constant';
+import { getGameDate, getGameWeekMonday } from '../utils/GameTime';
 
 export interface MissionReward {
   type: 'exp' | 'gold' | 'diamond' | 'ruby';
@@ -13,7 +15,7 @@ export interface ProcessedMissionData {
   descriptionKey: string;
   iconKey: string;
   conditions: string;
-  categoryId: number;
+  category: MissionCategory;
   rewards: MissionReward[];
   completed: boolean;  // Whether conditions are met
   claimed: boolean;    // Whether reward has been claimed
@@ -35,25 +37,31 @@ class MissionStoreClass {
     return MissionStoreClass.instance;
   }
 
-  private getMissionRewards(missionId: number, categoryId: number): MissionReward[] {
-    switch (categoryId) {
-      case 1: // Daily missions
-        return [{ type: 'exp', amount: 50 }, { type: 'gold', amount: 10 }];
-      case 2: // Weekly missions
-        return [{ type: 'exp', amount: 350 }, { type: 'gold', amount: 70 }];
-      case 4: // Achievement missions
-        return [{ type: 'exp', amount: 500 }, { type: 'gold', amount: 100 }];
-      default:
-        return [{ type: 'exp', amount: 50 }, { type: 'gold', amount: 10 }];
+  private getMissionRewards(mission: MissionData): MissionReward[] {
+    const rewards: MissionReward[] = [];
+    
+    if (mission.rewardExp > 0) {
+      rewards.push({ type: 'exp', amount: mission.rewardExp });
     }
+    if (mission.rewardGold > 0) {
+      rewards.push({ type: 'gold', amount: mission.rewardGold });
+    }
+    if (mission.rewardDiamond > 0) {
+      rewards.push({ type: 'diamond', amount: mission.rewardDiamond });
+    }
+    if (mission.rewardRuby > 0) {
+      rewards.push({ type: 'ruby', amount: mission.rewardRuby });
+    }
+    
+    return rewards;
   }
 
   private getMissionType(categoryId: number): MissionType {
     switch (categoryId) {
-      case 1: return 'daily';
-      case 2: return 'weekly';
-      case 4: return 'achievement';
-      default: return 'daily';
+      case MISSION_CATEGORY_ID[MISSION_CATEGORY.DAILY]: return MISSION_CATEGORY.DAILY;
+      case MISSION_CATEGORY_ID[MISSION_CATEGORY.WEEKLY]: return MISSION_CATEGORY.WEEKLY;
+      case MISSION_CATEGORY_ID[MISSION_CATEGORY.ACHIEVEMENT]: return MISSION_CATEGORY.ACHIEVEMENT;
+      default: return MISSION_CATEGORY.DAILY;
     }
   }
 
@@ -66,24 +74,21 @@ class MissionStoreClass {
       case 'login':
         if (max === 1) {
           // Daily login - check if logged in today
-          const today = new Date().toISOString().slice(0, 10);
+          const today = getGameDate();
           current = statistics.lastLoginDate === today ? 1 : 0;
-        } else if (mission.missionCategoryId === 2) {
+        } else if (mission.missionCategoryId === MISSION_CATEGORY_ID[MISSION_CATEGORY.WEEKLY]) {
           // Weekly login days - check unique login days this week
           current = this.getWeeklyLoginDays();
         } else {
-          // Achievement - total login days or login streak
+          // Achievement - total login days
           current = statistics.totalLoginDays;
         }
         break;
-      case 'login_streak':
-        current = statistics.currentLoginStreak;
-        break;
       case 'level_play':
-        if (mission.missionCategoryId === 1) {
+        if (mission.missionCategoryId === MISSION_CATEGORY_ID[MISSION_CATEGORY.DAILY]) {
           // Daily - check if played today
           current = this.getTodayLevelPlays();
-        } else if (mission.missionCategoryId === 2) {
+        } else if (mission.missionCategoryId === MISSION_CATEGORY_ID[MISSION_CATEGORY.WEEKLY]) {
           // Weekly - check plays this week
           current = this.getWeeklyLevelPlays();
         } else {
@@ -92,18 +97,18 @@ class MissionStoreClass {
         }
         break;
       case 'jump':
-        if (mission.missionCategoryId === 1) {
+        if (mission.missionCategoryId === MISSION_CATEGORY_ID[MISSION_CATEGORY.DAILY]) {
           current = this.getTodayJumps();
-        } else if (mission.missionCategoryId === 2) {
+        } else if (mission.missionCategoryId === MISSION_CATEGORY_ID[MISSION_CATEGORY.WEEKLY]) {
           current = this.getWeeklyJumps();
         } else {
           current = statistics.totalJumps;
         }
         break;
       case 'attack':
-        if (mission.missionCategoryId === 1) {
+        if (mission.missionCategoryId === MISSION_CATEGORY_ID[MISSION_CATEGORY.DAILY]) {
           current = this.getTodayAttacks();
-        } else if (mission.missionCategoryId === 2) {
+        } else if (mission.missionCategoryId === MISSION_CATEGORY_ID[MISSION_CATEGORY.WEEKLY]) {
           current = this.getWeeklyAttacks();
         } else {
           current = statistics.totalAttacks;
@@ -148,7 +153,7 @@ class MissionStoreClass {
     return derived(
       [StaticDataStore.missionData, playerStore],
       ([$missionData, $playerData]) => {
-        const categoryId = missionType === 'daily' ? 1 : missionType === 'weekly' ? 2 : 4;
+        const categoryId = MISSION_CATEGORY_ID[missionType];
         const statistics = $playerData.statistics;
 
         return $missionData
@@ -164,8 +169,8 @@ class MissionStoreClass {
               descriptionKey: mission.missionDescriptionKey,
               iconKey: mission.missionIconKey,
               conditions: mission.missionConditions,
-              categoryId: mission.missionCategoryId,
-              rewards: this.getMissionRewards(mission.missionId, mission.missionCategoryId),
+              category: missionType,
+              rewards: this.getMissionRewards(mission),
               completed,
               claimed,
               progress
@@ -193,6 +198,10 @@ class MissionStoreClass {
         addExperienceToSaveData(reward.amount);
       } else if (reward.type === 'gold') {
         addResourcesToSaveData({ gold: reward.amount });
+      } else if (reward.type === 'diamond') {
+        addResourcesToSaveData({ diamond: reward.amount });
+      } else if (reward.type === 'ruby') {
+        addResourcesToSaveData({ ruby: reward.amount });
       }
     }
 
@@ -220,11 +229,18 @@ class MissionStoreClass {
   // Check if missions need to be refreshed (for daily/weekly)
   shouldRefreshMissions(): boolean {
     const now = new Date();
-    const hour = now.getHours();
+    const currentGameDate = getGameDate(now);
+    const currentGameWeek = getGameWeekMonday(now);
     
-    // Refresh at 5:00 AM local time
-    // For this implementation, we'll just return false as refresh logic would be more complex
-    return false;
+    // For a complete implementation, we would check:
+    // 1. If daily missions need refresh (new game day started)
+    // 2. If weekly missions need refresh (new game week started)
+    // 3. Compare with last refresh timestamps stored in player data
+    
+    // This is a simplified check - in practice you'd want to store
+    // last refresh dates in player data and compare
+    const hour = now.getHours();
+    return hour === 5 && now.getMinutes() === 0; // Refresh at exactly 5:00 AM
   }
 }
 

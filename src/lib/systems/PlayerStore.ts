@@ -1,4 +1,5 @@
 import { get, writable, type Writable } from "svelte/store";
+import { getGameDate, getGameWeekMonday } from '../utils/GameTime';
 
 export interface StageRecord {
   bestTime: number; // in seconds
@@ -11,12 +12,12 @@ export interface PlayerResources {
   gold: number;
   diamond: number;
   gem: number;
+  ruby: number;
 }
 
 export interface PlayerStatistics {
   totalLoginDays: number;
   lastLoginDate: string; // YYYY-MM-DD format
-  currentLoginStreak: number;
   totalLevelPlays: number;
   totalJumps: number;
   totalAttacks: number;
@@ -77,13 +78,13 @@ const DEFAULT_PLAYER_DATA : PlayerData = {
     resources: {
       gold: 0,
       diamond: 0,
-      gem: 0
+      gem: 0,
+      ruby: 0
     },
     stageRecords: {},
     statistics: {
       totalLoginDays: 0,
       lastLoginDate: "",
-      currentLoginStreak: 0,
       totalLevelPlays: 0,
       totalJumps: 0,
       totalAttacks: 0
@@ -258,23 +259,11 @@ export function getExperiencePercentForCurrentLevel(): number {
 
 export function recordLogin(): void {
   playerStore.update((currentData) => {
-    const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+    const today = getGameDate(); // Use game day instead of calendar day
     
     // Update login statistics
     if (currentData.statistics.lastLoginDate !== today) {
       currentData.statistics.totalLoginDays++;
-      
-      // Calculate login streak
-      const yesterday = new Date();
-      yesterday.setDate(yesterday.getDate() - 1);
-      const yesterdayStr = yesterday.toISOString().slice(0, 10);
-      
-      if (currentData.statistics.lastLoginDate === yesterdayStr) {
-        currentData.statistics.currentLoginStreak++;
-      } else {
-        currentData.statistics.currentLoginStreak = 1;
-      }
-      
       currentData.statistics.lastLoginDate = today;
       
       // Update condition counters
@@ -290,7 +279,7 @@ export function recordLevelPlay(): void {
   playerStore.update((currentData) => {
     currentData.statistics.totalLevelPlays++;
     
-    const today = new Date().toISOString().slice(0, 10);
+    const today = getGameDate();
     updateDailyCounter(currentData, today, 'levelPlays', 1);
     updateWeeklyCounter(currentData, today, 'levelPlays', 1);
     
@@ -302,7 +291,7 @@ export function recordJump(): void {
   playerStore.update((currentData) => {
     currentData.statistics.totalJumps++;
     
-    const today = new Date().toISOString().slice(0, 10);
+    const today = getGameDate();
     updateDailyCounter(currentData, today, 'jumps', 1);
     updateWeeklyCounter(currentData, today, 'jumps', 1);
     
@@ -314,7 +303,7 @@ export function recordAttack(): void {
   playerStore.update((currentData) => {
     currentData.statistics.totalAttacks++;
     
-    const today = new Date().toISOString().slice(0, 10);
+    const today = getGameDate();
     updateDailyCounter(currentData, today, 'attacks', 1);
     updateWeeklyCounter(currentData, today, 'attacks', 1);
     
@@ -326,7 +315,7 @@ export function completeMission(missionId: number, missionType: 'daily' | 'weekl
   playerStore.update((currentData) => {
     switch (missionType) {
       case 'daily': {
-        const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+        const today = getGameDate();
         if (!currentData.missionProgress.dailyMissions[today]) {
           currentData.missionProgress.dailyMissions[today] = [];
         }
@@ -336,11 +325,8 @@ export function completeMission(missionId: number, missionType: 'daily' | 'weekl
         break;
       }
       case 'weekly': {
-        // Get Monday of current week
-        const now = new Date();
-        const monday = new Date(now);
-        monday.setDate(now.getDate() - now.getDay() + (now.getDay() === 0 ? -6 : 1));
-        const mondayStr = monday.toISOString().slice(0, 10);
+        // Get Monday of current game week (5 AM cutoff)
+        const mondayStr = getGameWeekMonday();
         
         if (!currentData.missionProgress.weeklyMissions[mondayStr]) {
           currentData.missionProgress.weeklyMissions[mondayStr] = [];
@@ -371,15 +357,12 @@ export function isMissionCompleted(missionId: number, missionType: 'daily' | 'we
   
   switch (missionType) {
     case 'daily': {
-      const today = new Date().toISOString().slice(0, 10);
+      const today = getGameDate();
       return currentData.missionProgress.dailyMissions[today]?.includes(missionId) ?? false;
     }
     case 'weekly': {
-      // Get Monday of current week
-      const now = new Date();
-      const monday = new Date(now);
-      monday.setDate(now.getDate() - now.getDay() + (now.getDay() === 0 ? -6 : 1));
-      const mondayStr = monday.toISOString().slice(0, 10);
+      // Get Monday of current game week (5 AM cutoff)
+      const mondayStr = getGameWeekMonday();
       
       return currentData.missionProgress.weeklyMissions[mondayStr]?.includes(missionId) ?? false;
     }
@@ -413,7 +396,7 @@ function updateDailyCounter(playerData: PlayerData, date: string, counterType: k
 }
 
 function updateWeeklyCounter(playerData: PlayerData, date: string, counterType: keyof WeeklyCounters, increment: number): void {
-  const mondayStr = getMondayOfWeek(new Date(date)).toISOString().slice(0, 10);
+  const mondayStr = getGameWeekMonday(new Date(date));
   
   if (!playerData.conditionCounters.weeklyCounters[mondayStr]) {
     playerData.conditionCounters.weeklyCounters[mondayStr] = {
@@ -426,7 +409,7 @@ function updateWeeklyCounter(playerData: PlayerData, date: string, counterType: 
   
   // For loginDays, only increment if it's a new day for this week
   if (counterType === 'loginDays') {
-    const currentWeekDates = getWeekDates(new Date(mondayStr));
+    const currentWeekDates = getGameWeekDates(new Date(mondayStr));
     const loginDaysThisWeek = currentWeekDates.filter(weekDate => 
       playerData.conditionCounters.dailyCounters[weekDate.toISOString().slice(0, 10)]?.login > 0
     ).length;
@@ -442,13 +425,8 @@ function updateWeeklyCounter(playerData: PlayerData, date: string, counterType: 
   }
 }
 
-function getMondayOfWeek(date: Date): Date {
-  const monday = new Date(date);
-  monday.setDate(date.getDate() - date.getDay() + (date.getDay() === 0 ? -6 : 1));
-  return monday;
-}
-
-function getWeekDates(mondayDate: Date): Date[] {
+// Use the GameTime utility functions instead of local implementations
+function getGameWeekDates(mondayDate: Date): Date[] {
   const dates = [];
   for (let i = 0; i < 7; i++) {
     const date = new Date(mondayDate);
@@ -460,13 +438,13 @@ function getWeekDates(mondayDate: Date): Date[] {
 
 export function getDailyConditionCounter(counterType: keyof DailyCounters, date?: string): number {
   const currentData = get(playerStore);
-  const targetDate = date || new Date().toISOString().slice(0, 10);
+  const targetDate = date || getGameDate();
   return currentData.conditionCounters.dailyCounters[targetDate]?.[counterType] || 0;
 }
 
 export function getWeeklyConditionCounter(counterType: keyof WeeklyCounters, date?: string): number {
   const currentData = get(playerStore);
-  const targetDate = date || new Date().toISOString().slice(0, 10);
-  const mondayStr = getMondayOfWeek(new Date(targetDate)).toISOString().slice(0, 10);
+  const targetDate = date || getGameDate();
+  const mondayStr = getGameWeekMonday(new Date(targetDate));
   return currentData.conditionCounters.weeklyCounters[mondayStr]?.[counterType] || 0;
 }

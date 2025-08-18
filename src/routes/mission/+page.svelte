@@ -7,10 +7,11 @@
   import Page from "$lib/components/Page.svelte";
   import Button from "$lib/components/Button.svelte";
   import Topbar from "$lib/components/Topbar.svelte";
+  import RewardIcon from "$lib/components/RewardIcon.svelte";
   import { BACK_PATH } from "$lib/utils/Constant";
   import { waitUntil } from "$lib/utils/Wait";
   import { get, writable, type Writable } from "svelte/store";
-  import { Calendar, CalendarDays, Trophy, Gift, Coins, Diamond, Gem, User, GamepadIcon, Zap, Swords, Star } from "lucide-svelte";
+  import { Calendar, CalendarDays, Trophy, Gift, User, GamepadIcon, Zap, Swords } from "lucide-svelte";
   import { PopupStore, PopupResult } from "$lib/systems/PopupStore";
 
   $: topbarHeight = 0;
@@ -68,41 +69,33 @@
   }
 
   function showRewardPopup(rewards: { type: string; amount: number }[]) {
-    // For now, let's use hardcoded Lucide SVG paths since dynamic component instantiation 
-    // doesn't work well in this context. This matches the exact Lucide component paths.
-    const rewardsHtml = rewards.map(reward => {
+    // Create reward elements dynamically using proper Svelte components
+    const rewardElements = rewards.map(reward => {
       const color = getRewardColor(reward.type);
-      let iconPath = '';
       
-      // Get proper Lucide SVG paths
-      switch (reward.type) {
-        case 'gold':
-          // Coins icon from Lucide
-          iconPath = '<circle cx="8" cy="8" r="6"/><path d="m14.5 9-5 5"/><path d="m14.5 14-5-5"/>';
-          break;
-        case 'exp':
-          // Star icon from Lucide  
-          iconPath = '<polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/>';
-          break;
-        case 'diamond':
-          // Diamond icon from Lucide
-          iconPath = '<path d="M2.7 10.3a2.41 2.41 0 0 0 0 3.41l7.59 7.59a2.41 2.41 0 0 0 3.41 0l7.59-7.59a2.41 2.41 0 0 0 0-3.41L13.7 2.7a2.41 2.41 0 0 0-3.41 0Z"/>';
-          break;
-        case 'ruby':
-          // Gem icon from Lucide
-          iconPath = '<path d="m6 2 3 6 5-6"/><path d="M5 21a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2"/><path d="m6 2 5 6"/><path d="m13 8 5-6"/>';
-          break;
-        default:
-          // Gift icon from Lucide  
-          iconPath = '<rect x="3" y="8" width="18" height="4" rx="1"/><path d="m12 8 0-4"/><path d="m8 12-2 8"/><path d="m16 12 2 8"/>';
-      }
+      // Create a temporary container for rendering the Svelte component
+      const tempDiv = document.createElement('div');
+      tempDiv.style.display = 'inline-block';
+      
+      // Create the reward icon component
+      const iconComponent = new RewardIcon({
+        target: tempDiv,
+        props: {
+          rewardType: reward.type,
+          size: 24,
+          color: color
+        }
+      });
+      
+      const iconHTML = tempDiv.innerHTML;
+      
+      // Clean up the component
+      iconComponent.$destroy();
       
       return `
         <div style="display: flex; align-items: center; gap: 0.75rem; margin: 0.5rem 0; padding: 0.5rem; background: rgba(0, 0, 0, 0.05); border-radius: 0.5rem;">
           <div style="color: ${color}; display: flex; align-items: center;">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              ${iconPath}
-            </svg>
+            ${iconHTML}
           </div>
           <span style="color: ${color}; font-weight: bold; font-size: 1.1rem; min-width: 4rem;">+${reward.amount}</span>
           <span style="color: #374151; font-size: 1rem;">${getRewardTypeName(reward.type)}</span>
@@ -114,7 +107,7 @@
       <div style="text-align: center; padding: 1rem;">
         <div style="margin-bottom: 1rem;">
           <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-            ${rewardsHtml}
+            ${rewardElements}
           </div>
         </div>
       </div>
@@ -132,16 +125,6 @@
     });
   }
 
-  function getRewardComponent(rewardType: string) {
-    switch (rewardType) {
-      case 'gold': return Coins;
-      case 'exp': return Star;
-      case 'diamond': return Diamond;
-      case 'ruby': return Gem;
-      default: return Gift;
-    }
-  }
-
   function getRewardTypeName(type: string): string {
     switch (type) {
       case 'gold': return 'Gold';
@@ -149,16 +132,6 @@
       case 'diamond': return 'Diamond';
       case 'ruby': return 'Ruby';
       default: return 'Reward';
-    }
-  }
-
-  function getRewardIcon(type: string) {
-    switch (type) {
-      case 'gold': return Coins;
-      case 'exp': return Star;  // Using star icon for experience
-      case 'diamond': return Diamond;
-      case 'ruby': return Gem;
-      default: return Gift;
     }
   }
 
@@ -276,10 +249,10 @@
                 <div class="rewardsList">
                   {#each mission.rewards as reward}
                     <div class="rewardItem">
-                      <svelte:component 
-                        this={getRewardIcon(reward.type)} 
+                      <RewardIcon 
+                        rewardType={reward.type}
                         size={16} 
-                        style="color: {getRewardColor(reward.type)}" />
+                        color={getRewardColor(reward.type)} />
                       <span style="color: {getRewardColor(reward.type)}">
                         {reward.amount}
                       </span>
