@@ -37,6 +37,28 @@ class MissionStoreClass {
     return MissionStoreClass.instance;
   }
 
+  /**
+   * Check if a mission's prerequisites are satisfied
+   * @param mission The mission data object
+   * @param missionType The mission type
+   * @returns true if all prerequisites are claimed, false otherwise
+   */
+  private isMissionUnlocked(mission: MissionData, missionType: MissionType): boolean {
+    // Daily and weekly missions don't have prerequisites
+    if (missionType !== 'achievement') {
+      return true;
+    }
+
+    const prerequisiteId = mission.prerequisiteMissionId;
+    if (!prerequisiteId) {
+      // No prerequisite, mission is unlocked
+      return true;
+    }
+
+    // Check if prerequisite mission has been claimed
+    return isMissionCompleted(prerequisiteId, 'achievement');
+  }
+
   private getMissionRewards(mission: MissionData): MissionReward[] {
     const rewards: MissionReward[] = [];
     
@@ -156,7 +178,7 @@ class MissionStoreClass {
         const categoryId = MISSION_CATEGORY_ID[missionType];
         const statistics = $playerData.statistics;
 
-        return $missionData
+        const processedMissions = $missionData
           .filter(mission => mission.missionCategoryId === categoryId)
           .map(mission => {
             const progress = this.checkMissionProgress(mission, statistics);
@@ -173,9 +195,25 @@ class MissionStoreClass {
               rewards: this.getMissionRewards(mission),
               completed,
               claimed,
-              progress
+              progress,
+              rawMission: mission // Keep reference for prerequisite checking
             };
+          })
+          // Filter missions based on prerequisites (only for achievement missions)
+          .filter(processedMission => this.isMissionUnlocked(processedMission.rawMission, missionType))
+          // Remove the rawMission reference before returning
+          .map(({ rawMission, ...processedMission }) => processedMission)
+          // Sort missions: unclaimed first, then claimed at the end
+          .sort((a, b) => {
+            // Primary sort: claimed missions go to end
+            if (a.claimed !== b.claimed) {
+              return a.claimed ? 1 : -1;
+            }
+            // Secondary sort: by mission ID to maintain consistent order
+            return a.id - b.id;
           });
+
+        return processedMissions;
       }
     );
   }

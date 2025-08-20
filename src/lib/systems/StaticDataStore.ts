@@ -74,6 +74,7 @@ export interface MissionData {
   rewardGold: number;
   rewardDiamond: number;
   rewardRuby: number;
+  prerequisiteMissionId?: number;
 }
 
 export type StageData = {
