@@ -1,5 +1,7 @@
 import { get, writable, type Writable } from "svelte/store";
 import { getGameDate, getGameWeekMonday } from '../utils/GameTime';
+import { IndexedDBService } from './IndexedDBService';
+import { DataMigration } from './DataMigration';
 
 export interface StageRecord {
   bestTime: number; // in seconds
@@ -100,23 +102,50 @@ const DEFAULT_PLAYER_DATA : PlayerData = {
     }
 }
 const STORAGE_KEY = "playerData";
-export const playerStore: Writable<PlayerData> = writable(load());
+const indexedDBService = IndexedDBService.getInstance();
+export const playerStore: Writable<PlayerData> = writable(DEFAULT_PLAYER_DATA);
 
-function load(): PlayerData {
-  const base64 = localStorage.getItem(STORAGE_KEY);
-  if (base64) {
-    try {
-      const json = atob(base64);
-      const parsed = JSON.parse(json);
-      const merged = mergeDefaults(DEFAULT_PLAYER_DATA, parsed);
-      
+// Initialize store with async loading
+async function initializeStore() {
+  const loadedData = await load();
+  playerStore.set(loadedData);
+}
+
+// Auto-initialize when module is imported
+initializeStore();
+
+async function load(): Promise<PlayerData> {
+  try {
+    // First, attempt migration from LocalStorage if needed
+    await DataMigration.migrateFromLocalStorage();
+    
+    // Load data from IndexedDB
+    const data = await indexedDBService.loadPlayerData();
+    
+    if (data) {
+      const merged = mergeDefaults(DEFAULT_PLAYER_DATA, data);
       return merged;
-    } catch {
-      return DEFAULT_PLAYER_DATA;
     }
+    
+    return DEFAULT_PLAYER_DATA;
+  } catch (error) {
+    console.error('Failed to load player data from IndexedDB:', error);
+    
+    // Fallback: try to read from LocalStorage directly
+    try {
+      const base64 = localStorage.getItem(STORAGE_KEY);
+      if (base64) {
+        const json = atob(base64);
+        const parsed = JSON.parse(json);
+        const merged = mergeDefaults(DEFAULT_PLAYER_DATA, parsed);
+        return merged;
+      }
+    } catch (fallbackError) {
+      console.error('Fallback LocalStorage read also failed:', fallbackError);
+    }
+    
+    return DEFAULT_PLAYER_DATA;
   }
-
-  return DEFAULT_PLAYER_DATA;
 }
 
 function mergeDefaults<T extends Record<string, any>>(defaults: T, actual: T): T {
@@ -131,14 +160,26 @@ function mergeDefaults<T extends Record<string, any>>(defaults: T, actual: T): T
   return result;
 }
 
-function save(data: PlayerData): void {
-  const json = JSON.stringify(data);
-  const base64 = btoa(json);
-  localStorage.setItem(STORAGE_KEY, base64);
+async function save(data: PlayerData): Promise<void> {
+  try {
+    await indexedDBService.savePlayerData(data);
+  } catch (error) {
+    console.error('Failed to save player data to IndexedDB:', error);
+    
+    // Fallback to LocalStorage for emergency backup
+    try {
+      const json = JSON.stringify(data);
+      const base64 = btoa(json);
+      localStorage.setItem(STORAGE_KEY, base64);
+      console.warn('Saved to LocalStorage as fallback');
+    } catch (fallbackError) {
+      console.error('Fallback LocalStorage save also failed:', fallbackError);
+    }
+  }
 }
 
-playerStore.subscribe((data) => {
-  save(data);
+playerStore.subscribe(async (data) => {
+  await save(data);
 });
 
 export function exportBase64FromSaveData(): string {
@@ -447,4 +488,43 @@ export function getWeeklyConditionCounter(counterType: keyof WeeklyCounters, dat
   const targetDate = date || getGameDate();
   const mondayStr = getGameWeekMonday(new Date(targetDate));
   return currentData.conditionCounters.weeklyCounters[mondayStr]?.[counterType] || 0;
+}
+
+// IndexedDB management functions
+
+/**
+ * Force reload player data from IndexedDB
+ */
+export async function reloadPlayerData(): Promise<void> {
+  const loadedData = await load();
+  playerStore.set(loadedData);
+}
+
+/**
+ * Check if data migration from LocalStorage has been completed
+ */
+export function isMigrationCompleted(): boolean {
+  return DataMigration.isMigrationCompleted();
+}
+
+/**
+ * Manually trigger migration from LocalStorage to IndexedDB
+ */
+export async function migrateFromLocalStorage(): Promise<boolean> {
+  return await DataMigration.migrateFromLocalStorage();
+}
+
+/**
+ * Get debug information about storage
+ */
+export function getStorageDebugInfo(): { 
+  migrationCompleted: boolean;
+  localStorageData: any;
+  indexedDBSupported: boolean;
+} {
+  return {
+    migrationCompleted: DataMigration.isMigrationCompleted(),
+    localStorageData: DataMigration.getLocalStorageData(),
+    indexedDBSupported: 'indexedDB' in window
+  };
 }
