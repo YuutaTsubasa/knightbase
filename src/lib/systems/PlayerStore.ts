@@ -105,11 +105,37 @@ const STORAGE_KEY = "playerData";
 const indexedDBService = IndexedDBService.getInstance();
 export const playerStore: Writable<PlayerData> = writable(DEFAULT_PLAYER_DATA);
 
+// Track initialization state
+let isInitialized = false;
+let initializationPromise: Promise<void> | null = null;
+
 // Initialize store with async loading
 async function initializeStore() {
-  const loadedData = await load();
-  playerStore.set(loadedData);
+  if (initializationPromise) {
+    return initializationPromise;
+  }
+  
+  initializationPromise = (async () => {
+    try {
+      const loadedData = await load();
+      isInitialized = true;
+      playerStore.set(loadedData);
+    } catch (error) {
+      console.error('Failed to initialize player store:', error);
+      isInitialized = true; // Mark as initialized even if failed
+    }
+  })();
+  
+  return initializationPromise;
 }
+
+// Subscribe to store changes only after initialization
+playerStore.subscribe(async (data) => {
+  // Only save if initialization is complete to prevent overwriting loaded data
+  if (isInitialized) {
+    await save(data);
+  }
+});
 
 // Auto-initialize when module is imported
 initializeStore();
@@ -177,10 +203,6 @@ async function save(data: PlayerData): Promise<void> {
     }
   }
 }
-
-playerStore.subscribe(async (data) => {
-  await save(data);
-});
 
 export function exportBase64FromSaveData(): string {
   return btoa(JSON.stringify(get(playerStore)));
@@ -491,6 +513,15 @@ export function getWeeklyConditionCounter(counterType: keyof WeeklyCounters, dat
 }
 
 // IndexedDB management functions
+
+/**
+ * Wait for player store to be fully initialized
+ */
+export async function waitForInitialization(): Promise<void> {
+  if (initializationPromise) {
+    await initializationPromise;
+  }
+}
 
 /**
  * Force reload player data from IndexedDB
