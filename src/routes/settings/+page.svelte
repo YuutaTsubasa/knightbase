@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { exportBase64FromSaveData, importBase64ToSaveData, playerStore } from '$lib/systems/PlayerStore';
+  import { exportBase64FromSaveData, importBase64ToSaveData, playerStore, waitForInitialization } from '$lib/systems/PlayerStore';
   import { BACK_PATH } from '$lib/utils/Constant';
   import Page from '$lib/components/Page.svelte';
   import { waitUntil } from '$lib/utils/Wait';
@@ -11,6 +11,7 @@
   import { get, writable, type Writable } from 'svelte/store';
   import StatusBox from '$lib/components/StatusBox.svelte';
   import { StatusBoxType } from '$lib/types/StatusBoxType';
+  import { onMount } from 'svelte';
 
   let playerData = $playerStore;
   $: masterVolume = playerData.masterVolume;
@@ -25,6 +26,14 @@
   let restoreStatusType = StatusBoxType.Default;
   let restoreStatus = 'backupSaveHint';
   let shouldExit: Writable<boolean>;
+  let isStoreInitialized = false;
+
+  // Wait for store initialization on component mount
+  onMount(async () => {
+    await waitForInitialization();
+    playerData = $playerStore;
+    isStoreInitialized = true;
+  });
 
   function updateVolume() {
     playerStore.update(value => ({
@@ -80,46 +89,50 @@
   </slot>
   
   <div class="settingsPanel" style={`padding-top: ${topBarHeight}px;`}>
-    <label>
-      <div class="labelTitle"><Volume2Icon class="icon" size="20" /> {$t("masterVolume")}</div>
-      <input type="range" min="0" max="100" bind:value={masterVolume} on:input={updateVolume} 
-        style="--ratio: {masterVolume}%"/>
-      <span>{masterVolume}</span>
-    </label>
+    {#if isStoreInitialized}
+      <label>
+        <div class="labelTitle"><Volume2Icon class="icon" size="20" /> {$t("masterVolume")}</div>
+        <input type="range" min="0" max="100" bind:value={masterVolume} on:input={updateVolume} 
+          style="--ratio: {masterVolume}%"/>
+        <span>{masterVolume}</span>
+      </label>
 
-    <label>
-      <div class="labelTitle"><Music4Icon class="icon" size="20" /> {$t("musicVolume")}</div>
-      <input type="range" min="0" max="100" bind:value={bgmVolume} on:input={updateVolume} 
-        style="--ratio: {bgmVolume}%"/>
-      <span>{bgmVolume}</span>
-    </label>
+      <label>
+        <div class="labelTitle"><Music4Icon class="icon" size="20" /> {$t("musicVolume")}</div>
+        <input type="range" min="0" max="100" bind:value={bgmVolume} on:input={updateVolume} 
+          style="--ratio: {bgmVolume}%"/>
+        <span>{bgmVolume}</span>
+      </label>
 
-    <label>
-      <div class="labelTitle"><DrumIcon class="icon" size="20" /> {$t("soundVolume")}</div>
-      <input type="range" min="0" max="100" bind:value={sfxVolume} on:input={updateVolume} 
-        style="--ratio: {sfxVolume}%"/>
-      <span>{sfxVolume}</span>
-    </label>
+      <label>
+        <div class="labelTitle"><DrumIcon class="icon" size="20" /> {$t("soundVolume")}</div>
+        <input type="range" min="0" max="100" bind:value={sfxVolume} on:input={updateVolume} 
+          style="--ratio: {sfxVolume}%"/>
+        <span>{sfxVolume}</span>
+      </label>
 
-    <label>
-      <div class="labelTitle">
-        <MessageSquareTextIcon class="icon" size="20"/> {$t("language")}
+      <label>
+        <div class="labelTitle">
+          <MessageSquareTextIcon class="icon" size="20"/> {$t("language")}
+        </div>
+        <select bind:value={$locale} on:change={() => {LocalizationStore.setLocale(LocalizationStore.getLocale());}}>
+          {#each $availableLocales as availableLocale }
+            <option value={availableLocale}>{$t(availableLocale)}</option>
+          {/each}
+        </select>
+      </label>
+
+      <div class="backupRestore">
+        <StatusBox type={restoreStatusType}>{$t(restoreStatus)}</StatusBox>
+        <Button onClick={handleBackup}><BoxIcon class="icon" size="20"/> {$t("backupSaveData")}</Button>
+        <div class="restoreSection">
+          <input type="text" bind:value={restoreText} placeholder="{$t("pasteSaveDataHint")}" />
+          <Button onClick={handleRestore}><FormInputIcon class="icon" size="20"/> {$t("restoreSaveData")}</Button>
+        </div>
       </div>
-      <select bind:value={$locale} on:change={() => {LocalizationStore.setLocale(LocalizationStore.getLocale());}}>
-        {#each $availableLocales as availableLocale }
-          <option value={availableLocale}>{$t(availableLocale)}</option>
-        {/each}
-      </select>
-    </label>
-
-    <div class="backupRestore">
-      <StatusBox type={restoreStatusType}>{$t(restoreStatus)}</StatusBox>
-      <Button onClick={handleBackup}><BoxIcon class="icon" size="20"/> {$t("backupSaveData")}</Button>
-      <div class="restoreSection">
-        <input type="text" bind:value={restoreText} placeholder="{$t("pasteSaveDataHint")}" />
-        <Button onClick={handleRestore}><FormInputIcon class="icon" size="20"/> {$t("restoreSaveData")}</Button>
-      </div>
-    </div>
+    {:else}
+      <div class="loading">Loading settings...</div>
+    {/if}
   </div>
 </Page>
 
@@ -186,5 +199,12 @@
   .restoreSection input {
     flex: 1;
     padding: 0.4rem;
+  }
+
+  .loading {
+    text-align: center;
+    padding: 2rem;
+    color: #666;
+    font-style: italic;
   }
 </style>
